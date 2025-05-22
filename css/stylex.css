@@ -26,8 +26,8 @@ main {
     border-radius: 10px;
     border: 2px solid #000;
     background: linear-gradient(90deg, #003236 0.38%, #420300 99.58%);
-    width: 40%;
-    height: 45%;
+    width: 50%;
+    height: 60%;
 }
 
 #pokedex h2 {
