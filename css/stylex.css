@@ -56,7 +56,7 @@ main {
     cursor: pointer;
     padding: 2px;
     height: 100%;
-    width: 3vw;
+    width: 5vw;
     border-radius: 10px;
     border: 2px solid #000;
 }
@@ -84,7 +84,7 @@ main {
 #brn__favoritos {
     padding: 2px;
     height: 100%;
-    width: 3vw;
+    width: 5vw;
     border-radius: 10px;
     border: 2px solid #000;
 }
@@ -170,6 +170,7 @@ main {
 }
 
 #campo__de__pesquisa {
+    gap: 1vw;
     margin-top: 10px;
     display: flex;
     width: 100%;
