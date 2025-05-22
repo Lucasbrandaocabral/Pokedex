@@ -1,0 +1,170 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-image: url(/DESAFIO/poke.api/img/fundo.png);
+    background-size: cover;
+    background-position: center;
+    font-family: "Jersey 20";
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+
+.container {
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 10px;
+    border: 2px solid #000;
+    background: linear-gradient(90deg, #003236 0.38%, #420300 99.58%);
+    width: 40%;
+    height: 45%;
+}
+
+#pokedex h2 {
+    margin-top: 10px;
+    font-size: 32px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 1.8px;
+}
+
+#input__pesquisa {
+    padding: 2px;
+    height: 1vw;
+    width: 15vw;
+    border-radius: 10px;
+    border: 2px solid #000;
+    background: #D9D9D9;
+}
+
+#brn__buscar a,
+#brn__favoritos a {
+    text-decoration: none;
+}
+
+#brn__buscar {
+    cursor: pointer;
+    padding: 2px;
+    height: 100%;
+    width: 3vw;
+    border-radius: 10px;
+    border: 2px solid #000;
+}
+
+#nome__favorito {
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: 15px;
+}
+
+#pokemon__infos {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    font-size: 20px;
+}
+
+#pokemon__img {
+    width: 8vw;
+}
+
+#brn__favoritos {
+    padding: 2px;
+    height: 100%;
+    width: 3vw;
+    border-radius: 10px;
+    border: 2px solid #000;
+}
+
+.favoritar i::before {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.favoritar.favorito {
+    color: gold;
+    background: none;
+    border: none;
+}
+
+.favoritar.nao_favorito {
+    border: none;
+    background: none;
+    color: gray;
+}
+
+#evolucaos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px;
+    border-radius: 13px;
+    border: 2px solid #000;
+    background: rgba(217, 217, 217, 0.00);
+}
+
+#todas__as__evolocoes {
+    display: flex;
+    align-items: center;
+}
+
+#qual__pokemon {
+    margin-top: 15px;
+    font-size: 40px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.pokemon__evolucao {
+    width: 3vw;
+}
+
+#lista__favoritos {
+    display: flex;
+}
+
+.pokemon__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    margin: 10px;
+    border: 2px solid white;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.pokemon__card img {
+    width: 80px;
+}
+
+#text__favorito {
+    font-size: 25px;
+}
+
+#pokemons {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+#deu__ruim {
+    font-size: 25px;
+}

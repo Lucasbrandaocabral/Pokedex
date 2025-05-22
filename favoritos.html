@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jersey+20&family=League+Spartan&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/stylex.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <script src="https://unicons.iconscout.com/release/v4.0.8/script/monochrome/bundle.js"></script>
+    <script src="https://unicons.iconscout.com/release/v4.0.8/script/monochrome/bundle.js"></script>
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/thinline.css">
+    <script src="https://kit.fontawesome.com/a45f4a70e6.js" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokedex</title>
+</head>
+<body>
+    <main>
+        <section class="container">
+            <div id="pokedex">
+                <h2>Pokedex</h2>
+            </div>
+            <div id="campo__de__pesquisa">
+                <button id="brn__buscar">
+                    <a href="index.html">Voltar</a>
+                </button>
+                <button id="brn__favoritos">
+                    <a href="#">favoritos</a>
+                </button>
+            </div>
+            <div id="pokemons">
+                <p id="text__favorito">
+                    Pokemons favoritos
+                </p>
+                <div id="lista__favoritos"></div>
+                <div id="pokemon__infos" class="hidden">
+                    <div id="nome__favorito">
+                        <button class="favoritar nao_favorito" id="brn__estrela">
+                            <i class="uil uil-favorite"></i>
+                        </button>
+                        <h2 id="nome__pokemon"></h2>
+                    </div>
+                    <img id="pokemon__img" src="" alt="pokemin raro">
+                    <p id="tipo__do__pokemon"></p>
+                </div>
+                <div id="deu__ruim" class="hidden">
+                    <p>Erro 404 - Ta maluco que Pokómon e esse?</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="../poke.api/Js/scripts.js"></script>
+</body>
+</html>
