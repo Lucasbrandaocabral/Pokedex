@@ -52,7 +52,7 @@ const fetchPokemin = async (identificadorPokemon) => {
 // ====================================================
 const preencherPokemonInfo = (pokemon) => {
     if (nomePokemon) nomePokemon.textContent = pokemon.name;
-    if (tipoPokemon) tipoPokemon.textContent = pokemon.types.map(t => t.type.name).join(", ");
+    if (tipoPokemon) tipoPokemon.textContent = `Tipo de Pokémon: ${pokemon.types.map(t => t.type.name).join(", ")}`;
     if (pokemonImg) pokemonImg.src = pokemon.sprites.front_default;
     atualizarEstrela(pokemon.name);
 };
