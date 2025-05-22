@@ -168,3 +168,10 @@ main {
 #deu__ruim {
     font-size: 25px;
 }
+
+#campo__de__pesquisa {
+    margin-top: 10px;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
