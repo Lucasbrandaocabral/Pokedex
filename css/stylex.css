@@ -4,7 +4,7 @@
 }
 
 body {
-    background-image: url(/DESAFIO/poke.api/img/fundo.png);
+    background-image: url(../img/fundo.png);
     background-size: cover;
     background-position: center;
     font-family: "Jersey 20";
