@@ -24,6 +24,8 @@ const acao = (nome, dados = {}) => api("social", { metodo: "POST", corpo: { acao
 export const atualizarSocial = async () => {
     if (!usuarioAtual()) {
         resumo = null;
+        conhecidas = null;
+        fecharNotificacoes();
         atualizarBadges();
         return;
     }
@@ -31,6 +33,7 @@ export const atualizarSocial = async () => {
         resumo = await api("social?acao=resumo");
         erroResumo = null;
         await aplicarEntregas(resumo.entregas);
+        avisarNovidades();
     } catch (e) {
         erroResumo = e.message;
     }
@@ -63,19 +66,145 @@ const aplicarEntregas = async (entregas) => {
 
 const trocasRecebidasPendentes = () => (resumo?.trocas || []).filter((t) => !t.enviada && t.status === "pendente");
 
+// ---------------- Notificações (sino no topo) ----------------
+const CHAVE_VISTAS = "pokepocket_notif_vistas";
+let vistas = new Set();
+try {
+    vistas = new Set(JSON.parse(localStorage.getItem(CHAVE_VISTAS)) || []);
+} catch (e) { /* sem armazenamento: tudo aparece como novo */ }
+const guardarVistas = () => {
+    try {
+        localStorage.setItem(CHAVE_VISTAS, JSON.stringify([...vistas].slice(-100)));
+    } catch (e) { /* sem armazenamento */ }
+};
+let conhecidas = null; // ids da última atualização, para saber o que é novo
+let painelAberto = false;
+
+const tempoAtras = (data) => {
+    const min = Math.max(0, Math.round((Date.now() - new Date(data)) / 60000));
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min} min`;
+    const h = Math.round(min / 60);
+    if (h < 24) return `há ${h} h`;
+    const d = Math.round(h / 24);
+    return `há ${d} dia${d > 1 ? "s" : ""}`;
+};
+
+const cartasTexto = (n) => `${n} carta${n === 1 ? "" : "s"}`;
+
+// Lista de notificações montada a partir do resumo do servidor.
+// "pendente" = continua no contador até a pessoa responder.
+const notificacoes = () => {
+    if (!resumo) return [];
+    const lista = [
+        ...resumo.pedidosRecebidos.map((p) => ({
+            id: `amigo-${p.id}`, pendente: true, quem: p, quando: p.criadoEm,
+            texto: `<b>${escapar(p.apelido)}</b> quer ser seu amigo`,
+            botoes: `<button class="btn pequeno" data-social="aceitar-amigo" data-id="${p.id}">Aceitar</button>
+                     <button class="btn pequeno secundario" data-social="recusar-amigo" data-id="${p.id}">Recusar</button>`,
+        })),
+        ...trocasRecebidasPendentes().map((t) => ({
+            id: `troca-${t.id}`, pendente: true, quem: t.com, quando: t.criadoEm,
+            texto: `<b>${escapar(t.com.apelido)}</b> te propôs uma troca: oferece ${cartasTexto(t.da.length)}${t.quer.length ? ` e pede ${cartasTexto(t.quer.length)}` : " de presente"}`,
+            botoes: `<a class="btn pequeno" href="#trocas/amigos" data-social="fechar-notificacoes">Ver troca</a>`,
+        })),
+        ...(resumo.trocas || []).filter((t) => t.enviada && ["aceita", "recusada"].includes(t.status)).map((t) => ({
+            id: `resultado-${t.id}-${t.status}`, pendente: false, quem: t.com, quando: t.resolvidoEm,
+            texto: t.status === "aceita"
+                ? `<b>${escapar(t.com.apelido)}</b> aceitou sua troca! As cartas já estão no seu álbum.`
+                : `<b>${escapar(t.com.apelido)}</b> recusou sua troca. Suas cartas voltaram para o álbum.`,
+            botoes: `<a class="btn pequeno secundario" href="#trocas/amigos" data-social="fechar-notificacoes">Ver trocas</a>`,
+        })),
+    ];
+    return lista.sort((a, b) => new Date(b.quando) - new Date(a.quando));
+};
+
+const contarNotificacoes = () => notificacoes().filter((n) => n.pendente || !vistas.has(n.id)).length;
+
+const htmlPainelNotificacoes = () => {
+    const lista = notificacoes();
+    return `
+        <div class="notificacoes-topo"><h3>Notificações</h3><button class="fechar" data-social="fechar-notificacoes" aria-label="Fechar">✕</button></div>
+        ${lista.length ? `<ul class="lista-notificacoes">${lista.map((n) => `
+            <li class="notificacao ${n.pendente || !vistas.has(n.id) ? "nao-lida" : ""}">
+                <img class="avatar-treinador" src="${imagemSprite(n.quem.avatar || 25)}" alt="" loading="lazy">
+                <div>
+                    <p>${n.texto}</p>
+                    <small>${n.quando ? tempoAtras(n.quando) : ""}</small>
+                    <div class="notificacao-botoes">${n.botoes}</div>
+                </div>
+            </li>`).join("")}</ul>`
+            : `<p class="vazio pequeno">Nada por aqui. Quando alguém te adicionar ou propor uma troca, aparece aqui.</p>`}`;
+};
+
+const posicionarPainel = (painel) => {
+    // Abre alinhado ao sino, mas sem sair da tela (no celular o sino fica à esquerda)
+    const r = $("#btn-sino").getBoundingClientRect();
+    const largura = painel.offsetWidth;
+    painel.style.top = `${r.bottom + 10}px`;
+    painel.style.left = `${Math.min(Math.max(12, r.right - largura), innerWidth - largura - 12)}px`;
+};
+
+const abrirNotificacoes = () => {
+    let painel = $("#painel-notificacoes");
+    if (!painel) {
+        painel = document.createElement("div");
+        painel.id = "painel-notificacoes";
+        painel.className = "painel-notificacoes";
+        document.body.appendChild(painel);
+    }
+    painelAberto = true;
+    painel.innerHTML = htmlPainelNotificacoes();
+    painel.hidden = false;
+    posicionarPainel(painel);
+    // Ao abrir, os resultados de trocas contam como vistos
+    notificacoes().forEach((n) => { if (!n.pendente) vistas.add(n.id); });
+    guardarVistas();
+    atualizarBadges();
+};
+
+const fecharNotificacoes = () => {
+    painelAberto = false;
+    const painel = $("#painel-notificacoes");
+    if (painel) painel.hidden = true;
+};
+
+// Mostra um aviso quando chega algo novo enquanto o jogo está aberto
+const avisarNovidades = () => {
+    const lista = notificacoes();
+    const ids = new Set(lista.map((n) => n.id));
+    if (conhecidas) {
+        // Só pedidos e propostas: o resultado de uma troca já tem o aviso das cartas que chegaram
+        const novas = lista.filter((n) => n.pendente && !conhecidas.has(n.id));
+        if (novas.length) {
+            sons.raro(2);
+            novas.slice(0, 3).forEach((n) => aviso(`🔔 ${n.texto}`));
+            const sino = $("#btn-sino");
+            sino?.classList.remove("balancando");
+            void sino?.offsetWidth; // reinicia a animação
+            sino?.classList.add("balancando");
+        }
+    }
+    conhecidas = ids;
+};
+
 const atualizarBadges = () => {
     const recebidas = trocasRecebidasPendentes().length;
-    const pedidos = resumo?.pedidosRecebidos?.length || 0;
     const bTrocas = $("#badge-trocas");
     if (bTrocas) {
         bTrocas.textContent = recebidas;
         bTrocas.hidden = !recebidas;
     }
-    const bConta = $("#badge-conta");
-    if (bConta) {
-        bConta.textContent = pedidos;
-        bConta.hidden = !pedidos;
+    const total = usuarioAtual() ? contarNotificacoes() : 0;
+    const sino = $("#btn-sino");
+    if (sino) sino.hidden = !usuarioAtual();
+    const bSino = $("#badge-sino");
+    if (bSino) {
+        bSino.textContent = total > 9 ? "9+" : total;
+        bSino.hidden = !total;
     }
+    document.title = total ? `(${total}) Pokédex Pocket` : "Pokédex Pocket";
+    if (painelAberto && $("#painel-notificacoes")) $("#painel-notificacoes").innerHTML = htmlPainelNotificacoes();
 };
 
 export const iniciarSocial = () => {
@@ -85,6 +214,19 @@ export const iniciarSocial = () => {
         if (conviteGuardado()) processarConvite(conviteGuardado());
     });
     window.addEventListener("botao-conta-atualizado", atualizarBadges);
+    $("#btn-sino")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sons.clique();
+        if (painelAberto) fecharNotificacoes();
+        else abrirNotificacoes();
+    });
+    // Fecha ao clicar fora, com Esc ou ao trocar de tela
+    document.addEventListener("click", (e) => {
+        if (painelAberto && !e.target.closest("#painel-notificacoes, #btn-sino, .modal")) fecharNotificacoes();
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharNotificacoes(); });
+    window.addEventListener("hashchange", fecharNotificacoes);
+    window.addEventListener("resize", () => painelAberto && posicionarPainel($("#painel-notificacoes")));
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") atualizarSocial();
     });
@@ -727,6 +869,10 @@ const ACOES = {
         }, "Pronto! Só este aparelho continua conectado.");
     },
     sair: sairDaConta,
+    "fechar-notificacoes": (el) => {
+        fecharNotificacoes();
+        if (el.tagName === "A") location.hash = el.getAttribute("href");
+    },
     "aceitar-amigo": (el) => executar(() => acao("responder-amigo", { id: el.dataset.id, aceitar: true }), "Pedido aceito! Agora vocês são amigos."),
     "recusar-amigo": (el) => executar(() => acao("responder-amigo", { id: el.dataset.id, aceitar: false })),
     "ver-amigo": (el) => modalPerfilAmigo(el.dataset.usuario),
