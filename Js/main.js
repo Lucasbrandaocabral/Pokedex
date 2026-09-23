@@ -966,6 +966,11 @@ setInterval(() => {
 
 window.addEventListener("hashchange", () => {
     fecharModal();
+    if (overlay.classList.contains("aberta")) {
+        overlay.className = "abertura";
+        overlay.innerHTML = "";
+        document.body.classList.remove("travado");
+    }
     navegar();
 });
 
