@@ -484,14 +484,17 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .abertura .btn.secundario { background: transparent; color: var(--papel2); border-color: var(--papel2); box-shadow: 3px 3px 0 #000; }
 
 .contador-cartas { font-family: "Jersey 20"; font-size: 1.6rem; }
-.pilha { position: relative; width: min(300px, 72vw); aspect-ratio: 63 / 88; cursor: pointer; }
+.pilha { position: relative; width: min(300px, 72vw); aspect-ratio: 63 / 88; cursor: grab; touch-action: none; user-select: none; }
+.pilha:active { cursor: grabbing; }
 .pilha-item { position: absolute; inset: 0; transition: transform 0.45s ease, opacity 0.45s; animation: entrarPilha 0.5s ease backwards; }
 .pilha-item:nth-child(2) { transform: translate(6px, 6px); }
 .pilha-item:nth-child(3) { transform: translate(12px, 12px); }
 .pilha-item:nth-child(4) { transform: translate(18px, 18px); }
 .pilha-item:nth-child(5) { transform: translate(24px, 24px); }
 @keyframes entrarPilha { from { transform: translateY(60vh); } }
-.pilha-item.saiu { transform: translate(-130%, -10%) rotate(-18deg) !important; opacity: 0; pointer-events: none; }
+.pilha-item.em-cima { transform: none; }
+.pilha-item.saiu { transform: translate(-140%, -10%) rotate(-20deg) !important; opacity: 0; pointer-events: none; transition: transform 0.4s ease-in, opacity 0.4s ease-in !important; }
+.pilha-item.saiu.direita { transform: translate(140%, -10%) rotate(20deg) !important; }
 .gira { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(.3, .8, .4, 1.2); }
 .pilha-item.virada .gira { transform: rotateY(180deg); }
 .lado { position: absolute; inset: 0; backface-visibility: hidden; }
@@ -845,3 +848,14 @@ body:not(.bloqueado) > .tela-login { display: none; }
     .login-pacotes { display: none; }
     .login-caixa { padding: 24px 16px 40px; align-items: flex-start; }
 }
+
+/* Barra de cima na abertura de pacotes: contador e botões de pular */
+.abertura-topo {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 16px; background: rgba(23, 22, 29, 0.85); border-bottom: 2px solid #34323d;
+}
+.contador-pacotes { font-family: "Jersey 20", monospace; font-size: 1.4rem; color: #cfc8b8; }
+.contador-pacotes b { color: var(--amarelo); font-weight: 400; }
+.abertura-botoes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.abertura .abertura-palco { min-height: calc(100% - 60px); }

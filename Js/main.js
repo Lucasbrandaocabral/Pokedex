@@ -286,6 +286,10 @@ const fecharAbertura = () => {
     renderizar();
 };
 
+// Sequência de abertura: cada pacote é cortado e as cartas passam para o lado, uma por uma.
+// Com vários pacotes, um depois do outro; dá para pular o pacote atual ou pular tudo.
+let sequencia = null;
+
 const abrir = (qtd) => {
     const abertos = abrirPacotes(pacoteSelecionado, qtd);
     if (!abertos.length) {
@@ -296,13 +300,45 @@ const abrir = (qtd) => {
     // Pré-carrega as imagens para a revelação não aparecer vazia
     abertos.forEach((p) => p.cartas.forEach(({ carta }) => { new Image().src = carta.imagem; }));
     document.body.classList.add("travado");
-    if (abertos.length === 1) animarPacote(abertos[0]);
-    else mostrarResumoMultiplo(abertos);
+    sequencia = { pacotes: abertos, atual: 0 };
+    animarPacote();
 };
 
-const animarPacote = (pacote) => {
+const finalizarSequencia = () => {
+    const { pacotes } = sequencia;
+    if (pacotes.length === 1) mostrarResumo(pacotes);
+    else mostrarResumoMultiplo(pacotes);
+};
+
+const proximoPacote = () => {
+    sequencia.atual++;
+    if (sequencia.atual < sequencia.pacotes.length) animarPacote();
+    else finalizarSequencia();
+};
+
+const topoSequencia = (fase) => {
+    const { pacotes, atual } = sequencia;
+    const varios = pacotes.length > 1;
+    return `
+        <div class="abertura-topo">
+            <span class="contador-pacotes">${varios ? `Pacote <b>${atual + 1}</b> de ${pacotes.length}` : ""}</span>
+            <div class="abertura-botoes">
+                ${varios && fase === "cartas" && atual < pacotes.length - 1 ? `<button class="btn secundario pequeno" data-abertura="pular-pacote">Próximo pacote</button>` : ""}
+                <button class="btn secundario pequeno" data-abertura="pular-tudo">${varios ? "Pular animação" : "Pular"}</button>
+            </div>
+        </div>`;
+};
+
+const ligarPulos = () => {
+    $("[data-abertura=pular-tudo]", overlay)?.addEventListener("click", finalizarSequencia);
+    $("[data-abertura=pular-pacote]", overlay)?.addEventListener("click", proximoPacote);
+};
+
+const animarPacote = () => {
+    const pacote = sequencia.pacotes[sequencia.atual];
     overlay.className = "abertura aberta";
     overlay.innerHTML = `
+        ${topoSequencia("pacote")}
         <div class="abertura-palco">
             ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
             <p class="dica">Arraste sobre a linha pontilhada para abrir o pacote</p>
@@ -312,6 +348,7 @@ const animarPacote = (pacote) => {
             </div>
             <button class="btn secundario pequeno" data-abertura="cortar">Toque para abrir</button>
         </div>`;
+    ligarPulos();
     const alvo = $(".pacote-abrir", overlay);
     const progresso = $(".progresso-corte", overlay);
     let inicioX = null;
@@ -321,7 +358,9 @@ const animarPacote = (pacote) => {
         aberto = true;
         sons.rasgar();
         alvo.classList.add("cortado");
-        setTimeout(() => mostrarCartas(pacote), 750);
+        setTimeout(() => {
+            if (sequencia?.pacotes[sequencia.atual] === pacote && overlay.classList.contains("aberta")) mostrarCartas(pacote);
+        }, 750);
     };
     alvo.addEventListener("pointerdown", (e) => {
         inicioX = e.clientX;
@@ -344,7 +383,9 @@ const animarPacote = (pacote) => {
 const mostrarCartas = (pacote) => {
     let indice = 0;
     const total = pacote.cartas.length;
+    const ultimoPacote = sequencia.atual === sequencia.pacotes.length - 1;
     overlay.innerHTML = `
+        ${topoSequencia("cartas")}
         <div class="abertura-palco">
             ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
             <p class="contador-cartas"><span id="contador">1</span>/${total}</p>
@@ -352,48 +393,82 @@ const mostrarCartas = (pacote) => {
                 ${pacote.cartas.map(({ carta }, i) => `
                     <div class="pilha-item ${carta.raridade >= 5 ? "virada" : ""}" style="z-index:${total - i}" data-i="${i}">
                         <div class="gira">
-                            <div class="lado frente">${htmlCarta(carta, { classe: "tilt" })}</div>
+                            <div class="lado frente">${htmlCarta(carta)}</div>
                             <div class="lado tras">${htmlVerso(`brilho-r${carta.raridade}`)}</div>
                         </div>
                     </div>`).join("")}
             </div>
-            <p class="dica">Toque na carta para ver a próxima</p>
-            <button class="btn secundario pequeno" data-abertura="pular">Pular</button>
+            <p class="dica">Arraste a carta para o lado (ou toque) para ver a próxima</p>
         </div>`;
-    ativarTilt(overlay);
+    ligarPulos();
     const itens = $$(".pilha-item", overlay);
+    const pilha = $(".pilha", overlay);
 
+    const marcarNova = (i) => {
+        if (pacote.cartas[i].nova) itens[i].querySelector(".carta").insertAdjacentHTML("beforeend", `<span class="carta-nova">NOVA</span>`);
+    };
     const destacar = () => {
-        const { carta, nova } = pacote.cartas[indice];
+        const { carta } = pacote.cartas[indice];
         const item = itens[indice];
+        item.classList.add("em-cima");
         $("#contador").textContent = indice + 1;
-        if (item.classList.contains("virada")) {
-            sons.carta();
-            return;
-        }
+        if (item.classList.contains("virada")) return sons.carta();
         if (carta.raridade >= 3) sons.raro(carta.raridade);
         else sons.carta();
-        if (nova) item.querySelector(".carta").insertAdjacentHTML("beforeend", `<span class="carta-nova">NOVA</span>`);
+        marcarNova(indice);
     };
     destacar();
 
-    $(".pilha", overlay).addEventListener("click", () => {
+    const revelar = (item) => {
+        item.classList.remove("virada");
+        item.classList.add("revelada");
+        sons.raro(pacote.cartas[indice].carta.raridade);
+        marcarNova(indice);
+    };
+
+    // A carta de cima sai voando para o lado escolhido
+    const passar = (direcao) => {
+        const item = itens[indice];
+        item.style.transform = "";
+        item.style.transition = "";
+        item.classList.add("saiu", direcao);
+        indice++;
+        if (indice < total) destacar();
+        else setTimeout(() => (ultimoPacote ? finalizarSequencia() : proximoPacote()), 380);
+    };
+
+    // Arrastar com o dedo/mouse; toque simples também funciona
+    let inicio = null;
+    let deslocamento = 0;
+    pilha.addEventListener("pointerdown", (e) => {
+        if (!itens[indice]) return;
+        inicio = e.clientX;
+        deslocamento = 0;
+        pilha.setPointerCapture(e.pointerId);
+        itens[indice].style.transition = "none";
+    });
+    pilha.addEventListener("pointermove", (e) => {
+        if (inicio === null) return;
+        deslocamento = e.clientX - inicio;
+        const item = itens[indice];
+        if (!item.classList.contains("virada")) item.style.transform = `translateX(${deslocamento}px) rotate(${deslocamento / 18}deg)`;
+    });
+    const soltar = () => {
+        if (inicio === null) return;
+        inicio = null;
         const item = itens[indice];
         if (!item) return;
-        if (item.classList.contains("virada")) {
-            item.classList.remove("virada");
-            item.classList.add("revelada");
-            const { carta, nova } = pacote.cartas[indice];
-            sons.raro(carta.raridade);
-            if (nova) item.querySelector(".carta").insertAdjacentHTML("beforeend", `<span class="carta-nova">NOVA</span>`);
-            return;
-        }
-        item.classList.add("saiu");
-        indice++;
-        if (indice >= total) setTimeout(() => mostrarResumo([pacote]), 350);
-        else destacar();
+        item.style.transition = "";
+        if (item.classList.contains("virada")) return revelar(item);
+        if (Math.abs(deslocamento) > 70) return passar(deslocamento > 0 ? "direita" : "esquerda");
+        item.style.transform = "";
+        if (Math.abs(deslocamento) < 8) passar("esquerda");
+    };
+    pilha.addEventListener("pointerup", soltar);
+    pilha.addEventListener("pointercancel", () => {
+        inicio = null;
+        if (itens[indice]) itens[indice].style.transform = "";
     });
-    $("[data-abertura=pular]", overlay).addEventListener("click", () => mostrarResumo([pacote]));
 };
 
 const mostrarResumo = (pacotes) => {
