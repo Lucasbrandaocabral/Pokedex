@@ -790,3 +790,14 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     .resumo-troca { flex-direction: column; align-items: stretch; }
     .resumo-troca .seta { align-self: center; transform: rotate(90deg); }
 }
+
+.codigo-amigo {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 10px 12px; margin-bottom: 12px; border-radius: 6px;
+    background: var(--tinta); color: var(--papel2);
+}
+.codigo-amigo small { display: block; color: #cfc8b8; font-size: 0.75rem; }
+.codigo-amigo b { font-family: "Jersey 20", monospace; font-size: 1.9rem; font-weight: 400; letter-spacing: 3px; color: var(--amarelo); user-select: all; }
+.codigo-amigo .btn.secundario { box-shadow: 2px 2px 0 #000; }
+.pessoa.grande { background: var(--papel); margin: 10px 0; }
+.modal-caixa p.sutil + p.sutil { margin-top: 8px; }

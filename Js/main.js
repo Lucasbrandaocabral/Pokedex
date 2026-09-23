@@ -19,7 +19,9 @@ import {
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
 } from "./ui.js";
 import { iniciarConta, abrirConta } from "./conta.js";
-import { iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas } from "./social.js";
+import {
+    iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas, processarConvite,
+} from "./social.js";
 
 const app = $("#app");
 let telaAtual = "inicio";
@@ -84,6 +86,13 @@ const TELAS = {
         telaTrocas();
     },
     perfil: () => telaPerfil(app),
+    // Link de convite: #amigo/CODIGO abre o perfil e pergunta se quer adicionar
+    amigo: (codigo) => {
+        history.replaceState(null, "", "#perfil");
+        telaAtual = "perfil";
+        telaPerfil(app);
+        processarConvite(codigo);
+    },
     loja: () => telaLoja(),
     pokedex: (arg) => telaPokedex(arg),
 };

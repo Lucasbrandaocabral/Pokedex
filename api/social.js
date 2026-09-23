@@ -11,10 +11,12 @@
 // - Ao propor, as cartas oferecidas ficam reservadas (saem do álbum). Se a troca for
 //   recusada, cancelada ou expirar, elas voltam por uma entrega.
 // ====================================================
+import crypto from "node:crypto";
 import {
     rota, responder, lerCorpo, consulta, exigirSessao, ErroHttp,
     conferirSenha, gerarHashSenha,
 } from "./_lib.js";
+import { validarUsuario } from "./auth/cadastro.js";
 
 const MAX_CARTAS_POR_LADO = 10;
 const MAX_TROCAS_PENDENTES = 10;
@@ -22,6 +24,27 @@ const MAX_PEDIDOS_AMIZADE = 20;
 const DIAS_EXPIRAR_TROCA = 7;
 const TOTAL_CARTAS = 200;
 const TOTAL_POKEMON = 151;
+const DIAS_ENTRE_TROCAS_DE_NOME = 180; // 6 meses
+
+// Código de amigo: 8 caracteres sem letras/números parecidos (0/O, 1/I)
+const ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const normalizarCodigo = (texto) => String(texto || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const formatarCodigo = (codigo) => (codigo ? `${codigo.slice(0, 4)}-${codigo.slice(4)}` : null);
+const novoCodigo = () => Array.from(crypto.randomBytes(8), (b) => ALFABETO_CODIGO[b % ALFABETO_CODIGO.length]).join("");
+
+// Contas antigas ganham um código na primeira vez que abrem o perfil
+const garantirCodigoAmigo = async (uid) => {
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+        const [atual] = await consulta("SELECT codigo_amigo FROM usuarios WHERE id = $1", [uid]);
+        if (atual?.codigo_amigo) return atual.codigo_amigo;
+        try {
+            await consulta("UPDATE usuarios SET codigo_amigo = $2 WHERE id = $1 AND codigo_amigo IS NULL", [uid, novoCodigo()]);
+        } catch (e) {
+            if (e.code !== "23505") throw e; // código repetido: tenta outro
+        }
+    }
+    throw new ErroHttp(500, "Não foi possível gerar o código de amigo.");
+};
 
 // ---------------- Validações ----------------
 const validarCartas = (lista, nome) => {
@@ -40,10 +63,16 @@ const contar = (ids) => ids.reduce((m, id) => ({ ...m, [id]: (m[id] || 0) + 1 })
 const limparTexto = (texto, max) => String(texto ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, max);
 
 // ---------------- Usuários ----------------
-const buscarUsuario = async (nome) => {
-    const usuario = String(nome || "").trim().toLowerCase();
+// Aceita o nome de usuário ou o código de amigo (com ou sem hífen)
+const buscarUsuario = async (entrada) => {
+    const codigo = normalizarCodigo(entrada);
+    if (/^[A-Z2-9]{8}$/.test(codigo)) {
+        const [porCodigo] = await consulta("SELECT id, usuario FROM usuarios WHERE codigo_amigo = $1 AND totp_ativo", [codigo]);
+        if (porCodigo) return porCodigo;
+    }
+    const usuario = String(entrada || "").trim().replace(/^@/, "").toLowerCase();
     const [u] = await consulta("SELECT id, usuario FROM usuarios WHERE usuario = $1 AND totp_ativo", [usuario]);
-    if (!u) throw new ErroHttp(404, "Treinador não encontrado.");
+    if (!u) throw new ErroHttp(404, "Treinador não encontrado. Confira o nome ou o código de amigo.");
     return u;
 };
 
@@ -136,7 +165,12 @@ const cancelarTrocasEntre = async (a, b, motivo) => {
 // ---------------- GET ----------------
 const resumo = async (eu) => {
     await expirarTrocas(eu.id);
-    const [perfil] = await consulta(`SELECT ${CAMPOS_PERFIL} FROM usuarios u LEFT JOIN saves s ON s.usuario_id = u.id WHERE u.id = $1`, [eu.id]);
+    const codigoAmigo = await garantirCodigoAmigo(eu.id);
+    const [perfil] = await consulta(
+        `SELECT ${CAMPOS_PERFIL}, u.usuario_alterado_em + make_interval(days => $2) AS proxima_troca_nome
+         FROM usuarios u LEFT JOIN saves s ON s.usuario_id = u.id WHERE u.id = $1`,
+        [eu.id, DIAS_ENTRE_TROCAS_DE_NOME]
+    );
     const amigos = await consulta(
         `SELECT ${CAMPOS_PERFIL} FROM amizades a
          JOIN usuarios u ON u.id = CASE WHEN a.de_id = $1 THEN a.para_id ELSE a.de_id END
@@ -165,7 +199,12 @@ const resumo = async (eu) => {
     const entregas = await consulta("SELECT id, cartas, motivo FROM entregas WHERE usuario_id = $1 ORDER BY id", [eu.id]);
     const outro = (l) => ({ usuario: l.usuario, apelido: l.apelido, avatar: l.avatar });
     return {
-        perfil: perfilPublico(perfil),
+        perfil: {
+            ...perfilPublico(perfil),
+            codigoAmigo: formatarCodigo(codigoAmigo),
+            // Data a partir da qual pode mudar o nome de novo (null = pode agora)
+            proximaTrocaNome: perfil.proxima_troca_nome && new Date(perfil.proxima_troca_nome) > new Date() ? perfil.proxima_troca_nome : null,
+        },
         amigos: amigos.map(perfilPublico),
         pedidosRecebidos: pedidos.filter((p) => !p.enviado).map((p) => ({ id: p.id, ...outro(p) })),
         pedidosEnviados: pedidos.filter((p) => p.enviado).map((p) => ({ id: p.id, ...outro(p) })),
@@ -220,6 +259,26 @@ const ACOES = {
         return { ok: true };
     },
 
+    async "trocar-nome"(eu, corpo) {
+        const novo = validarUsuario(corpo.novo);
+        const [u] = await consulta(
+            "SELECT usuario, senha_hash, usuario_alterado_em > NOW() - make_interval(days => $2) AS recente FROM usuarios WHERE id = $1",
+            [eu.id, DIAS_ENTRE_TROCAS_DE_NOME]
+        );
+        if (u.recente) throw new ErroHttp(429, "Você só pode mudar o nome de usuário uma vez a cada 6 meses.");
+        if (novo === u.usuario) throw new ErroHttp(400, "Esse já é o seu nome de usuário.");
+        if (!(await conferirSenha(String(corpo.senha || ""), u.senha_hash))) throw new ErroHttp(400, "Senha incorreta.");
+        // Libera nomes de contas que nunca terminaram o cadastro
+        await consulta("DELETE FROM usuarios WHERE usuario = $1 AND NOT totp_ativo AND criado_em < NOW() - INTERVAL '1 hour'", [novo]);
+        try {
+            await consulta("UPDATE usuarios SET usuario = $2, usuario_alterado_em = NOW() WHERE id = $1", [eu.id, novo]);
+        } catch (e) {
+            if (e.code === "23505") throw new ErroHttp(409, "Esse nome de usuário já está em uso.");
+            throw e;
+        }
+        return { ok: true, usuario: novo };
+    },
+
     async "adicionar-amigo"(eu, corpo) {
         const alvo = await buscarUsuario(corpo.usuario);
         if (alvo.id === eu.id) throw new ErroHttp(400, "Você não pode adicionar a si mesmo.");
@@ -232,12 +291,12 @@ const ACOES = {
         if (existente) {
             // A outra pessoa já tinha pedido: aceita direto
             await consulta("UPDATE amizades SET status = 'aceita' WHERE id = $1", [existente.id]);
-            return { ok: true, aceito: true };
+            return { ok: true, aceito: true, usuario: alvo.usuario };
         }
         const [{ total }] = await consulta("SELECT count(*)::int AS total FROM amizades WHERE de_id = $1 AND status = 'pendente'", [eu.id]);
         if (total >= MAX_PEDIDOS_AMIZADE) throw new ErroHttp(429, "Você tem pedidos de amizade demais esperando resposta.");
         await consulta("INSERT INTO amizades (de_id, para_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [eu.id, alvo.id]);
-        return { ok: true, aceito: false };
+        return { ok: true, aceito: false, usuario: alvo.usuario };
     },
 
     async "responder-amigo"(eu, corpo) {
