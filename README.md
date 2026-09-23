@@ -2,6 +2,8 @@
 
 Um jogo de colecionar cartas Pokémon que roda no navegador. Você abre pacotes, completa o álbum e troca cartas com os amigos, meio no estilo do Pokémon TCG Pocket.
 
+**Para jogar: [pokepalword.vercel.app](https://pokepalword.vercel.app/)**
+
 ![Tela de entrada](docs/imagens/login.jpg)
 
 ## De onde veio
@@ -12,7 +14,7 @@ Depois resolvi transformar a Pokédex num jogo de verdade. A busca original cont
 
 ## Como é o jogo
 
-Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). São três pacotes da coleção Origem Genética, com Charizard, Mewtwo e Pikachu na capa. Você corta o pacote arrastando o dedo e passa as cartas para o lado, uma de cada vez.
+Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). São três pacotes da coleção Origem Genética, com Charizard, Mewtwo e Pikachu na capa. Você corta o pacote arrastando o dedo, as cartas saem de dentro dele e você vai passando para o lado, uma de cada vez. Quando vem carta rara, ela aparece virada e o fundo acende na cor da raridade.
 
 <p>
   <img src="docs/imagens/abrindo.jpg" width="49%" alt="Abrindo um pacote">
@@ -94,7 +96,7 @@ npm test                     # com o servidor ligado, roda os testes
 3. Em Settings → Environment Variables, crie `SESSION_SECRET` com um texto aleatório de pelo menos 32 caracteres. Dá para gerar um no console do navegador com `crypto.randomUUID() + crypto.randomUUID()`.
 4. Faça um Redeploy. As tabelas do banco são criadas no primeiro acesso.
 
-O GitHub Pages só serve arquivos estáticos, então lá o jogo abre mas mostra "sem conexão com o servidor". O endereço certo para jogar é o da Vercel.
+O endereço antigo no GitHub Pages redireciona automaticamente para o jogo na Vercel.
 
 ## Agradecimentos
 

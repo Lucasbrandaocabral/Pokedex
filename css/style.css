@@ -469,40 +469,102 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     border: 3px solid var(--papel2); animation: piscar 0.8s steps(2) infinite;
 }
 @keyframes piscar { 50% { background: var(--papel2); } }
-.pacote-abrir { position: relative; touch-action: none; cursor: grab; animation: flutuar 2.5s ease-in-out infinite; }
-@keyframes flutuar { 50% { transform: translateY(-10px); } }
-.linha-corte { position: absolute; left: 4%; right: 4%; top: 11%; height: 4px; border-top: 3px dashed #fff; pointer-events: none; }
-.progresso-corte { height: 5px; width: 0; margin-top: -4px; background: var(--amarelo); transition: width 0.08s; }
-.pacote-abrir.cortado { animation: none; }
-.pacote-abrir.cortado .pacote-topo { transform: translate(30%, -260%); opacity: 0; }
-.pacote-abrir.cortado .pacote { animation: descer 0.6s 0.25s steps(8) forwards; }
-.pacote-abrir.cortado .linha-corte { display: none; }
-@keyframes descer { to { transform: translateY(80vh); } }
 .abertura .pacote-casca { background: var(--papel2); }
 .abertura .pacote { filter: drop-shadow(var(--p) var(--p) 0 #000); }
 .abertura .btn { border-color: var(--papel2); box-shadow: 3px 3px 0 #000; }
 .abertura .btn.secundario { background: transparent; color: var(--papel2); border-color: var(--papel2); box-shadow: 3px 3px 0 #000; }
 
-.contador-cartas { font-family: "Jersey 20"; font-size: 1.6rem; }
-.pilha { position: relative; width: min(300px, 72vw); aspect-ratio: 63 / 88; cursor: grab; touch-action: none; user-select: none; }
+/* Palco: luz na cor do pacote (ou da raridade da carta) atrás de tudo */
+.palco-pacote { position: relative; overflow: hidden; }
+.palco-pacote > *:not(.luz-fundo) { position: relative; z-index: 1; }
+.luz-fundo {
+    position: absolute; left: 50%; top: 54%; z-index: 0; width: min(900px, 170vw); aspect-ratio: 1;
+    transform: translate(-50%, -50%); pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--c1) 55%, transparent) 0%, color-mix(in srgb, var(--c2) 22%, transparent) 30%, transparent 62%);
+    animation: pulsarLuz 3.2s ease-in-out infinite;
+}
+@keyframes pulsarLuz { 50% { transform: translate(-50%, -50%) scale(1.07); opacity: 0.8; } }
+.raios {
+    position: absolute; inset: 12%; border-radius: 50%; opacity: 0; transition: opacity 0.6s;
+    background: repeating-conic-gradient(rgba(255, 255, 255, 0.22) 0deg 5deg, transparent 5deg 16deg);
+    -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 68%);
+    mask-image: radial-gradient(circle, #000 15%, transparent 68%);
+    animation: girar 40s linear infinite;
+}
+.fase-cartas[data-luz="comum"] .luz-fundo { background: radial-gradient(circle, rgba(255, 255, 255, 0.14), transparent 55%); }
+.palco-pacote[data-luz="rara"] .luz-fundo { background: radial-gradient(circle, rgba(90, 176, 255, 0.55), rgba(47, 91, 211, 0.22) 30%, transparent 62%); }
+.palco-pacote[data-luz="ex"] .luz-fundo { background: radial-gradient(circle, rgba(235, 240, 250, 0.6), rgba(150, 160, 185, 0.25) 30%, transparent 62%); }
+.palco-pacote[data-luz="estrela"] .luz-fundo {
+    background: radial-gradient(circle, rgba(255, 110, 196, 0.55), rgba(120, 115, 245, 0.35) 22%, rgba(74, 222, 128, 0.18) 40%, transparent 62%);
+    animation: pulsarLuz 3.2s ease-in-out infinite, arcoIrisLuz 4s linear infinite;
+}
+@keyframes arcoIrisLuz { to { filter: hue-rotate(360deg); } }
+.palco-pacote[data-luz="coroa"] .luz-fundo { background: radial-gradient(circle, rgba(255, 210, 60, 0.7), rgba(255, 150, 0, 0.3) 30%, transparent 62%); }
+.palco-pacote[data-luz="ex"] .raios, .palco-pacote[data-luz="estrela"] .raios, .palco-pacote[data-luz="coroa"] .raios { opacity: 1; }
+
+/* Clarão branco no corte e ao revelar carta rara */
+.palco-pacote::after { content: ""; position: absolute; inset: 0; z-index: 5; background: #fff; opacity: 0; pointer-events: none; }
+.palco-pacote.cortado::after { animation: clarao 0.55s ease-out; }
+.palco-pacote.clarao::after { animation: clarao2 0.7s ease-out; }
+@keyframes clarao { 0% { opacity: 0; } 15% { opacity: 0.85; } 100% { opacity: 0; } }
+@keyframes clarao2 { 0% { opacity: 0; } 12% { opacity: 0.9; } 100% { opacity: 0; } }
+
+/* Pacote e cartas ocupam o mesmo lugar: as cartas saem de dentro do pacote */
+.area-abertura { display: grid; place-items: center; }
+.area-abertura > * { grid-area: 1 / 1; }
+.pacote-abrir { position: relative; z-index: 2; touch-action: none; cursor: grab; animation: flutuar 3s ease-in-out infinite; }
+@keyframes flutuar { 0%, 100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-12px) rotate(1.2deg); } }
+.linha-corte { position: absolute; left: 4%; right: 4%; top: 11%; height: 4px; border-top: 3px dashed rgba(255, 255, 255, 0.9); pointer-events: none; animation: piscarLinha 1.2s ease-in-out infinite; }
+@keyframes piscarLinha { 50% { opacity: 0.45; } }
+.progresso-corte {
+    position: relative; height: 5px; width: 0; margin-top: -4px; border-radius: 3px;
+    background: linear-gradient(90deg, #fff, var(--amarelo)); box-shadow: 0 0 10px #fff, 0 0 22px var(--amarelo);
+    transition: width 0.06s;
+}
+.progresso-corte::after { content: ""; position: absolute; right: -6px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 4px var(--amarelo); }
+.cortado .pacote-abrir { animation: tremerPacote 0.32s ease-in-out; pointer-events: none; }
+@keyframes tremerPacote { 20% { transform: translateX(-6px) rotate(-2deg); } 50% { transform: translateX(6px) rotate(2deg); } 80% { transform: translateX(-3px); } }
+.cortado .linha-corte { display: none; }
+.cortado .pacote-topo { transform: translate(45%, -320%) rotate(28deg); opacity: 0; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.6s 0.15s; }
+.cortado .pacote-abrir .pacote { animation: pacoteDesce 0.8s 0.35s cubic-bezier(0.55, 0, 0.85, 0.35) forwards; }
+@keyframes pacoteDesce { to { transform: translateY(80vh) rotate(5deg); opacity: 0; } }
+
+.pilha {
+    position: relative; z-index: 1; width: min(300px, 72vw); aspect-ratio: 63 / 88;
+    cursor: grab; touch-action: none; user-select: none;
+    transition: transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.5s, opacity 0.4s 0.5s;
+}
+.fase-pacote:not(.cortado) .pilha { opacity: 0; transform: translateY(12%) scale(0.82); pointer-events: none; }
 .pilha:active { cursor: grabbing; }
-.pilha-item { position: absolute; inset: 0; transition: transform 0.45s ease, opacity 0.45s; animation: entrarPilha 0.5s ease backwards; }
-.pilha-item:nth-child(2) { transform: translate(6px, 6px); }
-.pilha-item:nth-child(3) { transform: translate(12px, 12px); }
-.pilha-item:nth-child(4) { transform: translate(18px, 18px); }
-.pilha-item:nth-child(5) { transform: translate(24px, 24px); }
-@keyframes entrarPilha { from { transform: translateY(60vh); } }
+.pilha .carta { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
+.pilha-item { position: absolute; inset: 0; transition: transform 0.45s ease, opacity 0.45s; }
+.pilha-item:nth-child(2) { transform: translate(6px, 6px) rotate(1.5deg); }
+.pilha-item:nth-child(3) { transform: translate(12px, 10px) rotate(-1.5deg); }
+.pilha-item:nth-child(4) { transform: translate(16px, 14px) rotate(2deg); }
+.pilha-item:nth-child(5) { transform: translate(20px, 18px) rotate(-2deg); }
 .pilha-item.em-cima { transform: none; }
-.pilha-item.saiu { transform: translate(-140%, -10%) rotate(-20deg) !important; opacity: 0; pointer-events: none; transition: transform 0.4s ease-in, opacity 0.4s ease-in !important; }
-.pilha-item.saiu.direita { transform: translate(140%, -10%) rotate(20deg) !important; }
-.gira { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(.3, .8, .4, 1.2); }
+.fase-cartas .pilha-item.em-cima:not(.virada) .lado.frente .carta { animation: destacarCarta 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+@keyframes destacarCarta { from { transform: scale(0.94); } }
+.pilha-item.saiu { transform: translate(-150%, -12%) rotate(-24deg) !important; opacity: 0; pointer-events: none; transition: transform 0.45s cubic-bezier(0.5, 0, 0.75, 0.3), opacity 0.45s ease-in !important; }
+.pilha-item.saiu.direita { transform: translate(150%, -12%) rotate(24deg) !important; }
+.gira { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.3, 0.8, 0.4, 1.2); }
 .pilha-item.virada .gira { transform: rotateY(180deg); }
 .lado { position: absolute; inset: 0; backface-visibility: hidden; }
 .lado.tras { transform: rotateY(180deg); }
 .pilha-item.virada .lado.tras .carta { animation: tremer 0.6s ease-in-out infinite; }
-@keyframes tremer { 25% { transform: rotate(-1.5deg); } 75% { transform: rotate(1.5deg); } }
-.pilha-item.revelada .lado.frente .carta { animation: revelar 0.9s ease; }
-@keyframes revelar { 0% { filter: brightness(3); } 100% { filter: brightness(1); } }
+@keyframes tremer { 25% { transform: rotate(-1.5deg) scale(1.02); } 75% { transform: rotate(1.5deg) scale(1.02); } }
+.pilha-item.revelada .lado.frente .carta { animation: revelar 1s ease; }
+@keyframes revelar { 0% { filter: brightness(3) saturate(0); transform: scale(1.08); } 100% { filter: none; transform: none; } }
+
+/* Bolinhas mostrando em que carta você está */
+.pontos-cartas { display: flex; gap: 10px; opacity: 0; transition: opacity 0.4s; }
+.fase-cartas .pontos-cartas { opacity: 1; }
+.pontos-cartas i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: transform 0.3s, background 0.3s; }
+.pontos-cartas i.visto { background: rgba(255, 255, 255, 0.6); }
+.pontos-cartas i.ativo { background: var(--amarelo); transform: scale(1.45); box-shadow: 0 0 10px var(--amarelo); }
+
+.abertura-barra { position: sticky; top: 0; z-index: 3; }
+.abertura-barra .abertura-topo { position: static; }
 
 .resumo h2 { margin: 0; font-size: 2.2rem; }
 .resumo .sutil { color: #b9b2a3; display: flex; align-items: center; gap: 6px; justify-content: center; flex-wrap: wrap; }
