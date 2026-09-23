@@ -3,12 +3,14 @@
 import {
     rota, responder, lerCorpo, consulta, ErroHttp, conferirSenha, HASH_FALSO, decifrar,
     verificarBloqueio, registrarFalha, assinarToken, definirCookie, COOKIE_PENDENTE, DURACAO_PENDENTE,
+    limitarTaxa, ipDe,
 } from "../_lib.js";
 import { dadosConfiguracao } from "../_totp.js";
 
 const ERRO_LOGIN = "Usuário ou senha incorretos.";
 
 export default rota(["POST"], async (req, res) => {
+    await limitarTaxa(`entrar:${ipDe(req)}`, 20, 15);
     const corpo = await lerCorpo(req);
     const usuario = String(corpo.usuario || "").trim().toLowerCase();
     const senha = String(corpo.senha || "");

@@ -854,7 +854,7 @@ const telaPokedex = (busca) => {
             <div class="lista-favoritos">
                 ${estado.favoritos.length ? estado.favoritos.map((nome) => `
                     <a class="favorito" href="#pokedex/${encodeURIComponent(nome)}">
-                        <img src="${imagemSprite(Object.values(POKEMON_POR_ID).find((p) => p.nome === nome)?.id || 0)}" alt="" onerror="this.style.visibility='hidden'">
+                        <img src="${imagemSprite(Object.values(POKEMON_POR_ID).find((p) => p.nome === nome)?.id || 25)}" alt="">
                         <span>${escapar(nomeBonito(nome))}</span>
                     </a>`).join("") : `<p class="vazio">Toque na estrela de um Pokémon para favoritar.</p>`}
             </div>
@@ -1060,9 +1060,15 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Qualquer mudança no estado atualiza o cabeçalho e a tela atual (mantendo a rolagem)
+const digitandoNaTela = () => {
+    const el = document.activeElement;
+    return !!el && app.contains(el) && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
+};
+
 aoMudar(() => {
     atualizarCabecalho();
-    if (overlay.classList.contains("aberta") || telaAtual === "pokedex") return;
+    // Não redesenha enquanto alguém digita (senão o texto do campo some)
+    if (overlay.classList.contains("aberta") || telaAtual === "pokedex" || digitandoNaTela()) return;
     const y = window.scrollY;
     renderizar();
     window.scrollTo({ top: y });

@@ -11,7 +11,7 @@ const cliente = () => {
         const r = await fetch(BASE + caminho, {
             method: metodo,
             headers: { "Content-Type": "application/json", Cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; ") },
-            body: corpo ? JSON.stringify(corpo) : undefined,
+            body: corpo === undefined ? undefined : typeof corpo === "string" ? corpo : JSON.stringify(corpo),
         });
         for (const c of r.headers.getSetCookie()) {
             const [k, v] = c.split(";")[0].split("=");
@@ -21,6 +21,7 @@ const cliente = () => {
         return { status: r.status, dados: await r.json() };
     };
     api.acao = (acao, dados = {}) => api("/api/social", { metodo: "POST", corpo: { acao, ...dados } });
+    api.cookies = cookies;
     return api;
 };
 
@@ -175,6 +176,50 @@ test("mudar o nome de usuário: exige senha e só a cada 6 meses", async () => {
     assert.equal(antigo.status, 401, "o nome antigo não entra mais");
     const atual = await cliente()("/api/auth/entrar", { metodo: "POST", corpo: { usuario: novo, senha: "senha-forte-1" } });
     assert.equal(atual.dados.etapa, "codigo");
+});
+
+test("save adulterado é limpo e não quebra a tela dos amigos", async () => {
+    const hacker = await criarJogador("hacker", {});
+    await hacker.api.acao("adicionar-amigo", { usuario: misty.usuario });
+    const { pedidosRecebidos } = (await misty.api("/api/social?acao=resumo")).dados;
+    await misty.api.acao("responder-amigo", { id: pedidosRecebidos.find((p) => p.usuario === hacker.usuario).id, aceitar: true });
+    const atual = await save(hacker.api);
+    const r = await hacker.api("/api/save", { metodo: "PUT", corpo: { base: atual.salvoEm, dados: {
+        v: 1, salvoEm: atual.salvoEm + 1, moedas: 1e300, pontos: -5,
+        colecao: { "999": 3, "<img src=x onerror=alert(1)>": 1, "__proto__": { x: 1 }, "150": "7<b>", "025": 2 },
+        stats: { pacotes: "abc" },
+    } } });
+    assert.equal(r.status, 200);
+    const limpo = await save(hacker.api);
+    assert.deepEqual(limpo.colecao, { "025": 2 });
+    assert.equal(limpo.moedas, 1e9);
+    assert.equal(limpo.pontos, 0);
+    assert.equal(limpo.stats.pacotes, 0);
+    assert.equal((await misty.api("/api/social?acao=resumo")).status, 200, "a tela da amiga continua funcionando");
+    assert.deepEqual((await misty.api(`/api/social?acao=perfil&usuario=${hacker.usuario}`)).dados.colecao, { "025": 2 });
+});
+
+test("só aceita JSON de verdade", async () => {
+    const cookie = `pp_sessao=${ash.api.cookies.pp_sessao}`;
+    const r = await fetch(`${BASE}/api/social`, { method: "POST", headers: { Cookie: cookie, "Content-Type": "text/plain; charset=application/json" }, body: JSON.stringify({ acao: "editar-perfil", avatar: 25 }) });
+    assert.equal(r.status, 415);
+    assert.equal((await ash.api("/api/social", { metodo: "POST", corpo: "[1,2]" })).status, 400);
+});
+
+test("trocar a senha desconecta os outros aparelhos", async () => {
+    const j = await criarJogador("sessao", {});
+    const antes = await j.api("/api/auth/eu");
+    assert.equal(antes.status, 200);
+    const roubado = j.api.cookies.pp_sessao;
+    assert.equal((await j.api.acao("trocar-senha", { atual: "senha-forte-1", nova: "senha-nova-22" })).status, 200);
+    assert.equal((await j.api("/api/auth/eu")).status, 200, "este aparelho continua conectado");
+    const velho = await fetch(`${BASE}/api/auth/eu`, { headers: { Cookie: `pp_sessao=${roubado}` } });
+    assert.equal(velho.status, 401, "o cookie antigo não vale mais");
+
+    const roubado2 = j.api.cookies.pp_sessao;
+    await j.api.acao("sair-de-todos");
+    assert.equal((await fetch(`${BASE}/api/auth/eu`, { headers: { Cookie: `pp_sessao=${roubado2}` } })).status, 401);
+    assert.equal((await j.api("/api/auth/eu")).status, 200);
 });
 
 test("sem login não acessa nada social", async () => {
