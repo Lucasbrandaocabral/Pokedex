@@ -1011,6 +1011,12 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .opcao-carta { position: relative; background: none; border: 3px solid transparent; border-radius: 8px; padding: 0; cursor: pointer; transition: transform 0.1s; }
 .opcao-carta:hover { transform: translateY(-2px); }
 .opcao-carta.escolhido { border-color: var(--vermelho); }
+.filtros-troca { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0 0 8px; }
+.filtro-rapido { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; background: var(--papel); border: 2px solid var(--tinta); border-radius: 6px; padding: 6px 10px; }
+.filtro-rapido:has(input:checked) { background: var(--amarelo); }
+.filtro-rapido input { width: 16px; height: 16px; accent-color: var(--tinta); margin: 0; }
+.filtros-troca select { font: inherit; border: 2px solid var(--tinta); border-radius: 6px; padding: 6px 8px; background: #fff; }
+.selo-falta { position: absolute; top: -8px; right: -6px; z-index: 6; padding: 1px 7px; border-radius: 99px; background: var(--verde); color: #fff; border: 2px solid var(--tinta); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
 .selo-escolha { position: absolute; top: -8px; left: -8px; z-index: 6; min-width: 22px; height: 22px; border-radius: 11px; background: var(--vermelho); color: #fff; border: 2px solid var(--tinta); font-weight: 800; font-size: 0.8rem; display: grid; place-items: center; }
 
 .resumo-troca { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0; }

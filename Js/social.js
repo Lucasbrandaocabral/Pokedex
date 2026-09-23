@@ -1,7 +1,7 @@
 // ====================================================
 // Perfil do treinador, amigos e trocas de cartas entre jogadores
 // ====================================================
-import { CARTAS, CARTA_POR_ID, RARIDADES, TOTAL_CARTAS, imagemSprite, POKEMON_POR_ID, nomeBonito } from "./cards.js";
+import { CARTAS, CARTA_POR_ID, RARIDADES, TOTAL_CARTAS, COLECOES, imagemSprite, POKEMON_POR_ID, nomeBonito } from "./cards.js";
 import { estado, salvar, adicionarCarta, quantidade, cartasUnicas } from "./state.js";
 import { $, $$, escapar, numero, htmlCarta, abrirModal, fecharModal, aviso, confirmar, sons } from "./ui.js";
 import {
@@ -657,6 +657,10 @@ const modalNovaTroca = async (usuario) => {
     const donos = { da: estado.colecao, quer: amigo.colecao || {} };
     let lado = "da";
     let busca = "";
+    let colecao = "";
+    // Filtro rápido de cada lado: no seu, só repetidas; no do amigo, só as que você não tem
+    const filtroRapido = { da: false, quer: false };
+    const TEXTO_FILTRO = { da: "Só minhas repetidas", quer: "Só as que eu não tenho" };
 
     abrirModal(`
         <h3>Troca com ${escapar(amigo.apelido)}</h3>
@@ -671,6 +675,13 @@ const modalNovaTroca = async (usuario) => {
             <button data-lado="quer">Cartas de @${escapar(amigo.usuario)}</button>
         </div>
         <input type="search" id="busca-troca" class="campo-busca" placeholder="Buscar carta por nome ou número">
+        <div class="filtros-troca">
+            <label class="filtro-rapido"><input type="checkbox" id="filtro-rapido"> <span id="texto-filtro">${TEXTO_FILTRO.da}</span></label>
+            <select id="colecao-troca">
+                <option value="">Todas as expansões</option>
+                ${COLECOES.map((c) => `<option value="${c.codigo}">${c.nome}</option>`).join("")}
+            </select>
+        </div>
         <div class="grade-escolha alta" id="grade-troca"></div>
         <form id="form-troca" class="form-conta">
             <input name="mensagem" maxlength="140" placeholder="Mensagem (opcional)">
@@ -683,7 +694,9 @@ const modalNovaTroca = async (usuario) => {
         const dono = donos[lado];
         const lista = CARTAS
             .filter((c) => dono[c.id] > 0)
-            .filter((c) => !busca || c.nome.toLowerCase().includes(busca) || c.id.includes(busca))
+            .filter((c) => !busca || c.nome.toLowerCase().includes(busca) || c.id.toLowerCase().includes(busca))
+            .filter((c) => !colecao || c.colecao === colecao)
+            .filter((c) => !filtroRapido[lado] || (lado === "da" ? dono[c.id] > 1 : !quantidade(c.id)))
             .sort((a, b) => b.raridade - a.raridade || a.numero - b.numero);
         $("#grade-troca").innerHTML = lista.length
             ? lista.map((c) => {
@@ -691,9 +704,10 @@ const modalNovaTroca = async (usuario) => {
                 return `<button type="button" class="opcao-carta ${usadas ? "escolhido" : ""}" data-carta="${c.id}">
                     ${htmlCarta(c, { qtd: dono[c.id] })}
                     ${usadas ? `<span class="selo-escolha">${usadas}</span>` : ""}
+                    ${lado === "quer" && !quantidade(c.id) ? `<span class="selo-falta">Falta</span>` : ""}
                 </button>`;
             }).join("")
-            : `<p class="vazio">${lado === "da" ? "Você não tem cartas" : `@${escapar(amigo.usuario)} não tem cartas`}${busca ? " com essa busca" : ""}.</p>`;
+            : `<p class="vazio">${lado === "da" ? "Você não tem cartas" : `@${escapar(amigo.usuario)} não tem cartas`}${busca || colecao || filtroRapido[lado] ? " com esses filtros" : ""}.</p>`;
     };
     const desenharResumo = () => {
         for (const l of ["da", "quer"]) {
@@ -710,8 +724,18 @@ const modalNovaTroca = async (usuario) => {
     $$(".abas-conta [data-lado]").forEach((b) => b.addEventListener("click", () => {
         lado = b.dataset.lado;
         $$(".abas-conta [data-lado]").forEach((x) => x.classList.toggle("ativa", x === b));
+        $("#filtro-rapido").checked = filtroRapido[lado];
+        $("#texto-filtro").textContent = TEXTO_FILTRO[lado];
         desenharGrade();
     }));
+    $("#filtro-rapido").addEventListener("change", (e) => {
+        filtroRapido[lado] = e.target.checked;
+        desenharGrade();
+    });
+    $("#colecao-troca").addEventListener("change", (e) => {
+        colecao = e.target.value;
+        desenharGrade();
+    });
     $("#busca-troca").addEventListener("input", (e) => {
         busca = e.target.value.trim().toLowerCase();
         desenharGrade();
