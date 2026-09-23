@@ -15,7 +15,7 @@ import {
 import { abrirPacotes, CHANCES, CHANCE_GOD_PACK } from "./packs.js";
 import { sincronizarTrocas, tempoProximaRodada, verificarOferta, aceitarOferta, INTERVALO_TROCAS } from "./trades.js";
 import {
-    $, $$, escapar, numero, formatarTempo, htmlCarta, htmlVerso, htmlPacote,
+    icone, $, $$, escapar, numero, formatarTempo, htmlCarta, htmlVerso, htmlPacote,
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
 } from "./ui.js";
 
@@ -43,7 +43,7 @@ const atualizarCabecalho = () => {
     const tempo = tempoProximoGratis();
     $("#hud-gratis").textContent =
         estado.gratis.qtd >= PACOTES_GRATIS_MAX ? "cheio" : `+1 em ${formatarTempo(tempo)}`;
-    $("#btn-som").textContent = estado.som ? "🔊" : "🔇";
+    $("#btn-som").innerHTML = icone(estado.som ? "som" : "mudo");
     const novas = Object.keys(estado.novas).length;
     const badge = $("#badge-album");
     badge.textContent = novas;
@@ -114,9 +114,10 @@ const telaInicio = () => {
     app.innerHTML = `
     <section class="hero">
         <div>
-            <h1>Bem-vindo, Treinador!</h1>
-            <p>Abra pacotes, complete o álbum da coleção <b>Origem Genética</b> e troque cartas com bots.</p>
-            <a class="btn grande" href="#pacotes">✨ Abrir pacotes (${pacotesDisponiveis()})</a>
+            <span class="etiqueta">Coleção 1</span>
+            <h1>Origem Genética</h1>
+            <p>${unicas} de ${TOTAL_CARTAS} cartas encontradas. Abra pacotes, troque com outros treinadores e complete o álbum.</p>
+            <a class="btn grande" href="#pacotes">Abrir pacote (${pacotesDisponiveis()})</a>
         </div>
         <div class="hero-pacotes">
             ${Object.keys(PACOTES).map((p) => htmlPacote(p, "mini")).join("")}
@@ -125,7 +126,7 @@ const telaInicio = () => {
 
     <div class="grade-painel">
         <section class="painel">
-            <h2>🎁 Pacotes grátis</h2>
+            <h2>Pacotes grátis</h2>
             <p class="sutil">Você ganha <b>${PACOTES_GRATIS_MAX} pacotes por dia</b>: 1 a cada ${formatarTempo(INTERVALO_GRATIS)}. Acumula até ${PACOTES_GRATIS_MAX}.</p>
             <div class="ampulheta">
                 ${Array.from({ length: PACOTES_GRATIS_MAX }, (_, i) => `
@@ -136,12 +137,12 @@ const telaInicio = () => {
             <p class="destaque-texto">${estado.gratis.qtd}/${PACOTES_GRATIS_MAX} disponíveis
                 ${estado.gratis.qtd < PACOTES_GRATIS_MAX ? `• próximo em <span data-relogio="gratis">${formatarTempo(tempo)}</span>` : ""}</p>
             <button class="btn ${estado.diario.bonus ? "desativado" : "dourado"}" data-acao="bonus" ${estado.diario.bonus ? "disabled" : ""}>
-                ${estado.diario.bonus ? "✅ Bônus diário resgatado" : `🪙 Resgatar bônus diário (+${BONUS_DIARIO})`}
+                ${estado.diario.bonus ? "Bônus de hoje já resgatado" : `Resgatar bônus diário +${BONUS_DIARIO} <i class="ic-moeda"></i>`}
             </button>
         </section>
 
         <section class="painel">
-            <h2>📋 Missões diárias</h2>
+            <h2>Missões diárias</h2>
             <ul class="lista-missoes">
                 ${MISSOES.map((m) => {
                     const prog = Math.min(estado.diario.progresso[m.campo] || 0, m.meta);
@@ -152,10 +153,10 @@ const telaInicio = () => {
                         <div>
                             <span>${m.texto}</span>
                             ${barra(prog, m.meta)}
-                            <small>${prog}/${m.meta} • 🪙 ${m.premio}</small>
+                            <small>${prog}/${m.meta} • <i class="ic-moeda"></i> ${m.premio}</small>
                         </div>
                         <button class="btn pequeno ${pronta ? "dourado" : "desativado"}" data-acao="missao" data-id="${m.id}" ${pronta ? "" : "disabled"}>
-                            ${feita ? "✅" : "Resgatar"}
+                            ${feita ? "Feito" : "Resgatar"}
                         </button>
                     </li>`;
                 }).join("")}
@@ -163,7 +164,7 @@ const telaInicio = () => {
         </section>
 
         <section class="painel">
-            <h2>📖 Coleção</h2>
+            <h2>Coleção</h2>
             <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas</p>
             ${barra(unicas, TOTAL_CARTAS, "grossa")}
             ${Object.values(PACOTES).map((p) => {
@@ -171,16 +172,16 @@ const telaInicio = () => {
                 const tenho = cartas.filter((c) => quantidade(c.id)).length;
                 return `<div class="linha-progresso"><span>${p.nome}</span>${barra(tenho, cartas.length)}<small>${tenho}/${cartas.length}</small></div>`;
             }).join("")}
-            <h3>🏆 Conquistas</h3>
+            <h3>Conquistas</h3>
             <ul class="lista-missoes">
                 ${CONQUISTAS.map((c) => {
                     const feita = estado.conquistas.includes(c.id);
                     const pronta = unicas >= c.meta && !feita;
                     return `
                     <li class="${feita ? "feita" : ""}">
-                        <div><span>Colete ${c.meta} cartas diferentes</span><small>🪙 ${numero(c.premio)}</small></div>
+                        <div><span>Colete ${c.meta} cartas diferentes</span><small><i class="ic-moeda"></i> ${numero(c.premio)}</small></div>
                         <button class="btn pequeno ${pronta ? "dourado" : "desativado"}" data-acao="conquista" data-id="${c.id}" ${pronta ? "" : "disabled"}>
-                            ${feita ? "✅" : "Resgatar"}
+                            ${feita ? "Feito" : "Resgatar"}
                         </button>
                     </li>`;
                 }).join("")}
@@ -188,7 +189,7 @@ const telaInicio = () => {
         </section>
 
         <section class="painel">
-            <h2>📊 Estatísticas</h2>
+            <h2>Estatísticas</h2>
             <dl class="estatisticas">
                 <div><dt>Pacotes abertos</dt><dd>${numero(estado.stats.pacotes)}</dd></div>
                 <div><dt>Trocas feitas</dt><dd>${numero(estado.stats.trocas)}</dd></div>
@@ -221,20 +222,20 @@ const telaPacotes = () => {
         </div>
         <p class="destaque-texto">Pacote <b>${PACOTES[pacoteSelecionado].nome}</b> • ${tenho}/${cartas.length} cartas coletadas</p>
         <div class="saldo-pacotes">
-            <span>🎁 Grátis: <b>${estado.gratis.qtd}/${PACOTES_GRATIS_MAX}</b></span>
-            <span>🛒 Comprados: <b>${estado.comprados}</b></span>
-            ${estado.gratis.qtd < PACOTES_GRATIS_MAX ? `<span>⏳ Próximo grátis: <b data-relogio="gratis">${formatarTempo(tempoProximoGratis())}</b></span>` : ""}
+            <span>Grátis: <b>${estado.gratis.qtd}/${PACOTES_GRATIS_MAX}</b></span>
+            <span>Comprados: <b>${estado.comprados}</b></span>
+            ${estado.gratis.qtd < PACOTES_GRATIS_MAX ? `<span>Próximo grátis: <b data-relogio="gratis">${formatarTempo(tempoProximoGratis())}</b></span>` : ""}
         </div>
         ${disponiveis ? `
         <div class="botoes-abrir">
-            <button class="btn grande" data-acao="abrir" data-qtd="1">✂️ Abrir 1 pacote</button>
-            ${disponiveis >= 2 ? `<button class="btn grande secundario" data-acao="abrir" data-qtd="${Math.min(10, disponiveis)}">⚡ Abrir ${Math.min(10, disponiveis)} de uma vez</button>` : ""}
-            ${disponiveis > 10 ? `<button class="btn grande secundario" data-acao="abrir" data-qtd="${Math.min(25, disponiveis)}">📦 Abrir ${Math.min(25, disponiveis)}</button>` : ""}
+            <button class="btn grande" data-acao="abrir" data-qtd="1">Abrir 1 pacote</button>
+            ${disponiveis >= 2 ? `<button class="btn grande secundario" data-acao="abrir" data-qtd="${Math.min(10, disponiveis)}">Abrir ${Math.min(10, disponiveis)} de uma vez</button>` : ""}
+            ${disponiveis > 10 ? `<button class="btn grande secundario" data-acao="abrir" data-qtd="${Math.min(25, disponiveis)}">Abrir ${Math.min(25, disponiveis)}</button>` : ""}
         </div>` : `
         <div class="sem-pacotes">
-            <p>Você não tem pacotes agora. 😢</p>
+            <p>Você não tem pacotes agora.</p>
             <p>O próximo pacote grátis chega em <b data-relogio="gratis">${formatarTempo(tempoProximoGratis())}</b>.</p>
-            <a class="btn dourado" href="#loja">🛒 Comprar na loja</a>
+            <a class="btn dourado" href="#loja">Comprar na loja</a>
         </div>`}
 
         <h2>Destaques deste pacote</h2>
@@ -246,16 +247,16 @@ const telaPacotes = () => {
         </div>
 
         <details class="painel chances">
-            <summary>📊 Chances de cada raridade</summary>
+            <summary>Chances de cada raridade</summary>
             <p>As 3 primeiras cartas são sempre ◆. A 4ª e a 5ª podem ser raras. Chance de <b>God Pack</b> (5 cartas ☆ ou melhores): ${CHANCE_GOD_PACK}%.</p>
             <table>
                 <thead><tr><th>Raridade</th><th>4ª carta</th><th>5ª carta</th><th>Venda</th></tr></thead>
                 <tbody>
                 ${Object.entries(RARIDADES).slice(1).map(([r, info]) =>
-                    `<tr><td>${info.simbolo} ${info.nome}</td><td>${CHANCES[4][r]}%</td><td>${CHANCES[5][r]}%</td><td>🪙 ${info.venda}</td></tr>`).join("")}
+                    `<tr><td>${info.simbolo} ${info.nome}</td><td>${CHANCES[4][r]}%</td><td>${CHANCES[5][r]}%</td><td><i class="ic-moeda"></i> ${info.venda}</td></tr>`).join("")}
                 </tbody>
             </table>
-            <p>Cada pacote aberto dá <b>${PONTOS_POR_PACOTE} pontos de pacote ✨</b>, que podem ser trocados por qualquer carta no álbum.</p>
+            <p>Cada pacote aberto dá <b>${PONTOS_POR_PACOTE} pontos de pacote</b>, que podem ser trocados por qualquer carta no álbum.</p>
         </details>
     </section>`;
 };
@@ -288,8 +289,8 @@ const animarPacote = (pacote) => {
     overlay.className = "abertura aberta";
     overlay.innerHTML = `
         <div class="abertura-palco">
-            ${pacote.god ? `<div class="god-banner">✨ GOD PACK ✨</div>` : ""}
-            <p class="dica">Deslize o dedo (ou o mouse) sobre a linha para cortar o pacote ✂️</p>
+            ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
+            <p class="dica">Arraste sobre a linha pontilhada para abrir o pacote</p>
             <div class="pacote-abrir">
                 ${htmlPacote(pacoteSelecionado, "grande")}
                 <div class="linha-corte"><div class="progresso-corte"></div></div>
@@ -330,7 +331,7 @@ const mostrarCartas = (pacote) => {
     const total = pacote.cartas.length;
     overlay.innerHTML = `
         <div class="abertura-palco">
-            ${pacote.god ? `<div class="god-banner">✨ GOD PACK ✨</div>` : ""}
+            ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
             <p class="contador-cartas"><span id="contador">1</span>/${total}</p>
             <div class="pilha">
                 ${pacote.cartas.map(({ carta }, i) => `
@@ -342,7 +343,7 @@ const mostrarCartas = (pacote) => {
                     </div>`).join("")}
             </div>
             <p class="dica">Toque na carta para ver a próxima</p>
-            <button class="btn secundario pequeno" data-abertura="pular">Pular ⏭</button>
+            <button class="btn secundario pequeno" data-abertura="pular">Pular</button>
         </div>`;
     ativarTilt(overlay);
     const itens = $$(".pilha-item", overlay);
@@ -385,17 +386,17 @@ const mostrarResumo = (pacotes) => {
     const restantes = pacotesDisponiveis();
     overlay.innerHTML = `
         <div class="abertura-palco resumo">
-            ${pacote.god ? `<div class="god-banner">✨ GOD PACK ✨</div>` : ""}
+            ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
             <h2>Suas cartas</h2>
             <div class="grade-cartas resumo-cartas">
                 ${pacote.cartas.map(({ carta, nova }, i) =>
                     `<div class="entrada" style="animation-delay:${i * 90}ms">${htmlCarta(carta, { nova, classe: "tilt" })}</div>`).join("")}
             </div>
-            <p class="sutil">+${PONTOS_POR_PACOTE} pontos de pacote ✨ • ${restantes} pacote(s) restantes</p>
+            <p class="sutil">+${PONTOS_POR_PACOTE} pontos de pacote • ${restantes} pacote(s) restantes</p>
             <div class="modal-botoes">
                 <button class="btn secundario" data-abertura="fechar">Fechar</button>
                 <a class="btn secundario" href="#album" data-abertura="fechar">Ver álbum</a>
-                ${restantes ? `<button class="btn" data-abertura="outro">✂️ Abrir outro</button>` : ""}
+                ${restantes ? `<button class="btn" data-abertura="outro">Abrir outro</button>` : ""}
             </div>
         </div>`;
     ativarTilt(overlay);
@@ -418,10 +419,10 @@ const mostrarResumoMultiplo = (pacotes) => {
     overlay.className = "abertura aberta";
     overlay.innerHTML = `
         <div class="abertura-palco resumo">
-            ${gods ? `<div class="god-banner">✨ ${gods} GOD PACK${gods > 1 ? "S" : ""} ✨</div>` : ""}
+            ${gods ? `<div class="god-banner">${gods} GOD PACK${gods > 1 ? "S" : ""}</div>` : ""}
             <h2>${pacotes.length} pacotes abertos!</h2>
             <p class="sutil">${pacotes.length * 5} cartas • ${novas} novas • melhor raridade: ${RARIDADES[melhor].simbolo}
-                • +${pacotes.length * PONTOS_POR_PACOTE} pontos ✨</p>
+                • +${pacotes.length * PONTOS_POR_PACOTE} pontos</p>
             <div class="grade-cartas resumo-cartas multiplo">
                 ${lista.map(({ carta, qtd, nova }, i) =>
                     `<div class="entrada" style="animation-delay:${Math.min(i * 40, 1500)}ms">${htmlCarta(carta, { qtd, nova, classe: "tilt" })}</div>`).join("")}
@@ -482,10 +483,10 @@ const telaAlbum = () => {
         <div class="titulo-album">
             <div>
                 <h1>Meu Álbum</h1>
-                <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas • ✨ ${numero(estado.pontos)} pontos de pacote</p>
+                <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas • ${numero(estado.pontos)} pontos de pacote</p>
                 ${barra(unicas, TOTAL_CARTAS, "grossa")}
             </div>
-            <button class="btn dourado" data-acao="vender-repetidas" ${repetidas ? "" : "disabled"}>🪙 Vender repetidas (${repetidas})</button>
+            <button class="btn dourado" data-acao="vender-repetidas" ${repetidas ? "" : "disabled"}><i class="ic-moeda"></i> Vender repetidas (${repetidas})</button>
         </div>
         <div class="filtros">
             <input type="search" id="busca-album" placeholder="Buscar por nome ou número" value="${escapar(filtrosAlbum.busca)}">
@@ -527,16 +528,16 @@ const verCarta = (id) => {
             <div class="detalhe-info">
                 <h3>${c.nome}</h3>
                 <p class="sutil">#${c.id}/${TOTAL_CARTAS} • ${info.simbolo} ${info.nome} • Pacote ${PACOTES[c.pacote].nome}</p>
-                <p>${c.tipos.map((t) => `<span class="chip-tipo" style="--cor:${TIPOS[t].cor}">${TIPOS[t].icone} ${TIPOS[t].nome}</span>`).join(" ")}</p>
+                <p>${c.tipos.map((t) => `<span class="chip-tipo" style="--cor:${TIPOS[t].cor}">${TIPOS[t].nome}</span>`).join(" ")}</p>
                 <p class="destaque-texto">${q ? `Você tem <b>${q}</b> ${q > 1 ? "cópias" : "cópia"}` : "Você ainda não tem essa carta"}</p>
                 <div class="acoes-carta">
-                    ${q ? `<button class="btn dourado" data-acao="vender-uma" data-id="${id}">🪙 Vender 1 (+${info.venda})</button>` : ""}
+                    ${q ? `<button class="btn dourado" data-acao="vender-uma" data-id="${id}"><i class="ic-moeda"></i> Vender 1 (+${info.venda})</button>` : ""}
                     <button class="btn ${estado.pontos >= info.pontos ? "" : "desativado"}" data-acao="resgatar-pontos" data-id="${id}" ${estado.pontos >= info.pontos ? "" : "disabled"}>
-                        ✨ Pegar com ${numero(info.pontos)} pontos
+                        Pegar com ${numero(info.pontos)} pontos
                     </button>
-                    <a class="btn secundario" href="#pokedex/${POKEMON_POR_ID[c.pid].nome}" data-acao="fechar-modal">🔎 Ver na Pokédex</a>
+                    <a class="btn secundario" href="#pokedex/${POKEMON_POR_ID[c.pid].nome}" data-acao="fechar-modal">Ver na Pokédex</a>
                 </div>
-                <p class="sutil">Você tem ✨ ${numero(estado.pontos)} pontos de pacote.</p>
+                <p class="sutil">Você tem ${numero(estado.pontos)} pontos de pacote.</p>
             </div>
         </div>`, "largo");
 };
@@ -553,10 +554,10 @@ const verFaltando = (id) => {
                 <p>Encontre essa carta abrindo pacotes <b>${PACOTES[c.pacote].nome}</b>, trocando com bots ou usando pontos de pacote.</p>
                 <div class="acoes-carta">
                     <button class="btn ${estado.pontos >= info.pontos ? "" : "desativado"}" data-acao="resgatar-pontos" data-id="${id}" ${estado.pontos >= info.pontos ? "" : "disabled"}>
-                        ✨ Pegar com ${numero(info.pontos)} pontos
+                        Pegar com ${numero(info.pontos)} pontos
                     </button>
                 </div>
-                <p class="sutil">Você tem ✨ ${numero(estado.pontos)} pontos de pacote.</p>
+                <p class="sutil">Você tem ${numero(estado.pontos)} pontos de pacote.</p>
             </div>
         </div>`, "largo");
 };
@@ -566,7 +567,7 @@ const modalVenderRepetidas = (manter = 1, raridadeMax = 4) => {
     const total = lista.reduce((s, x) => s + RARIDADES[x.carta.raridade].venda * x.qtd, 0);
     const qtd = lista.reduce((s, x) => s + x.qtd, 0);
     abrirModal(`
-        <h3>🪙 Vender repetidas</h3>
+        <h3><i class="ic-moeda"></i> Vender repetidas</h3>
         <div class="opcoes-venda">
             <label>Manter
                 <select id="venda-manter">
@@ -586,10 +587,10 @@ const modalVenderRepetidas = (manter = 1, raridadeMax = 4) => {
                     <img src="${imagemSprite(carta.pid)}" alt="" loading="lazy">
                     <span>${carta.nome} <small>${RARIDADES[carta.raridade].simbolo}</small></span>
                     <span>x${qtd}</span>
-                    <b>🪙 ${RARIDADES[carta.raridade].venda * qtd}</b>
+                    <b><i class="ic-moeda"></i> ${RARIDADES[carta.raridade].venda * qtd}</b>
                 </div>`).join("") : `<p class="vazio">Nada para vender com essas opções.</p>`}
         </div>
-        <p class="destaque-texto">Total: ${qtd} cartas por 🪙 ${numero(total)}</p>
+        <p class="destaque-texto">Total: ${qtd} cartas por <i class="ic-moeda"></i> ${numero(total)}</p>
         <div class="modal-botoes">
             <button class="btn secundario" data-acao="fechar-modal">Cancelar</button>
             <button class="btn dourado" data-acao="confirmar-venda" data-manter="${manter}" data-raridade="${raridadeMax}" ${qtd ? "" : "disabled"}>Vender tudo</button>
@@ -613,10 +614,10 @@ const miniCarta = (id) => {
 };
 
 const ROTULOS_TROCA = {
-    troca: "🔄 Troca 1 por 1",
-    pacotao: "📦 3 repetidas por 1 carta melhor",
-    compra: "💰 Quer comprar sua carta",
-    venda: "🏷️ Está vendendo",
+    troca: "Troca 1 por 1",
+    pacotao: "3 repetidas por 1 melhor",
+    compra: "Quer comprar",
+    venda: "Está vendendo",
 };
 
 const htmlOferta = (o) => {
@@ -624,7 +625,7 @@ const htmlOferta = (o) => {
     const feita = estado.trocas.feitas.includes(o.indice);
     const lado = (ids, moedas) => [
         ...ids.map(miniCarta),
-        moedas ? `<div class="moedas-oferta">🪙 ${numero(moedas)}</div>` : "",
+        moedas ? `<div class="moedas-oferta"><i class="ic-moeda"></i> ${numero(moedas)}</div>` : "",
     ].join("");
     return `
     <article class="oferta ${feita ? "feita" : ""}">
@@ -638,11 +639,11 @@ const htmlOferta = (o) => {
         </header>
         <div class="lados">
             <div class="lado-oferta"><h4>Você dá</h4><div class="cartas-oferta">${lado(o.quer, o.moedas < 0 ? -o.moedas : 0)}</div></div>
-            <div class="seta">⇄</div>
+            <div class="seta">${icone("trocas")}</div>
             <div class="lado-oferta"><h4>Você recebe</h4><div class="cartas-oferta">${lado(o.da, o.moedas > 0 ? o.moedas : 0)}</div></div>
         </div>
         <button class="btn ${v.ok ? "" : "desativado"}" data-acao="aceitar-troca" data-i="${o.indice}" ${v.ok ? "" : "disabled"}>
-            ${feita ? "✅ Troca concluída" : v.ok ? (v.ultimaCopia ? "Aceitar (é sua última cópia!)" : "Aceitar troca") : v.motivo}
+            ${feita ? "Troca concluída" : v.ok ? (v.ultimaCopia ? "Aceitar (é sua última cópia!)" : "Aceitar troca") : v.motivo}
         </button>
     </article>`;
 };
@@ -674,7 +675,7 @@ const telaLoja = () => {
     app.innerHTML = `
     <section>
         <h1>Loja</h1>
-        <p class="destaque-texto">Seu saldo: 🪙 ${numero(estado.moedas)} moedas</p>
+        <p class="destaque-texto">Seu saldo: <i class="ic-moeda"></i> ${numero(estado.moedas)} moedas</p>
         <div class="grade-loja">
             ${LOJA.map((item) => `
             <article class="item-loja ${item.destaque ? "destaque" : ""}">
@@ -687,19 +688,19 @@ const telaLoja = () => {
                 <h3>${item.nome}</h3>
                 <p class="sutil">${item.desc}</p>
                 <button class="btn ${estado.moedas >= item.preco ? "dourado" : "desativado"}" data-acao="comprar" data-id="${item.id}" ${estado.moedas >= item.preco ? "" : "disabled"}>
-                    🪙 ${numero(item.preco)}
+                    <i class="ic-moeda"></i> ${numero(item.preco)}
                 </button>
             </article>`).join("")}
         </div>
         <section class="painel">
-            <h2>Como ganhar moedas 🪙</h2>
+            <h2>Como ganhar moedas</h2>
             <ul class="lista-dicas">
-                <li>🎁 Resgate o <b>bônus diário</b> de ${BONUS_DIARIO} moedas na tela inicial.</li>
-                <li>📋 Complete as <b>missões diárias</b> e as <b>conquistas</b> do álbum.</li>
-                <li>🪙 <b>Venda cartas repetidas</b> no álbum (◆ ${RARIDADES[1].venda}, ◆◆ ${RARIDADES[2].venda}, ◆◆◆ ${RARIDADES[3].venda}, ex ${RARIDADES[4].venda}...).</li>
-                <li>💰 Alguns <b>bots compram suas repetidas</b> pelo dobro do preço na tela de trocas.</li>
+                <li>Resgate o <b>bônus diário</b> de ${BONUS_DIARIO} moedas na tela inicial.</li>
+                <li>Complete as <b>missões diárias</b> e as <b>conquistas</b> do álbum.</li>
+                <li><b>Venda cartas repetidas</b> no álbum (◆ ${RARIDADES[1].venda}, ◆◆ ${RARIDADES[2].venda}, ◆◆◆ ${RARIDADES[3].venda}, ex ${RARIDADES[4].venda}...).</li>
+                <li>Alguns <b>bots compram suas repetidas</b> pelo dobro do preço na tela de trocas.</li>
             </ul>
-            <p class="sutil">As moedas são apenas do jogo, nada de dinheiro de verdade. 😉</p>
+            <p class="sutil">As moedas são só do jogo, nada de dinheiro de verdade.</p>
         </section>
     </section>`;
 };
@@ -732,13 +733,13 @@ const telaPokedex = (busca) => {
         <form class="busca-pokedex" id="form-pokedex">
             <input type="search" id="input-pokedex" placeholder="Nome ou número do Pokémon" value="${escapar(busca || "")}">
             <button class="btn" type="submit">Buscar</button>
-            <button class="btn secundario" type="button" data-acao="pokedex-aleatorio">🎲</button>
+            <button class="btn secundario" type="button" data-acao="pokedex-aleatorio">Aleatório</button>
         </form>
         <div id="resultado-pokedex" class="painel resultado-pokedex">
             <p class="qual-pokemon">Qual é esse Pokémon?! Digite um nome ou número acima.</p>
         </div>
         <section class="painel">
-            <h2>⭐ Favoritos</h2>
+            <h2>Favoritos</h2>
             <div class="lista-favoritos">
                 ${estado.favoritos.length ? estado.favoritos.map((nome) => `
                     <a class="favorito" href="#pokedex/${encodeURIComponent(nome)}">
@@ -788,7 +789,7 @@ const mostrarPokemon = async (busca) => {
                 </div>
                 <p>${p.types.map((t) => {
                     const tipo = TIPOS[t.type.name];
-                    return tipo ? `<span class="chip-tipo" style="--cor:${tipo.cor}">${tipo.icone} ${tipo.nome}</span>` : t.type.name;
+                    return tipo ? `<span class="chip-tipo" style="--cor:${tipo.cor}">${tipo.nome}</span>` : t.type.name;
                 }).join(" ")}</p>
                 ${texto ? `<p class="descricao">${escapar(texto.flavor_text.replace(/\s+/g, " "))}</p>` : ""}
                 <p class="sutil">Altura ${(p.height / 10).toLocaleString("pt-BR")} m • Peso ${(p.weight / 10).toLocaleString("pt-BR")} kg</p>
@@ -825,15 +826,15 @@ const mostrarPokemon = async (busca) => {
 const ACOES = {
     bonus: () => {
         const v = resgatarBonusDiario();
-        if (v) { sons.moeda(); aviso(`+${v} moedas de bônus diário! 🪙`, "sucesso"); }
+        if (v) { sons.moeda(); aviso(`+${v} moedas de bônus diário! <i class="ic-moeda"></i>`, "sucesso"); }
     },
     missao: (el) => {
         const v = resgatarMissao(el.dataset.id);
-        if (v) { sons.moeda(); aviso(`Missão concluída! +${v} moedas 🪙`, "sucesso"); }
+        if (v) { sons.moeda(); aviso(`Missão concluída! +${v} moedas <i class="ic-moeda"></i>`, "sucesso"); }
     },
     conquista: (el) => {
         const v = resgatarConquista(el.dataset.id);
-        if (v) { sons.moeda(); aviso(`Conquista desbloqueada! +${numero(v)} moedas 🏆`, "sucesso"); }
+        if (v) { sons.moeda(); aviso(`Conquista desbloqueada! +${numero(v)} moedas`, "sucesso"); }
     },
     resetar: async () => {
         if (await confirmar("Apagar progresso?", "Todas as cartas, moedas e pacotes serão perdidos. Essa ação não pode ser desfeita.", "Apagar tudo")) resetar();
@@ -858,7 +859,7 @@ const ACOES = {
         const v = venderCarta(id);
         if (v) {
             sons.moeda();
-            aviso(`${c.nome} vendida por ${v} moedas 🪙`, "sucesso");
+            aviso(`${c.nome} vendida por ${v} moedas <i class="ic-moeda"></i>`, "sucesso");
             if (quantidade(id)) verCarta(id);
             else fecharModal();
         }
@@ -867,7 +868,7 @@ const ACOES = {
         const id = el.dataset.id;
         if (resgatarComPontos(id)) {
             sons.raro(CARTA_POR_ID[id].raridade);
-            aviso(`${CARTA_POR_ID[id].nome} adicionada ao álbum! ✨`, "sucesso");
+            aviso(`${CARTA_POR_ID[id].nome} adicionada ao álbum!`, "sucesso");
             verCarta(id);
         }
     },
@@ -875,7 +876,7 @@ const ACOES = {
     "confirmar-venda": (el) => {
         const { total, qtd } = venderRepetidas(Number(el.dataset.manter), Number(el.dataset.raridade));
         fecharModal();
-        if (qtd) { sons.moeda(); aviso(`${qtd} cartas vendidas por ${numero(total)} moedas 🪙`, "sucesso"); }
+        if (qtd) { sons.moeda(); aviso(`${qtd} cartas vendidas por ${numero(total)} moedas <i class="ic-moeda"></i>`, "sucesso"); }
     },
     "aceitar-troca": async (el) => {
         const oferta = estado.trocas.ofertas[Number(el.dataset.i)];
@@ -886,23 +887,23 @@ const ACOES = {
         if (!recebidas) return;
         if (!recebidas.length) {
             sons.moeda();
-            aviso(`${oferta.bot.nome} comprou sua carta por ${numero(oferta.moedas)} moedas! 🪙`, "sucesso");
+            aviso(`${oferta.bot.nome} comprou sua carta por ${numero(oferta.moedas)} moedas! <i class="ic-moeda"></i>`, "sucesso");
             return;
         }
         const { carta, nova } = recebidas[0];
         sons.raro(Math.max(carta.raridade, 3));
         abrirModal(`
-            <h3>Troca feita com ${oferta.bot.nome}! 🤝</h3>
+            <h3>Troca feita com ${oferta.bot.nome}</h3>
             <div class="detalhe-imagem sozinha revelar">${htmlCarta(carta, { nova, classe: "tilt" })}</div>
             <p class="sutil centro">${RARIDADES[carta.raridade].simbolo} ${RARIDADES[carta.raridade].nome}${nova ? " • Nova no seu álbum!" : ""}</p>
             <div class="modal-botoes"><button class="btn" data-acao="fechar-modal">Legal!</button></div>`, "largo");
     },
     comprar: async (el) => {
         const item = LOJA.find((i) => i.id === el.dataset.id);
-        if (!(await confirmar(`Comprar ${item.nome}?`, `Você vai gastar 🪙 ${numero(item.preco)} e receber ${item.pacotes} pacote(s).`, "Comprar"))) return;
+        if (!(await confirmar(`Comprar ${item.nome}?`, `Você vai gastar <i class="ic-moeda"></i> ${numero(item.preco)} e receber ${item.pacotes} pacote(s).`, "Comprar"))) return;
         if (comprar(item.preco, item.pacotes)) {
             sons.moeda();
-            aviso(`+${item.pacotes} pacote(s)! <a href="#pacotes">Abrir agora ✂️</a>`, "sucesso");
+            aviso(`+${item.pacotes} pacote(s)! <a href="#pacotes">Abrir agora</a>`, "sucesso");
         } else {
             sons.erro();
             aviso("Moedas insuficientes!", "erro");
@@ -912,7 +913,7 @@ const ACOES = {
     favoritar: (el) => {
         const ativo = alternarFavorito(el.dataset.nome);
         el.classList.toggle("ativa", ativo);
-        aviso(ativo ? "Adicionado aos favoritos ⭐" : "Removido dos favoritos");
+        aviso(ativo ? "Adicionado aos favoritos" : "Removido dos favoritos");
     },
     som: () => {
         estado.som = !estado.som;
@@ -951,7 +952,7 @@ let slotVisto = null;
 setInterval(() => {
     const qtdAntes = estado.gratis.qtd;
     sincronizarGratis();
-    if (estado.gratis.qtd > qtdAntes) aviso("🎁 Você ganhou um pacote grátis!", "sucesso");
+    if (estado.gratis.qtd > qtdAntes) aviso("Você ganhou um pacote grátis!", "sucesso");
     sincronizarDiario();
     atualizarCabecalho();
     $$("[data-relogio=gratis]").forEach((el) => { el.textContent = formatarTempo(tempoProximoGratis()); });
@@ -959,7 +960,7 @@ setInterval(() => {
     $$("[data-relogio=trocas]").forEach((el) => { el.textContent = formatarTempo(tempo); });
     const barraTrocas = $("#barra-trocas");
     if (barraTrocas) barraTrocas.style.width = `${(1 - tempo / INTERVALO_TROCAS) * 100}%`;
-    if (sincronizarTrocas() && slotVisto !== null && telaAtual === "trocas") aviso("🤖 Os bots trouxeram novas ofertas!");
+    if (sincronizarTrocas() && slotVisto !== null && telaAtual === "trocas") aviso("Os bots trouxeram novas ofertas!");
     slotVisto = estado.trocas.slot;
 }, 1000);
 

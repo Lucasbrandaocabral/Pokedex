@@ -26,7 +26,21 @@ const ESTAGIOS = ["Básico", "Estágio 1", "Estágio 2"];
 const FULL_ART = ["arte", "sr", "im", "coroa"];
 
 export const iconeTipo = (tipo) =>
-    `<span class="icone-tipo" style="--cor:${TIPOS[tipo].cor}" title="${TIPOS[tipo].nome}">${TIPOS[tipo].icone}</span>`;
+    `<span class="icone-tipo" style="--cor:${TIPOS[tipo].cor}" title="${TIPOS[tipo].nome}"></span>`;
+
+// Ícones de traço simples (usam a cor do texto)
+const ICONES = {
+    inicio: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    pacote: '<path d="M6 3l1.5 2L9 3l1.5 2L12 3l1.5 2L15 3l1.5 2L18 3v18H6z"/><path d="M6 8h12"/>',
+    album: '<rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>',
+    trocas: '<path d="M4 8h14l-4-4M20 16H6l4 4"/>',
+    loja: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    busca: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+    som: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>',
+    mudo: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+};
+export const icone = (nome) =>
+    `<svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome]}</svg>`;
 
 export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
     <div class="carta r${c.raridade} v-${c.variante} ${FULL_ART.includes(c.variante) ? "full-art" : ""} ${classe}"
