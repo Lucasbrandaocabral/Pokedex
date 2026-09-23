@@ -14,7 +14,7 @@
 import crypto from "node:crypto";
 import {
     rota, responder, lerCorpo, consulta, exigirSessao, ErroHttp,
-    conferirSenha, gerarHashSenha, renovarSessoes, limparSave,
+    conferirSenha, gerarHashSenha, renovarSessoes, limparSave, idCartaValido,
 } from "./_lib.js";
 import { validarUsuario } from "./auth/cadastro.js";
 
@@ -22,7 +22,6 @@ const MAX_CARTAS_POR_LADO = 10;
 const MAX_TROCAS_PENDENTES = 10;
 const MAX_PEDIDOS_AMIZADE = 20;
 const DIAS_EXPIRAR_TROCA = 7;
-const TOTAL_CARTAS = 200;
 const TOTAL_POKEMON = 151;
 const DIAS_ENTRE_TROCAS_DE_NOME = 180; // 6 meses
 
@@ -52,8 +51,7 @@ const validarCartas = (lista, nome) => {
     if (lista.length > MAX_CARTAS_POR_LADO) throw new ErroHttp(400, `No máximo ${MAX_CARTAS_POR_LADO} cartas de cada lado.`);
     return lista.map((id) => {
         const texto = String(id);
-        const n = Number(texto);
-        if (!/^\d{3}$/.test(texto) || n < 1 || n > TOTAL_CARTAS) throw new ErroHttp(400, "Carta inválida.");
+        if (!idCartaValido(texto)) throw new ErroHttp(400, "Carta inválida.");
         return texto;
     });
 };

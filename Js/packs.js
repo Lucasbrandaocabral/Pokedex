@@ -1,7 +1,7 @@
 // ====================================================
 // Sorteio das cartas de um pacote (5 cartas, estilo TCG Pocket)
 // ====================================================
-import { cartasDaRaridade } from "./cards.js";
+import { cartasDaRaridade, PACOTES } from "./cards.js";
 import { estado, adicionarCarta, gastarPacote, registrarProgresso, salvar, PONTOS_POR_PACOTE } from "./state.js";
 
 // Chances (%) por raridade para as posições 4 e 5 do pacote.
@@ -24,10 +24,16 @@ export const sortearPeso = (tabela, rnd = Math.random) => {
     return Number(itens[itens.length - 1][0]);
 };
 
+// Procura primeiro no pacote, depois no resto da mesma expansão.
+// Se a expansão não tiver aquela raridade, desce para a mais próxima.
 export const sortearCarta = (raridade, pacote, rnd = Math.random) => {
-    let pool = cartasDaRaridade(raridade, pacote);
-    if (!pool.length) pool = cartasDaRaridade(raridade);
-    return pool[Math.floor(rnd() * pool.length)];
+    const colecao = PACOTES[pacote]?.colecao;
+    for (let r = raridade; r >= 1; r--) {
+        let pool = cartasDaRaridade(r, pacote);
+        if (!pool.length) pool = cartasDaRaridade(r, null, colecao);
+        if (pool.length) return pool[Math.floor(rnd() * pool.length)];
+    }
+    return cartasDaRaridade(1, null, colecao)[0];
 };
 
 export const sortearPacote = (pacote) => {

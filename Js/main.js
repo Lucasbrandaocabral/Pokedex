@@ -2,8 +2,8 @@
 // Pokédex Pocket: telas e interações do jogo
 // ====================================================
 import {
-    CARTAS, CARTA_POR_ID, PACOTES, RARIDADES, TIPOS, TOTAL_CARTAS,
-    cartasDoPacote, imagemSprite, nomeBonito, POKEMON_POR_ID,
+    CARTAS, CARTA_POR_ID, PACOTES, RARIDADES, TIPOS, TOTAL_CARTAS, COLECOES, COLECAO_POR_CODIGO,
+    cartasDoPacote, imagemSprite, nomeBonito, POKEMON_POR_ID, numeroCarta,
 } from "./cards.js";
 import {
     estado, salvar, aoMudar, resetar, quantidade, cartasUnicas,
@@ -29,7 +29,9 @@ if (location.hostname.endsWith("github.io")) location.replace(`https://pokepalwo
 const app = $("#app");
 let telaAtual = "inicio";
 let pacoteSelecionado = "charizard";
-const filtrosAlbum = { busca: "", pacote: "", raridade: "", mostrar: "todas" };
+const filtrosAlbum = { busca: "", colecao: "A1", pacote: "", raridade: "", mostrar: "todas" };
+const colecaoSelecionada = () => COLECAO_POR_CODIGO[PACOTES[pacoteSelecionado].colecao];
+const tenhoDe = (cartas) => cartas.filter((c) => quantidade(c.id)).length;
 // Cartas novas mostradas com o selo "NOVA" enquanto o jogador está no álbum
 let novasVisita = {};
 
@@ -132,13 +134,13 @@ const telaInicio = () => {
     app.innerHTML = `
     <section class="hero">
         <div>
-            <span class="etiqueta">Coleção 1</span>
-            <h1>Origem Genética</h1>
-            <p>${unicas} de ${TOTAL_CARTAS} cartas encontradas. Abra pacotes, troque com outros treinadores e complete o álbum.</p>
+            <span class="etiqueta">Série A • ${COLECOES.length} expansões</span>
+            <h1>Complete o álbum</h1>
+            <p>${unicas} de ${TOTAL_CARTAS} cartas encontradas. Abra pacotes, troque com outros treinadores e complete todas as expansões.</p>
             <a class="btn grande" href="#pacotes">Abrir pacote (${pacotesDisponiveis()})</a>
         </div>
         <div class="hero-pacotes">
-            ${Object.keys(PACOTES).map((p) => htmlPacote(p, "mini")).join("")}
+            ${["mew", "charizard", "gyarados"].map((p) => htmlPacote(p, "mini")).join("")}
         </div>
     </section>
 
@@ -185,10 +187,9 @@ const telaInicio = () => {
             <h2>Coleção</h2>
             <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas</p>
             ${barra(unicas, TOTAL_CARTAS, "grossa")}
-            ${Object.values(PACOTES).map((p) => {
-                const cartas = cartasDoPacote(p.id);
-                const tenho = cartas.filter((c) => quantidade(c.id)).length;
-                return `<div class="linha-progresso"><span>${p.nome}</span>${barra(tenho, cartas.length)}<small>${tenho}/${cartas.length}</small></div>`;
+            ${COLECOES.map((c) => {
+                const tenho = tenhoDe(c.cartas);
+                return `<div class="linha-progresso"><span>${c.nome}</span>${barra(tenho, c.total)}<small>${tenho}/${c.total}</small></div>`;
             }).join("")}
             <h3>Conquistas</h3>
             <ul class="lista-missoes">
@@ -227,18 +228,28 @@ const telaInicio = () => {
 const telaPacotes = () => {
     const disponiveis = pacotesDisponiveis();
     const cartas = cartasDoPacote(pacoteSelecionado);
-    const tenho = cartas.filter((c) => quantidade(c.id)).length;
+    const tenho = tenhoDe(cartas);
+    const colecao = colecaoSelecionada();
     const destaques = cartas.filter((c) => c.raridade >= 4).sort((a, b) => b.raridade - a.raridade).slice(0, 6);
     app.innerHTML = `
     <section class="tela-pacotes">
         <h1>Escolha um pacote</h1>
+        <div class="seletor-colecoes">
+            ${COLECOES.map((c) => `
+                <button class="opcao-colecao ${c.codigo === colecao.codigo ? "selecionada" : ""}" data-acao="selecionar-colecao" data-id="${c.codigo}"
+                        style="--c1:${c.pacotes[0].cores[0]};--c2:${c.pacotes[0].cores[1]}">
+                    <img src="${imagemSprite(c.pacotes[0].mascote)}" alt="" loading="lazy" draggable="false">
+                    <b>${c.nome}</b>
+                    <small>${c.codigo} • ${tenhoDe(c.cartas)}/${c.total}</small>
+                </button>`).join("")}
+        </div>
         <div class="seletor-pacotes">
-            ${Object.keys(PACOTES).map((p) =>
+            ${colecao.pacotes.map(({ id: p }) =>
                 `<button class="opcao-pacote ${p === pacoteSelecionado ? "selecionado" : ""}" data-acao="selecionar-pacote" data-id="${p}">
                     ${htmlPacote(p)}
                 </button>`).join("")}
         </div>
-        <p class="destaque-texto">Pacote <b>${PACOTES[pacoteSelecionado].nome}</b> • ${tenho}/${cartas.length} cartas coletadas</p>
+        <p class="destaque-texto">${colecao.nome} • Pacote <b>${PACOTES[pacoteSelecionado].nome}</b> • ${tenho}/${cartas.length} cartas coletadas</p>
         <div class="saldo-pacotes">
             <span>Grátis: <b>${estado.gratis.qtd}/${PACOTES_GRATIS_MAX}</b></span>
             <span>Comprados: <b>${estado.comprados}</b></span>
@@ -277,6 +288,9 @@ const telaPacotes = () => {
             <p>Cada pacote aberto dá <b>${PONTOS_POR_PACOTE} pontos de pacote</b>, que podem ser trocados por qualquer carta no álbum.</p>
         </details>
     </section>`;
+    // Deixa a expansão escolhida visível na faixa (no celular ela rola para o lado)
+    const escolhida = $(".opcao-colecao.selecionada");
+    escolhida.parentElement.scrollLeft = escolhida.offsetLeft - (escolhida.parentElement.clientWidth - escolhida.offsetWidth) / 2;
 };
 
 // ---------------- Abertura de pacote (animação) ----------------
@@ -561,13 +575,14 @@ const cartasFiltradas = () => {
     const busca = filtrosAlbum.busca.trim().toLowerCase();
     return CARTAS.filter((c) => {
         const q = quantidade(c.id);
+        if (filtrosAlbum.colecao && c.colecao !== filtrosAlbum.colecao) return false;
         if (filtrosAlbum.pacote && c.pacote !== filtrosAlbum.pacote) return false;
         if (filtrosAlbum.raridade && c.raridade !== Number(filtrosAlbum.raridade)) return false;
         if (filtrosAlbum.mostrar === "tenho" && !q) return false;
         if (filtrosAlbum.mostrar === "faltando" && q) return false;
         if (filtrosAlbum.mostrar === "repetidas" && q < 2) return false;
         if (filtrosAlbum.mostrar === "novas" && !novasVisita[c.id]) return false;
-        if (busca && !(q && c.nome.toLowerCase().includes(busca)) && !c.id.includes(busca)) return false;
+        if (busca && !(q && c.nome.toLowerCase().includes(busca)) && !numeroCarta(c).toLowerCase().includes(busca)) return false;
         return true;
     });
 };
@@ -580,7 +595,7 @@ const htmlGradeAlbum = () => {
         if (!q) {
             return `<button class="slot-carta faltando" data-acao="ver-faltando" data-id="${c.id}" title="Carta ${c.id}">
                 <img src="${c.imagem}" alt="" loading="lazy" draggable="false">
-                <span>#${c.id}</span><small>${RARIDADES[c.raridade].simbolo}</small>
+                <span>${numeroCarta(c)}</span><small>${RARIDADES[c.raridade].simbolo}</small>
             </button>`;
         }
         return `<button class="slot-carta" data-acao="ver-carta" data-id="${c.id}">${htmlCarta(c, { qtd: q, nova: novasVisita[c.id] })}</button>`;
@@ -590,21 +605,27 @@ const htmlGradeAlbum = () => {
 const telaAlbum = () => {
     const unicas = cartasUnicas();
     const repetidas = listarRepetidas(1, 8).reduce((s, x) => s + x.qtd, 0);
+    const colecao = COLECAO_POR_CODIGO[filtrosAlbum.colecao];
+    const pacotesDoFiltro = colecao ? colecao.pacotes : Object.values(PACOTES);
     app.innerHTML = `
     <section>
         <div class="titulo-album">
             <div>
                 <h1>Meu Álbum</h1>
-                <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas • ${numero(estado.pontos)} pontos de pacote</p>
-                ${barra(unicas, TOTAL_CARTAS, "grossa")}
+                <p class="destaque-texto">${colecao ? `${colecao.nome}: ${tenhoDe(colecao.cartas)}/${colecao.total} • ` : ""}${unicas}/${TOTAL_CARTAS} no total • ${numero(estado.pontos)} pontos de pacote</p>
+                ${colecao ? barra(tenhoDe(colecao.cartas), colecao.total, "grossa") : barra(unicas, TOTAL_CARTAS, "grossa")}
             </div>
             <button class="btn dourado" data-acao="vender-repetidas" ${repetidas ? "" : "disabled"}><i class="ic-moeda"></i> Vender repetidas (${repetidas})</button>
         </div>
         <div class="filtros">
             <input type="search" id="busca-album" placeholder="Buscar por nome ou número" value="${escapar(filtrosAlbum.busca)}">
+            <select id="filtro-colecao">
+                <option value="">Todas as expansões</option>
+                ${COLECOES.map((c) => `<option value="${c.codigo}" ${filtrosAlbum.colecao === c.codigo ? "selected" : ""}>${c.nome} (${c.codigo})</option>`).join("")}
+            </select>
             <select id="filtro-pacote">
                 <option value="">Todos os pacotes</option>
-                ${Object.values(PACOTES).map((p) => `<option value="${p.id}" ${filtrosAlbum.pacote === p.id ? "selected" : ""}>${p.nome}</option>`).join("")}
+                ${pacotesDoFiltro.map((p) => `<option value="${p.id}" ${filtrosAlbum.pacote === p.id ? "selected" : ""}>${p.nome}</option>`).join("")}
             </select>
             <select id="filtro-raridade">
                 <option value="">Todas as raridades</option>
@@ -620,6 +641,11 @@ const telaAlbum = () => {
 
     const atualizarGrade = () => { $("#grade-album").innerHTML = htmlGradeAlbum(); };
     $("#busca-album").addEventListener("input", (e) => { filtrosAlbum.busca = e.target.value; atualizarGrade(); });
+    $("#filtro-colecao").addEventListener("change", (e) => {
+        filtrosAlbum.colecao = e.target.value;
+        filtrosAlbum.pacote = "";
+        telaAlbum();
+    });
     $("#filtro-pacote").addEventListener("change", (e) => { filtrosAlbum.pacote = e.target.value; atualizarGrade(); });
     $("#filtro-raridade").addEventListener("change", (e) => { filtrosAlbum.raridade = e.target.value; atualizarGrade(); });
     $("#filtro-mostrar").addEventListener("change", (e) => { filtrosAlbum.mostrar = e.target.value; atualizarGrade(); });
@@ -639,7 +665,7 @@ const verCarta = (id) => {
             <div class="detalhe-imagem">${htmlCarta(c, { classe: "tilt" })}</div>
             <div class="detalhe-info">
                 <h3>${c.nome}</h3>
-                <p class="sutil">#${c.id}/${TOTAL_CARTAS} • ${info.simbolo} ${info.nome} • Pacote ${PACOTES[c.pacote].nome}</p>
+                <p class="sutil">${numeroCarta(c)} • ${info.simbolo} ${info.nome} • ${COLECAO_POR_CODIGO[c.colecao].nome} • Pacote ${PACOTES[c.pacote].nome}</p>
                 <p>${c.tipos.map((t) => `<span class="chip-tipo" style="--cor:${TIPOS[t].cor}">${TIPOS[t].nome}</span>`).join(" ")}</p>
                 <p class="destaque-texto">${q ? `Você tem <b>${q}</b> ${q > 1 ? "cópias" : "cópia"}` : "Você ainda não tem essa carta"}</p>
                 <div class="acoes-carta">
@@ -659,11 +685,11 @@ const verFaltando = (id) => {
     const info = RARIDADES[c.raridade];
     abrirModal(`
         <div class="detalhe-carta">
-            <div class="detalhe-imagem"><div class="slot-carta faltando grande"><img src="${c.imagem}" alt=""><span>#${c.id}</span><small>${info.simbolo}</small></div></div>
+            <div class="detalhe-imagem"><div class="slot-carta faltando grande"><img src="${c.imagem}" alt=""><span>${numeroCarta(c)}</span><small>${info.simbolo}</small></div></div>
             <div class="detalhe-info">
                 <h3>Quem é esse Pokémon?</h3>
-                <p class="sutil">#${c.id}/${TOTAL_CARTAS} • ${info.simbolo} ${info.nome} • Pacote ${PACOTES[c.pacote].nome}</p>
-                <p>Encontre essa carta abrindo pacotes <b>${PACOTES[c.pacote].nome}</b>, trocando com bots ou usando pontos de pacote.</p>
+                <p class="sutil">${numeroCarta(c)} • ${info.simbolo} ${info.nome} • ${COLECAO_POR_CODIGO[c.colecao].nome} • Pacote ${PACOTES[c.pacote].nome}</p>
+                <p>Encontre essa carta abrindo pacotes <b>${PACOTES[c.pacote].nome}</b> (${COLECAO_POR_CODIGO[c.colecao].nome}), trocando com bots ou usando pontos de pacote.</p>
                 <div class="acoes-carta">
                     <button class="btn ${estado.pontos >= info.pontos ? "" : "desativado"}" data-acao="resgatar-pontos" data-id="${id}" ${estado.pontos >= info.pontos ? "" : "disabled"}>
                         Pegar com ${numero(info.pontos)} pontos
@@ -946,7 +972,7 @@ const mostrarPokemon = async (busca) => {
         <div class="grade-cartas pequenas">
             ${cartas.map((c) => quantidade(c.id)
                 ? `<button class="slot-carta" data-acao="ver-carta" data-id="${c.id}">${htmlCarta(c, { qtd: quantidade(c.id) })}</button>`
-                : `<div class="slot-carta faltando"><img src="${c.imagem}" alt="" loading="lazy"><span>#${c.id}</span><small>${RARIDADES[c.raridade].simbolo}</small></div>`).join("")}
+                : `<div class="slot-carta faltando"><img src="${c.imagem}" alt="" loading="lazy"><span>${numeroCarta(c)}</span><small>${RARIDADES[c.raridade].simbolo}</small></div>`).join("")}
         </div>` : ""}`;
     } catch (e) {
         area.innerHTML = `<p class="erro-pokedex">Error 404 - Tá maluco, que Pokémon é esse? <br><small>“${escapar(busca)}” não foi encontrado.</small></p>`;
@@ -977,6 +1003,14 @@ const ACOES = {
     },
     "selecionar-pacote": (el) => {
         pacoteSelecionado = el.dataset.id;
+        filtrosAlbum.colecao = colecaoSelecionada().codigo;
+        filtrosAlbum.pacote = "";
+        renderizar();
+    },
+    "selecionar-colecao": (el) => {
+        pacoteSelecionado = COLECAO_POR_CODIGO[el.dataset.id].pacotes[0].id;
+        filtrosAlbum.colecao = el.dataset.id;
+        filtrosAlbum.pacote = "";
         renderizar();
     },
     abrir: (el) => abrir(Number(el.dataset.qtd)),

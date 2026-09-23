@@ -225,3 +225,21 @@ test("trocar a senha desconecta os outros aparelhos", async () => {
 test("sem login não acessa nada social", async () => {
     assert.equal((await cliente()("/api/social?acao=resumo")).status, 401);
 });
+
+test("cartas das outras expansões: salvar e trocar", async () => {
+    const gary = await criarJogador("gary", { "A1a-001": 2, "A3-004": 1, "A1a-999": 1, "201": 1, "a1a-001": 1 });
+    assert.deepEqual((await save(gary.api)).colecao, { "A1a-001": 2, "A3-004": 1 }, "só fica o que existe no jogo");
+
+    const tracey = await criarJogador("tracey", { "001": 1 });
+    await gary.api.acao("adicionar-amigo", { usuario: tracey.usuario });
+    const { pedidosRecebidos } = (await tracey.api("/api/social?acao=resumo")).dados;
+    await tracey.api.acao("responder-amigo", { id: pedidosRecebidos[0].id, aceitar: true });
+
+    assert.equal((await gary.api.acao("propor-troca", { para: tracey.usuario, da: ["A1a-999"], quer: [] })).status, 400);
+    const prop = await gary.api.acao("propor-troca", { para: tracey.usuario, da: ["A1a-001"], quer: ["001"] });
+    assert.equal(prop.status, 200);
+    const recebida = (await tracey.api("/api/social?acao=resumo")).dados.trocas.find((t) => !t.enviada);
+    const ok = await tracey.api.acao("responder-troca", { id: recebida.id, aceitar: true });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.dados.save.colecao["A1a-001"], 1);
+});

@@ -4,6 +4,7 @@
 // ====================================================
 import crypto from "node:crypto";
 import { promisify } from "node:util";
+import { CARTA_POR_ID } from "../Js/cards.js";
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -329,7 +330,8 @@ export const limparFalhas = (uid) => consulta("UPDATE usuarios SET tentativas = 
 const inteiro = (valor, min, max, padrao = 0) =>
     Number.isInteger(valor) ? Math.min(Math.max(valor, min), max) : padrao;
 
-const idCartaValido = (id) => /^\d{3}$/.test(id) && Number(id) >= 1 && Number(id) <= 200;
+// Só aceita cartas que existem no jogo (Origem Genética usa "001", as outras expansões "A1a-001")
+export const idCartaValido = (id) => Object.hasOwn(CARTA_POR_ID, id);
 
 // Remove cartas inexistentes, quantidades absurdas e números inválidos.
 // Assim um save adulterado não quebra a tela de ninguém.

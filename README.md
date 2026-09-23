@@ -14,14 +14,14 @@ Depois resolvi transformar a Pokédex num jogo de verdade. A busca original cont
 
 ## Como é o jogo
 
-Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). São três pacotes da coleção Origem Genética, com Charizard, Mewtwo e Pikachu na capa. Você corta o pacote arrastando o dedo, as cartas saem de dentro dele e você vai passando para o lado, uma de cada vez. Quando vem carta rara, ela aparece virada e o fundo acende na cor da raridade.
+Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). Tem as 11 expansões da Série A (Origem Genética, Ilha Mítica, Embate Espaço-Tempo, Bosque de Eevee e as outras), com 17 pacotes diferentes. Por enquanto só entram Pokémon da 1ª geração, inclusive as formas de Alola em Guardiões Celestiais. Você corta o pacote arrastando o dedo, as cartas saem de dentro dele e você vai passando para o lado, uma de cada vez. Quando vem carta rara, ela aparece virada e o fundo acende na cor da raridade.
 
 <p>
   <img src="docs/imagens/abrindo.jpg" width="49%" alt="Abrindo um pacote">
   <img src="docs/imagens/carta.jpg" width="49%" alt="Revelando as cartas">
 </p>
 
-O álbum tem 200 cartas, do ◆ comum até a ♛ coroa, com silhueta nas que faltam. As mais raras têm arte completa e brilho holográfico quando você passa o mouse.
+O álbum tem 725 cartas, separadas por expansão, do ◆ comum até a ♛ coroa, com silhueta nas que faltam. As mais raras têm arte completa e brilho holográfico quando você passa o mouse.
 
 <p>
   <img src="docs/imagens/album.jpg" width="49%" alt="Álbum">
@@ -67,7 +67,7 @@ Um limite que ainda existe: moedas e pacotes são calculados no navegador. Quem 
 index.html            página do jogo
 css/style.css         visual (cartas, pacotes em pixel art, animações)
 Js/pokemon-data.js    dados dos 151 Pokémon
-Js/cards.js           monta as 200 cartas da coleção
+Js/cards.js           monta as cartas de todas as expansões
 Js/packs.js           sorteio das cartas de cada pacote
 Js/state.js           progresso, moedas, pacotes grátis e missões
 Js/trades.js          ofertas dos bots
