@@ -93,6 +93,30 @@ b { font-weight: 700; }
 .hud-item .icone { width: 18px; height: 18px; }
 .hud-item small { color: var(--tinta2); font-weight: 500; font-size: 0.75rem; }
 
+/* ---------------- Sino de notificações ---------------- */
+.btn-sino { position: relative; color: var(--tinta); font: inherit; }
+.btn-sino .icone { width: 20px; height: 20px; }
+.btn-sino .badge { top: -9px; right: -9px; }
+.btn-sino:has(.badge:not([hidden])) { background: #fff4c7; }
+.btn-sino.balancando .icone { animation: balancarSino 0.9s ease-in-out; transform-origin: 50% 10%; }
+@keyframes balancarSino { 15% { transform: rotate(18deg); } 30% { transform: rotate(-16deg); } 45% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 75% { transform: rotate(4deg); } }
+.painel-notificacoes {
+    position: fixed; z-index: 90; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 520px); overflow-y: auto;
+    background: var(--papel2); border: 3px solid var(--tinta); border-radius: var(--raio); box-shadow: 6px 6px 0 var(--tinta);
+    padding: 12px; animation: entrarAviso 0.18s ease-out;
+}
+.notificacoes-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.notificacoes-topo h3 { margin: 0; font-size: 1.4rem; }
+.notificacoes-topo .fechar { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--tinta2); padding: 4px 8px; }
+.lista-notificacoes { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; }
+.notificacao { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 6px; background: var(--papel); border: 2px solid var(--papel3); }
+.notificacao.nao-lida { border-color: var(--tinta); background: #fff8d9; box-shadow: 3px 3px 0 var(--tinta); }
+.notificacao .avatar-treinador { width: 42px; height: 42px; }
+.notificacao > div { flex: 1; min-width: 0; }
+.notificacao p { margin: 0; font-size: 0.9rem; line-height: 1.3; }
+.notificacao small { color: var(--tinta2); font-size: 0.75rem; }
+.notificacao-botoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
 /* ---------------- Navegação ---------------- */
 .nav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
@@ -924,7 +948,6 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 
 /* ---------------- Perfil, amigos e trocas entre jogadores ---------------- */
 .btn-conta { position: relative; }
-.badge-conta { top: -8px; right: -8px; }
 .badge-inline {
     display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-left: 4px;
     border-radius: 9px; background: var(--vermelho); color: #fff; font-style: normal; font-size: 0.7rem; font-weight: 800;

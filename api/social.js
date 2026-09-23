@@ -178,7 +178,7 @@ const resumo = async (eu) => {
         [eu.id]
     );
     const pedidos = await consulta(
-        `SELECT a.id, a.de_id = $1 AS enviado, u.usuario, COALESCE(u.apelido, u.usuario) AS apelido, u.avatar
+        `SELECT a.id, a.de_id = $1 AS enviado, a.criado_em, u.usuario, COALESCE(u.apelido, u.usuario) AS apelido, u.avatar
          FROM amizades a JOIN usuarios u ON u.id = CASE WHEN a.de_id = $1 THEN a.para_id ELSE a.de_id END
          WHERE a.status = 'pendente' AND (a.de_id = $1 OR a.para_id = $1)
          ORDER BY a.criado_em DESC`,
@@ -204,7 +204,7 @@ const resumo = async (eu) => {
             proximaTrocaNome: perfil.proxima_troca_nome && new Date(perfil.proxima_troca_nome) > new Date() ? perfil.proxima_troca_nome : null,
         },
         amigos: amigos.map(perfilPublico),
-        pedidosRecebidos: pedidos.filter((p) => !p.enviado).map((p) => ({ id: p.id, ...outro(p) })),
+        pedidosRecebidos: pedidos.filter((p) => !p.enviado).map((p) => ({ id: p.id, criadoEm: p.criado_em, ...outro(p) })),
         pedidosEnviados: pedidos.filter((p) => p.enviado).map((p) => ({ id: p.id, ...outro(p) })),
         trocas: trocas.map((t) => ({
             id: t.id,

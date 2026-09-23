@@ -182,7 +182,7 @@ const atualizarBotao = () => {
         return;
     }
     const status = { salvando: "salvando...", salvo: "salvo", erro: "não salvo" }[conta.sincronizacao] || "";
-    botao.innerHTML = `<span class="avatar-conta conectado"></span><span>${escapar(conta.usuario)}</span><small class="sync-${conta.sincronizacao}">${status}</small><i class="badge badge-conta" id="badge-conta" hidden></i>`;
+    botao.innerHTML = `<span class="avatar-conta conectado"></span><span>${escapar(conta.usuario)}</span><small class="sync-${conta.sincronizacao}">${status}</small>`;
     window.dispatchEvent(new CustomEvent("botao-conta-atualizado"));
     botao.title = "Sua conta";
 };
