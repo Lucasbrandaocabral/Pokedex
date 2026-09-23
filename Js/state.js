@@ -52,6 +52,7 @@ const estadoInicial = () => {
         diario: diarioNovo(),
         conquistas: [],
         trocas: { slot: -1, ofertas: [], feitas: [] },
+        missoesVistas: 0,
         favoritos: favoritosAntigos,
         som: true,
     };
@@ -70,11 +71,11 @@ export const estado = carregar();
 const ouvintes = new Set();
 export const aoMudar = (fn) => ouvintes.add(fn);
 
-export const salvar = () => {
+export const salvar = (notificar = true) => {
     try {
         localStorage.setItem(CHAVE, JSON.stringify(estado));
     } catch (e) { /* armazenamento indisponível */ }
-    ouvintes.forEach((fn) => fn());
+    if (notificar) ouvintes.forEach((fn) => fn());
 };
 
 export const resetar = () => {
