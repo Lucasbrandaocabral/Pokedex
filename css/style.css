@@ -235,7 +235,7 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     padding: 7% 6% 9%;
 }
 .pacote-logo {
-    font-family: "Jersey 20", monospace; text-align: center; line-height: 0.85; font-size: calc(var(--w) * 0.13);
+    font-family: "Jersey 20", monospace; text-align: center; line-height: 0.85; font-size: calc(var(--w) * 0.13 * var(--escala, 1));
     --c: calc(var(--p) / 2);
     color: #fff; text-shadow: var(--c) 0 0 var(--tinta), calc(var(--c) * -1) 0 0 var(--tinta), 0 var(--c) 0 var(--tinta), 0 calc(var(--c) * -1) 0 var(--tinta), var(--p) var(--p) 0 var(--tinta);
     letter-spacing: 1px;
@@ -276,6 +276,24 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .pacote.mini .pacote-fundo::after { display: none; }
 
 .tela-pacotes { text-align: center; }
+/* Faixa de expansões (rola para o lado no celular) */
+.seletor-colecoes {
+    display: flex; gap: 10px; overflow-x: auto; padding: 6px 4px 14px; margin: 16px -4px 0;
+    scroll-snap-type: x proximity; scrollbar-width: thin; position: relative;
+}
+.opcao-colecao {
+    flex: 0 0 132px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 8px 10px; border: var(--linha); border-radius: var(--raio); background: var(--papel2); color: var(--tinta);
+    cursor: pointer; font: inherit; text-align: center; transition: transform 0.15s;
+}
+.opcao-colecao img { width: 56px; height: 56px; image-rendering: pixelated; margin: -6px 0 -4px; }
+.opcao-colecao b { font-size: 0.82rem; line-height: 1.1; min-height: 2.2em; display: flex; align-items: center; }
+.opcao-colecao small { font-size: 0.72rem; color: var(--tinta2); }
+.opcao-colecao:hover { transform: translateY(-2px); }
+.opcao-colecao.selecionada {
+    background: linear-gradient(180deg, var(--c1), var(--c2)); box-shadow: var(--sombra); transform: translateY(-3px);
+}
+.opcao-colecao.selecionada b, .opcao-colecao.selecionada small { color: #fff; text-shadow: 1px 1px 0 var(--tinta); }
 .seletor-pacotes { display: flex; justify-content: center; gap: 18px; margin: 22px 0; flex-wrap: wrap; }
 .opcao-pacote { background: none; border: none; cursor: pointer; transition: transform 0.2s, filter 0.2s, opacity 0.2s; filter: grayscale(0.7); opacity: 0.65; padding: 8px; }
 .opcao-pacote .pacote { --w: 140px; }
@@ -318,6 +336,11 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .carta-topo { order: 1; display: flex; align-items: center; gap: 1.5cqw; position: relative; z-index: 2; }
 .carta-estagio { font-size: 3.6cqw; background: rgba(0, 0, 0, 0.18); padding: 0.5cqw 1.8cqw; border-radius: 99px; white-space: nowrap; font-weight: 700; }
 .carta-nome { flex: 1; font-weight: 800; font-size: 7cqw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carta-forma {
+    position: absolute; top: 3cqw; left: 3cqw; z-index: 2; padding: 0.5cqw 2.5cqw; border-radius: 2cqw;
+    background: var(--tinta); color: #fff; font-size: 4.2cqw; font-weight: 800; text-transform: uppercase;
+}
+.carta.full-art .carta-forma { top: 15cqw; }
 .carta-hp { font-weight: 800; font-size: 6.5cqw; white-space: nowrap; }
 .carta-hp small { font-size: 3.5cqw; margin-right: 0.5cqw; }
 .icone-tipo {

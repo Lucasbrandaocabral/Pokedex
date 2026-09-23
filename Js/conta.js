@@ -4,7 +4,6 @@
 // ====================================================
 import { estado, salvar, aoSalvar, substituirEstado, temProgresso, limparSaveLocal } from "./state.js";
 import { $, $$, abrirModal, fecharModal, aviso, escapar, confirmar, sons, htmlPacote } from "./ui.js";
-import { PACOTES } from "./cards.js";
 
 const conta = {
     disponivel: false, // false quando o site está sem servidor (ex.: GitHub Pages)
@@ -432,7 +431,7 @@ export const iniciarConta = async () => {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") enviarAoSair();
     });
-    $(".login-pacotes").innerHTML = Object.keys(PACOTES).map((p) => htmlPacote(p)).join("");
+    $(".login-pacotes").innerHTML = ["charizard", "mew", "pikachu"].map((p) => htmlPacote(p)).join("");
     let r;
     try {
         r = await fetch("/api/auth/eu", { credentials: "same-origin" });

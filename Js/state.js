@@ -1,7 +1,7 @@
 // ====================================================
 // Estado do jogador: salvo no localStorage do navegador
 // ====================================================
-import { CARTA_POR_ID, RARIDADES } from "./cards.js";
+import { CARTA_POR_ID, RARIDADES, TOTAL_CARTAS } from "./cards.js";
 
 const CHAVE = "pokepocket_save_v1";
 
@@ -25,6 +25,9 @@ export const CONQUISTAS = [
     { id: "c100", meta: 100, premio: 800 },
     { id: "c150", meta: 150, premio: 1500 },
     { id: "c200", meta: 200, premio: 5000 },
+    { id: "c300", meta: 300, premio: 3000 },
+    { id: "c500", meta: 500, premio: 6000 },
+    { id: "todas", meta: TOTAL_CARTAS, premio: 20000 },
 ];
 
 const hoje = () => {

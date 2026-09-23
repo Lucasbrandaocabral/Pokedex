@@ -1,7 +1,7 @@
 // ====================================================
 // Helpers de interface: cartas, modais, avisos, sons e efeito 3D
 // ====================================================
-import { TIPOS, RARIDADES, PACOTES, TOTAL_CARTAS, imagemPixel } from "./cards.js";
+import { TIPOS, RARIDADES, PACOTES, COLECAO_POR_CODIGO, numeroCarta, imagemPixel } from "./cards.js";
 import { estado } from "./state.js";
 
 export const $ = (sel, raiz = document) => raiz.querySelector(sel);
@@ -42,14 +42,17 @@ const ICONES = {
 export const icone = (nome) =>
     `<svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome]}</svg>`;
 
+// Nomes compridos (ex.: "Gyarados ex") diminuem um pouco para caber
+const tamanhoNome = (nome) => (nome.length > 10 ? `style="font-size:${(7 * Math.max(0.72, 10 / nome.length)).toFixed(2)}cqw"` : "");
+
 export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
     <div class="carta r${c.raridade} v-${c.variante} ${FULL_ART.includes(c.variante) ? "full-art" : ""} ${classe}"
          data-id="${c.id}" style="--cor:${TIPOS[c.tipo].cor}">
         <div class="carta-face">
-            <div class="carta-arte"><img src="${c.imagem}" alt="${c.nome}" loading="lazy" draggable="false"></div>
+            <div class="carta-arte"><img src="${c.imagem}" alt="${c.nome}" loading="lazy" draggable="false">${c.forma ? `<span class="carta-forma">${c.forma}</span>` : ""}</div>
             <div class="carta-topo">
                 <span class="carta-estagio">${ESTAGIOS[c.estagio]}</span>
-                <span class="carta-nome">${c.nome}</span>
+                <span class="carta-nome" ${tamanhoNome(c.nomeFace || c.nome)}>${c.nomeFace || c.nome}</span>
                 <span class="carta-hp"><small>PS</small>${c.hp}</span>
                 ${iconeTipo(c.tipo)}
             </div>
@@ -67,7 +70,7 @@ export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
                     <span>Recuo ${"●".repeat(c.recuo) || "—"}</span>
                 </div>
                 <div class="carta-info">
-                    <span>${c.id}/${TOTAL_CARTAS}</span>
+                    <span>${numeroCarta(c)}</span>
                     <span class="carta-raridade">${RARIDADES[c.raridade].simbolo}</span>
                 </div>
             </div>
@@ -82,13 +85,16 @@ export const htmlVerso = (classe = "") => `
 
 export const htmlPacote = (p, classe = "") => {
     const pacote = PACOTES[p];
+    const { logo } = COLECAO_POR_CODIGO[pacote.colecao];
+    // Nomes compridos ficam com a letra menor para caber no pacote
+    const escala = Math.min(1, 9 / Math.max(...logo.map((l) => l.length)));
     return `
     <div class="pacote ${classe}" data-pacote="${p}"
          style="--c1:${pacote.cores[0]};--c2:${pacote.cores[1]};--c3:${pacote.cores[2]}">
         <div class="pacote-casca"></div>
         <div class="pacote-fundo">
             <div class="pacote-corpo">
-                <span class="pacote-logo">ORIGEM<br>GENÉTICA</span>
+                <span class="pacote-logo" style="--escala:${escala.toFixed(2)}">${logo.join("<br>")}</span>
                 <img src="${imagemPixel(pacote.mascote)}" alt="${pacote.nome}" draggable="false">
                 <span class="pacote-nome">${pacote.nome}</span>
             </div>
