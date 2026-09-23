@@ -146,7 +146,8 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     background: var(--tinta); color: var(--papel2); padding: 2px 12px; border-radius: 4px;
     font-size: 1.35rem;
 }
-.grade-painel { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px 20px; margin-top: 34px; }
+/* align-items: start deixa cada painel só com a altura do que tem dentro */
+.grade-painel { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px 20px; margin-top: 34px; align-items: start; }
 .barra { height: 12px; background: var(--papel3); border: 2px solid var(--tinta); border-radius: 3px; overflow: hidden; margin: 6px 0; }
 .barra > div {
     height: 100%; background: var(--verde); transition: width 0.5s;
@@ -965,6 +966,9 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .pessoa > div:not(.pessoa-botoes) { flex: 1; display: flex; flex-direction: column; min-width: 120px; }
 .pessoa small { color: var(--tinta2); }
 .pessoa-botoes { display: flex; gap: 6px; }
+.zona-perigo { margin-top: 18px; padding-top: 14px; border-top: 2px dashed var(--papel3); }
+.zona-perigo h3 { margin: 0 0 4px; color: var(--vermelho); }
+.zona-perigo p { margin: 0 0 10px; }
 .sem-conta { max-width: 520px; margin: 30px auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .texto-verde { color: var(--verde); }
 .vazio.pequeno { padding: 6px; font-size: 0.85rem; }
