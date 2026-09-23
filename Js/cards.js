@@ -99,9 +99,11 @@ const imagem = {
     home: (id) => `${SPRITES}/other/home/${id}.png`,
     homeShiny: (id) => `${SPRITES}/other/home/shiny/${id}.png`,
     sprite: (id) => `${SPRITES}/${id}.png`,
+    pixel: (id) => `${SPRITES}/versions/generation-v/black-white/animated/${id}.gif`,
 };
 export const imagemSprite = imagem.sprite;
 export const imagemArte = imagem.arte;
+export const imagemPixel = imagem.pixel;
 
 const gerarAtaques = (p, bonus = 0) => {
     const nomes = ATAQUES[p.tipos[0]] || ATAQUES.normal;

@@ -1,7 +1,7 @@
 // ====================================================
 // Helpers de interface: cartas, modais, avisos, sons e efeito 3D
 // ====================================================
-import { TIPOS, RARIDADES, PACOTES, TOTAL_CARTAS, imagemArte } from "./cards.js";
+import { TIPOS, RARIDADES, PACOTES, TOTAL_CARTAS, imagemPixel } from "./cards.js";
 import { estado } from "./state.js";
 
 export const $ = (sel, raiz = document) => raiz.querySelector(sel);
@@ -85,13 +85,16 @@ export const htmlPacote = (p, classe = "") => {
     return `
     <div class="pacote ${classe}" data-pacote="${p}"
          style="--c1:${pacote.cores[0]};--c2:${pacote.cores[1]};--c3:${pacote.cores[2]}">
-        <div class="pacote-topo"></div>
-        <div class="pacote-corpo">
-            <span class="pacote-logo">ORIGEM<br>GENÉTICA</span>
-            <img src="${imagemArte(pacote.mascote)}" alt="${pacote.nome}" draggable="false">
-            <span class="pacote-nome">${pacote.nome}</span>
+        <div class="pacote-casca"></div>
+        <div class="pacote-fundo">
+            <div class="pacote-corpo">
+                <span class="pacote-logo">ORIGEM<br>GENÉTICA</span>
+                <img src="${imagemPixel(pacote.mascote)}" alt="${pacote.nome}" draggable="false">
+                <span class="pacote-nome">${pacote.nome}</span>
+            </div>
+            <div class="pacote-brilho"></div>
         </div>
-        <div class="pacote-reflexo"></div>
+        <div class="pacote-topo"></div>
     </div>`;
 };
 
