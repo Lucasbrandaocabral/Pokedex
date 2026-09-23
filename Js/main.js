@@ -23,6 +23,8 @@ const app = $("#app");
 let telaAtual = "inicio";
 let pacoteSelecionado = "charizard";
 const filtrosAlbum = { busca: "", pacote: "", raridade: "", mostrar: "todas" };
+// Cartas novas mostradas com o selo "NOVA" enquanto o jogador está no álbum
+let novasVisita = {};
 
 const LOJA = [
     { id: "p1", nome: "Pacote avulso", pacotes: 1, preco: 100, desc: "Um pacote para abrir quando quiser." },
@@ -46,12 +48,29 @@ const atualizarCabecalho = () => {
     const badge = $("#badge-album");
     badge.textContent = novas;
     badge.hidden = !novas;
-    const missoesProntas = MISSOES.filter((m) =>
+    const avisosInicio = Math.max(0, recompensasProntas() - estado.missoesVistas);
+    const badgeInicio = $("#badge-inicio");
+    badgeInicio.textContent = avisosInicio;
+    badgeInicio.hidden = !avisosInicio;
+};
+
+// Quantas recompensas (bônus diário + missões) estão prontas para resgatar
+const recompensasProntas = () =>
+    MISSOES.filter((m) =>
         !estado.diario.resgatadas.includes(m.id) && (estado.diario.progresso[m.campo] || 0) >= m.meta
     ).length + (estado.diario.bonus ? 0 : 1);
-    const badgeInicio = $("#badge-inicio");
-    badgeInicio.textContent = missoesProntas;
-    badgeInicio.hidden = !missoesProntas;
+
+// Limpa as notificações da barra de baixo ao abrir a tela correspondente
+const limparNotificacoes = (tela) => {
+    if (tela === "album" && Object.keys(estado.novas).length) {
+        Object.assign(novasVisita, estado.novas);
+        estado.novas = {};
+        salvar(false);
+    }
+    if (tela === "inicio" && estado.missoesVistas !== recompensasProntas()) {
+        estado.missoesVistas = recompensasProntas();
+        salvar(false);
+    }
 };
 
 const TELAS = {
@@ -65,7 +84,11 @@ const TELAS = {
 
 const navegar = () => {
     const [tela, arg] = location.hash.replace("#", "").split("/");
+    const anterior = telaAtual;
     telaAtual = TELAS[tela] ? tela : "inicio";
+    if (anterior === "album" && telaAtual !== "album") novasVisita = {};
+    limparNotificacoes(telaAtual);
+    atualizarCabecalho();
     $$(".nav-item").forEach((a) => a.classList.toggle("ativo", a.dataset.tela === telaAtual));
     TELAS[telaAtual](arg && decodeURIComponent(arg));
     ativarTilt(app);
@@ -73,6 +96,7 @@ const navegar = () => {
 };
 
 const renderizar = () => {
+    limparNotificacoes(telaAtual);
     TELAS[telaAtual]();
     ativarTilt(app);
 };
@@ -429,7 +453,7 @@ const cartasFiltradas = () => {
         if (filtrosAlbum.mostrar === "tenho" && !q) return false;
         if (filtrosAlbum.mostrar === "faltando" && q) return false;
         if (filtrosAlbum.mostrar === "repetidas" && q < 2) return false;
-        if (filtrosAlbum.mostrar === "novas" && !estado.novas[c.id]) return false;
+        if (filtrosAlbum.mostrar === "novas" && !novasVisita[c.id]) return false;
         if (busca && !(q && c.nome.toLowerCase().includes(busca)) && !c.id.includes(busca)) return false;
         return true;
     });
@@ -446,7 +470,7 @@ const htmlGradeAlbum = () => {
                 <span>#${c.id}</span><small>${RARIDADES[c.raridade].simbolo}</small>
             </button>`;
         }
-        return `<button class="slot-carta" data-acao="ver-carta" data-id="${c.id}">${htmlCarta(c, { qtd: q, nova: estado.novas[c.id] })}</button>`;
+        return `<button class="slot-carta" data-acao="ver-carta" data-id="${c.id}">${htmlCarta(c, { qtd: q, nova: novasVisita[c.id] })}</button>`;
     }).join("");
 };
 
@@ -491,6 +515,7 @@ const telaAlbum = () => {
 const verCarta = (id) => {
     const c = CARTA_POR_ID[id];
     const q = quantidade(id);
+    delete novasVisita[id];
     if (estado.novas[id]) {
         delete estado.novas[id];
         salvar();
@@ -948,5 +973,7 @@ sincronizarGratis();
 sincronizarDiario();
 sincronizarTrocas();
 slotVisto = estado.trocas.slot;
+limparNotificacoes("album");
+limparNotificacoes("inicio");
 atualizarCabecalho();
 navegar();
