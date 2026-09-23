@@ -184,30 +184,6 @@ const telaInicio = () => {
         </section>
 
         <section class="painel">
-            <h2>Coleção</h2>
-            <p class="destaque-texto">${unicas}/${TOTAL_CARTAS} cartas</p>
-            ${barra(unicas, TOTAL_CARTAS, "grossa")}
-            ${COLECOES.map((c) => {
-                const tenho = tenhoDe(c.cartas);
-                return `<div class="linha-progresso"><span>${c.nome}</span>${barra(tenho, c.total)}<small>${tenho}/${c.total}</small></div>`;
-            }).join("")}
-            <h3>Conquistas</h3>
-            <ul class="lista-missoes">
-                ${CONQUISTAS.map((c) => {
-                    const feita = estado.conquistas.includes(c.id);
-                    const pronta = unicas >= c.meta && !feita;
-                    return `
-                    <li class="${feita ? "feita" : ""}">
-                        <div><span>Colete ${c.meta} cartas diferentes</span><small><i class="ic-moeda"></i> ${numero(c.premio)}</small></div>
-                        <button class="btn pequeno ${pronta ? "dourado" : "desativado"}" data-acao="conquista" data-id="${c.id}" ${pronta ? "" : "disabled"}>
-                            ${feita ? "Feito" : "Resgatar"}
-                        </button>
-                    </li>`;
-                }).join("")}
-            </ul>
-        </section>
-
-        <section class="painel">
             <h2>Estatísticas</h2>
             <dl class="estatisticas">
                 <div><dt>Pacotes abertos</dt><dd>${numero(estado.stats.pacotes)}</dd></div>
@@ -218,6 +194,45 @@ const telaInicio = () => {
                 <div><dt>Pontos de pacote</dt><dd>${numero(estado.pontos)}</dd></div>
             </dl>
             <button class="btn perigo pequeno" data-acao="resetar">Apagar progresso</button>
+        </section>
+        <section class="painel largo">
+            <h2>Coleção</h2>
+            <p class="destaque-texto total-colecao">${unicas}/${TOTAL_CARTAS} cartas</p>
+            ${barra(unicas, TOTAL_CARTAS, "grossa")}
+            <div class="grade-expansoes">
+                ${COLECOES.map((c) => {
+                    const tenho = tenhoDe(c.cartas);
+                    return `
+                    <a class="expansao ${tenho === c.total ? "completa" : ""}" href="#album" data-acao="selecionar-colecao" data-id="${c.codigo}"
+                       style="--c1:${c.pacotes[0].cores[0]};--c2:${c.pacotes[0].cores[1]}" title="Ver ${c.nome} no álbum">
+                        <img src="${imagemSprite(c.pacotes[0].mascote)}" alt="" loading="lazy" draggable="false">
+                        <div>
+                            <b>${c.nome}</b>
+                            ${barra(tenho, c.total)}
+                            <small>${c.codigo} • ${tenho}/${c.total}</small>
+                        </div>
+                    </a>`;
+                }).join("")}
+            </div>
+        </section>
+
+        <section class="painel largo">
+            <h2>Conquistas</h2>
+            <ul class="grade-conquistas">
+                ${CONQUISTAS.map((c) => {
+                    const feita = estado.conquistas.includes(c.id);
+                    const pronta = unicas >= c.meta && !feita;
+                    return `
+                    <li class="${feita ? "feita" : pronta ? "pronta" : ""}">
+                        <b>${numero(c.meta)}</b>
+                        <span>cartas diferentes</span>
+                        <small><i class="ic-moeda"></i> ${numero(c.premio)}</small>
+                        ${feita ? `<em>Resgatado</em>`
+                            : pronta ? `<button class="btn pequeno dourado" data-acao="conquista" data-id="${c.id}">Resgatar</button>`
+                            : `${barra(unicas, c.meta)}<em>${numero(unicas)}/${numero(c.meta)}</em>`}
+                    </li>`;
+                }).join("")}
+            </ul>
         </section>
     </div>`;
 };
