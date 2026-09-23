@@ -97,7 +97,14 @@ export const substituirEstado = (novo) => {
 export const temProgresso = () => estado.stats.pacotes > 0 || Object.keys(estado.colecao).length > 0;
 
 // Apaga o progresso. Se houver conta conectada, o save zerado também vai para a nuvem.
-export const resetar = () => substituirEstado({ conta: estado.conta, som: estado.som });
+export const resetar = () =>
+    substituirEstado({
+        conta: estado.conta,
+        som: estado.som,
+        // Mantém a versão da nuvem para o save zerado conseguir substituir o antigo
+        nuvemBase: estado.nuvemBase,
+        entregasAplicadas: estado.entregasAplicadas,
+    });
 
 // Esquece o save deste aparelho (ao sair da conta)
 export const limparSaveLocal = () => {

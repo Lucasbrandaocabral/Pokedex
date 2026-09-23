@@ -25,7 +25,11 @@ const TIPOS = {
     ".png": "image/png", ".json": "application/json", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json",
 };
 
+// Mesmos cabeçalhos de segurança do vercel.json
+const CABECALHOS = JSON.parse(fs.readFileSync(path.join(RAIZ, "vercel.json"), "utf8")).headers[0].headers;
+
 http.createServer(async (req, res) => {
+    for (const { key, value } of CABECALHOS) res.setHeader(key, value);
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (url.pathname.startsWith("/api/")) {
         const arquivo = path.join(RAIZ, `${url.pathname.replace(/\/$/, "")}.js`);

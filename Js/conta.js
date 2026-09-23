@@ -453,7 +453,8 @@ export const iniciarConta = async () => {
         painel(`
             <h3>Sem conexão com o servidor</h3>
             <p class="sutil">Não foi possível conectar agora. Confira sua internet e tente de novo em alguns instantes.</p>
-            <button class="btn grande" onclick="location.reload()">Tentar de novo</button>`);
+            <button class="btn grande" id="tentar-de-novo">Tentar de novo</button>`);
+        $("#tentar-de-novo").addEventListener("click", () => location.reload());
     }
     atualizarBotao();
 };

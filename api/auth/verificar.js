@@ -5,10 +5,12 @@ import {
     rota, responder, lerCorpo, consulta, ErroHttp, lerToken, lerCookies, decifrar,
     verificarBloqueio, registrarFalha, iniciarSessao, gerarCodigosRecuperacao, hashCodigoRecuperacao,
     COOKIE_PENDENTE,
+    limitarTaxa, ipDe,
 } from "../_lib.js";
 import { validarCodigo } from "../_totp.js";
 
 export default rota(["POST"], async (req, res) => {
+    await limitarTaxa(`verificar:${ipDe(req)}`, 20, 15);
     const token = lerToken(lerCookies(req)[COOKIE_PENDENTE]);
     if (!token || !["configurar", "2fa"].includes(token.tipo)) throw new ErroHttp(401, "O tempo para digitar o código acabou. Entre de novo.");
     const codigo = String((await lerCorpo(req)).codigo || "").replace(/\s/g, "");
@@ -29,7 +31,7 @@ export default rota(["POST"], async (req, res) => {
             "UPDATE usuarios SET totp_ativo = TRUE, totp_ultimo = $2, codigos_recuperacao = $3, tentativas = 0, bloqueado_ate = NULL WHERE id = $1",
             [u.id, contador, hashes]
         );
-        iniciarSessao(res, u.id);
+        iniciarSessao(res, u.id, u.sessao_versao);
         return responder(res, 200, { usuario: u.usuario, codigosRecuperacao: codigos });
     }
 
@@ -58,7 +60,7 @@ export default rota(["POST"], async (req, res) => {
     }
 
     await consulta("UPDATE usuarios SET tentativas = 0, bloqueado_ate = NULL WHERE id = $1", [u.id]);
-    iniciarSessao(res, u.id);
+    iniciarSessao(res, u.id, u.sessao_versao);
     const [{ restantes }] = await consulta("SELECT cardinality(codigos_recuperacao) AS restantes FROM usuarios WHERE id = $1", [u.id]);
     responder(res, 200, { usuario: u.usuario, usouRecuperacao, codigosRestantes: Number(restantes) });
 });

@@ -208,6 +208,7 @@ export const telaPerfil = (app) => {
                 <button class="btn secundario" data-social="salvar-agora">Salvar agora</button>
                 <button class="btn secundario" data-social="trocar-nome">Mudar nome de usuário</button>
                 <button class="btn secundario" data-social="trocar-senha">Trocar senha</button>
+                <button class="btn secundario" data-social="sair-de-todos">Desconectar outros aparelhos</button>
                 <button class="btn perigo" data-social="sair">Sair da conta</button>
             </div>
         </section>
@@ -330,7 +331,7 @@ const modalTrocarSenha = () => {
         try {
             await acao("trocar-senha", { atual: form.atual.value, nova: form.nova.value });
             fecharModal();
-            aviso("Senha trocada com sucesso.", "sucesso");
+            aviso("Senha trocada! Os outros aparelhos conectados na sua conta foram desconectados.", "sucesso");
         } catch (err) {
             erro.textContent = err.message;
             erro.hidden = false;
@@ -713,6 +714,13 @@ const ACOES = {
         });
     },
     "salvar-agora": () => executar(salvarAgora, "Progresso salvo na nuvem."),
+    "sair-de-todos": async () => {
+        if (!(await confirmar("Desconectar outros aparelhos?", "Todos os outros celulares e computadores conectados na sua conta vão precisar entrar de novo. Este aparelho continua conectado.", "Desconectar"))) return;
+        await executar(async () => {
+            await salvarAgora();
+            await acao("sair-de-todos");
+        }, "Pronto! Só este aparelho continua conectado.");
+    },
     sair: sairDaConta,
     "aceitar-amigo": (el) => executar(() => acao("responder-amigo", { id: el.dataset.id, aceitar: true }), "Pedido aceito! Agora vocês são amigos."),
     "recusar-amigo": (el) => executar(() => acao("responder-amigo", { id: el.dataset.id, aceitar: false })),

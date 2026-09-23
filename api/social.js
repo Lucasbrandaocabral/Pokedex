@@ -14,7 +14,7 @@
 import crypto from "node:crypto";
 import {
     rota, responder, lerCorpo, consulta, exigirSessao, ErroHttp,
-    conferirSenha, gerarHashSenha,
+    conferirSenha, gerarHashSenha, renovarSessoes, limparSave,
 } from "./_lib.js";
 import { validarUsuario } from "./auth/cadastro.js";
 
@@ -87,14 +87,16 @@ const saoAmigos = async (a, b) => {
 // Dados públicos do perfil (sem coleção)
 const CAMPOS_PERFIL = `u.usuario, COALESCE(u.apelido, u.usuario) AS apelido, u.avatar, u.bio, u.vitrine,
     COALESCE((SELECT count(*) FROM jsonb_object_keys(COALESCE(s.dados->'colecao', '{}'::jsonb))), 0)::int AS cartas,
-    COALESCE((s.dados->'stats'->>'pacotes')::int, 0) AS pacotes`;
+    CASE WHEN jsonb_typeof(s.dados->'stats'->'pacotes') = 'number'
+         THEN LEAST(GREATEST((s.dados->'stats'->>'pacotes')::numeric, 0), 1000000000)::int ELSE 0 END AS pacotes`;
 
 const perfilPublico = (linha) => ({
     usuario: linha.usuario,
     apelido: linha.apelido,
     avatar: linha.avatar,
     bio: linha.bio,
-    vitrine: linha.vitrine || [],
+    // Só mostra na vitrine as cartas que a pessoa ainda tem
+    vitrine: (linha.vitrine || []).filter((id) => !linha.colecao || linha.colecao[id] > 0),
     cartas: Number(linha.cartas) || 0,
     pacotes: Number(linha.pacotes) || 0,
 });
@@ -105,10 +107,8 @@ const perfilPublico = (linha) => ({
 const alterarSave = async (uid, alterar) => {
     const [linha] = await consulta("SELECT dados FROM saves WHERE usuario_id = $1", [uid]);
     if (!linha) throw new ErroHttp(409, "Seu progresso ainda não foi salvo na nuvem. Tente de novo em alguns segundos.");
-    const dados = linha.dados;
-    const versao = Number(dados.salvoEm) || 0;
-    dados.colecao = dados.colecao || {};
-    dados.novas = dados.novas || {};
+    const versao = Number(linha.dados.salvoEm) || 0;
+    const dados = limparSave({ ...linha.dados, v: 1 });
     alterar(dados);
     dados.salvoEm = Math.max(Date.now(), versao + 1);
     dados.nuvemBase = dados.salvoEm;
@@ -167,7 +167,7 @@ const resumo = async (eu) => {
     await expirarTrocas(eu.id);
     const codigoAmigo = await garantirCodigoAmigo(eu.id);
     const [perfil] = await consulta(
-        `SELECT ${CAMPOS_PERFIL}, u.usuario_alterado_em + make_interval(days => $2) AS proxima_troca_nome
+        `SELECT ${CAMPOS_PERFIL}, s.dados->'colecao' AS colecao, u.usuario_alterado_em + make_interval(days => $2) AS proxima_troca_nome
          FROM usuarios u LEFT JOIN saves s ON s.usuario_id = u.id WHERE u.id = $1`,
         [eu.id, DIAS_ENTRE_TROCAS_DE_NOME]
     );
@@ -231,7 +231,9 @@ const verPerfil = async (eu, nome) => {
         [alvo.id]
     );
     const amigo = alvo.id === eu.id || (await saoAmigos(eu.id, alvo.id));
-    return { ...perfilPublico(linha), amigo, colecao: amigo ? linha.colecao || {} : null };
+    // A coleção passa pela mesma limpeza do save (ignora dados adulterados)
+    const colecao = amigo ? limparSave({ v: 1, colecao: linha.colecao }).colecao : null;
+    return { ...perfilPublico({ ...linha, colecao }), amigo, colecao };
 };
 
 // ---------------- POST ----------------
@@ -250,12 +252,18 @@ const ACOES = {
         return { ok: true };
     },
 
-    async "trocar-senha"(eu, corpo) {
+    async "trocar-senha"(eu, corpo, res) {
         const nova = String(corpo.nova || "");
         if (nova.length < 8 || nova.length > 128) throw new ErroHttp(400, "A nova senha precisa ter de 8 a 128 caracteres.");
         const [u] = await consulta("SELECT senha_hash FROM usuarios WHERE id = $1", [eu.id]);
         if (!(await conferirSenha(String(corpo.atual || ""), u.senha_hash))) throw new ErroHttp(400, "A senha atual está incorreta.");
         await consulta("UPDATE usuarios SET senha_hash = $2 WHERE id = $1", [eu.id, await gerarHashSenha(nova)]);
+        await renovarSessoes(res, eu.id); // desconecta os outros aparelhos
+        return { ok: true };
+    },
+
+    async "sair-de-todos"(eu, corpo, res) {
+        await renovarSessoes(res, eu.id);
         return { ok: true };
     },
 
@@ -398,5 +406,5 @@ export default rota(["GET", "POST"], async (req, res) => {
     const corpo = await lerCorpo(req);
     const acao = ACOES[corpo.acao];
     if (!acao) throw new ErroHttp(400, "Ação desconhecida.");
-    responder(res, 200, await acao(eu, corpo));
+    responder(res, 200, await acao(eu, corpo, res));
 });

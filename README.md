@@ -56,10 +56,17 @@ O login precisa de um servidor e de um banco de dados, então o jogo roda na Ver
 - 2FA obrigatório com códigos TOTP de 6 dígitos; cada código só pode ser usado uma vez
 - Segredo do 2FA criptografado no banco (AES-256-GCM)
 - 8 códigos de recuperação de uso único, guardados só como hash
-- Conta bloqueada por 15 minutos depois de 5 erros seguidos
+- Conta bloqueada por 15 minutos depois de 5 erros seguidos, e limite de tentativas de login e cadastro por IP
+- Trocar a senha desconecta os outros aparelhos; também há o botão "Desconectar outros aparelhos"
+- O servidor limpa o save recebido (cartas inexistentes, números absurdos), então um save adulterado não quebra a tela de ninguém
+- Cabeçalhos de segurança (Content-Security-Policy, X-Frame-Options, nosniff) e textos dos jogadores sempre escapados contra XSS
 - Sessão em cookie `HttpOnly`, `Secure` e `SameSite=Lax`, válida por 30 dias
 - Se o mesmo jogador usar dois aparelhos, o progresso mais novo nunca é sobrescrito por um aparelho desatualizado
 - Nas trocas, o servidor confere as cartas dos dois lados e cada troca só pode ser aceita uma vez, então não dá para duplicar cartas
+
+### Limites conhecidos
+
+O progresso (moedas, pacotes, cartas) é calculado no navegador e enviado ao servidor. Quem sabe programar consegue editar o próprio save para ter mais moedas ou cartas. O servidor impede dados inválidos e protege as trocas (reserva de cartas, cada troca só uma vez), mas não consegue saber se uma carta foi "ganha de verdade". Para bloquear isso seria preciso mover a abertura de pacotes e a economia para o servidor.
 
 ### Rodando no computador
 

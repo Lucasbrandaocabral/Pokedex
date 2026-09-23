@@ -3,6 +3,7 @@
 import {
     rota, responder, lerCorpo, consulta, ErroHttp, gerarHashSenha, cifrar,
     assinarToken, definirCookie, COOKIE_PENDENTE, DURACAO_PENDENTE,
+    limitarTaxa, ipDe,
 } from "../_lib.js";
 import { novoSegredo, dadosConfiguracao } from "../_totp.js";
 
@@ -20,6 +21,7 @@ export const validarSenha = (senha) => {
 };
 
 export default rota(["POST"], async (req, res) => {
+    await limitarTaxa(`cadastro:${ipDe(req)}`, 10, 60);
     const corpo = await lerCorpo(req);
     const usuario = validarUsuario(corpo.usuario);
     const senha = validarSenha(corpo.senha);

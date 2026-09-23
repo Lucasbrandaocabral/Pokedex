@@ -60,6 +60,12 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS vitrine TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_amigo TEXT UNIQUE;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS usuario_alterado_em TIMESTAMPTZ;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sessao_versao INT NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS limites (
+    chave TEXT PRIMARY KEY,
+    inicio TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    contagem INT NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS amizades (
     id SERIAL PRIMARY KEY,
     de_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -122,12 +128,24 @@ export const responder = (res, status, dados) => {
 
 // Lê o corpo JSON (a Vercel já entrega req.body; no servidor local lemos o stream)
 export const lerCorpo = async (req) => {
-    const tipo = req.headers["content-type"] || "";
-    if (!tipo.includes("application/json")) throw new ErroHttp(415, "Envie os dados como JSON.");
-    if (req.body !== undefined) {
-        if (typeof req.body === "string") return JSON.parse(req.body || "{}");
-        if (Buffer.isBuffer(req.body)) return JSON.parse(req.body.toString() || "{}");
-        return req.body;
+    // Só aceita "application/json" de verdade (evita formulários de outros sites)
+    const tipo = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+    if (tipo !== "application/json") throw new ErroHttp(415, "Envie os dados como JSON.");
+    let corpo;
+    try {
+        corpo = req.body; // a Vercel já entrega o corpo lido (e lança erro se o JSON for inválido)
+    } catch {
+        throw new ErroHttp(400, "JSON inválido.");
+    }
+    if (corpo !== undefined) {
+        try {
+            if (typeof corpo === "string") corpo = JSON.parse(corpo || "{}");
+            else if (Buffer.isBuffer(corpo)) corpo = JSON.parse(corpo.toString() || "{}");
+        } catch {
+            throw new ErroHttp(400, "JSON inválido.");
+        }
+        if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new ErroHttp(400, "JSON inválido.");
+        return corpo;
     }
     let tamanho = 0;
     const partes = [];
@@ -137,10 +155,12 @@ export const lerCorpo = async (req) => {
         partes.push(parte);
     }
     try {
-        return JSON.parse(Buffer.concat(partes).toString() || "{}");
+        corpo = JSON.parse(Buffer.concat(partes).toString() || "{}");
     } catch {
         throw new ErroHttp(400, "JSON inválido.");
     }
+    if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) throw new ErroHttp(400, "JSON inválido.");
+    return corpo;
 };
 
 // Envolve um handler: controla métodos aceitos e converte erros em JSON
@@ -250,14 +270,39 @@ export const COOKIE_PENDENTE = "pp_pendente";
 export const exigirSessao = async (req) => {
     const token = lerToken(lerCookies(req)[COOKIE_SESSAO]);
     if (!token || token.tipo !== "sessao") throw new ErroHttp(401, "Você não está conectado.");
-    const [usuario] = await consulta("SELECT id, usuario FROM usuarios WHERE id = $1 AND totp_ativo", [token.uid]);
-    if (!usuario) throw new ErroHttp(401, "Você não está conectado.");
+    const [usuario] = await consulta("SELECT id, usuario, sessao_versao FROM usuarios WHERE id = $1 AND totp_ativo", [token.uid]);
+    if (!usuario || (token.v || 0) !== usuario.sessao_versao) throw new ErroHttp(401, "Você não está conectado.");
     return usuario;
 };
 
-export const iniciarSessao = (res, uid) => {
+export const iniciarSessao = (res, uid, versao = 0) => {
     apagarCookie(res, COOKIE_PENDENTE);
-    definirCookie(res, COOKIE_SESSAO, assinarToken({ uid, tipo: "sessao" }, DURACAO_SESSAO), DURACAO_SESSAO);
+    definirCookie(res, COOKIE_SESSAO, assinarToken({ uid, tipo: "sessao", v: versao }, DURACAO_SESSAO), DURACAO_SESSAO);
+};
+
+// Invalida todas as sessões da conta e mantém só a deste aparelho
+export const renovarSessoes = async (res, uid) => {
+    const [u] = await consulta("UPDATE usuarios SET sessao_versao = sessao_versao + 1 WHERE id = $1 RETURNING sessao_versao", [uid]);
+    iniciarSessao(res, uid, u.sessao_versao);
+};
+
+// ---------------- Limite de tentativas por IP ----------------
+export const ipDe = (req) =>
+    String(req.headers["x-real-ip"] || req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "?").split(",")[0].trim();
+
+// Conta tentativas numa janela de tempo; passou do máximo, responde 429
+export const limitarTaxa = async (chave, maximo, minutos) => {
+    if (process.env.LIMITE_IP === "desligado") return; // só para testes locais
+    const [r] = await consulta(
+        `INSERT INTO limites (chave, inicio, contagem) VALUES ($1, NOW(), 1)
+         ON CONFLICT (chave) DO UPDATE SET
+            contagem = CASE WHEN limites.inicio < NOW() - make_interval(mins => $2) THEN 1 ELSE limites.contagem + 1 END,
+            inicio = CASE WHEN limites.inicio < NOW() - make_interval(mins => $2) THEN NOW() ELSE limites.inicio END
+         RETURNING contagem`,
+        [chave, minutos]
+    );
+    if (Math.random() < 0.02) await consulta("DELETE FROM limites WHERE inicio < NOW() - INTERVAL '1 day'");
+    if (r.contagem > maximo) throw new ErroHttp(429, "Muitas tentativas a partir desta rede. Espere alguns minutos e tente de novo.");
 };
 
 // ---------------- Bloqueio por tentativas ----------------
@@ -279,3 +324,40 @@ export const registrarFalha = (uid) =>
     );
 
 export const limparFalhas = (uid) => consulta("UPDATE usuarios SET tentativas = 0, bloqueado_ate = NULL WHERE id = $1", [uid]);
+
+// ---------------- Save: só aceita dados com o formato certo ----------------
+const inteiro = (valor, min, max, padrao = 0) =>
+    Number.isInteger(valor) ? Math.min(Math.max(valor, min), max) : padrao;
+
+const idCartaValido = (id) => /^\d{3}$/.test(id) && Number(id) >= 1 && Number(id) <= 200;
+
+// Remove cartas inexistentes, quantidades absurdas e números inválidos.
+// Assim um save adulterado não quebra a tela de ninguém.
+export const limparSave = (dados) => {
+    if (!dados || typeof dados !== "object" || Array.isArray(dados) || dados.v !== 1) throw new ErroHttp(400, "Save inválido.");
+    const colecao = {};
+    for (const [id, q] of Object.entries(dados.colecao && typeof dados.colecao === "object" ? dados.colecao : {})) {
+        if (idCartaValido(id) && Number.isInteger(q) && q > 0) colecao[id] = Math.min(q, 9999);
+    }
+    const novas = {};
+    for (const id of Object.keys(dados.novas && typeof dados.novas === "object" ? dados.novas : {})) {
+        if (colecao[id]) novas[id] = true;
+    }
+    const stats = dados.stats && typeof dados.stats === "object" && !Array.isArray(dados.stats) ? dados.stats : {};
+    return {
+        ...dados,
+        colecao,
+        novas,
+        moedas: inteiro(dados.moedas, 0, 1e9),
+        pontos: inteiro(dados.pontos, 0, 1e9),
+        comprados: inteiro(dados.comprados, 0, 1e6),
+        salvoEm: inteiro(dados.salvoEm, 0, 8.64e15),
+        nuvemBase: inteiro(dados.nuvemBase, 0, 8.64e15),
+        stats: {
+            pacotes: inteiro(stats.pacotes, 0, 1e9),
+            trocas: inteiro(stats.trocas, 0, 1e9),
+            vendidas: inteiro(stats.vendidas, 0, 1e9),
+            godPacks: inteiro(stats.godPacks, 0, 1e9),
+        },
+    };
+};
