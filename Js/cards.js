@@ -117,8 +117,8 @@ const gerarAtaques = (p, bonus = 0, variacao = 0) => {
 };
 
 // Pokémon base já organizados
-const BASE = POKEMON.map(([id, nome, tipos, hp, ataque, defesa, total, estagio, lendario, evolui]) => ({
-    id, nome, tipos, hp, ataque, defesa, total, estagio, lendario: !!lendario, evolui: !!evolui,
+const BASE = POKEMON.map(([id, nome, tipos, hp, ataque, defesa, total, estagio, lendario, evolui, altura, peso, evoluiDe]) => ({
+    id, nome, tipos, hp, ataque, defesa, total, estagio, lendario: !!lendario, evolui: !!evolui, altura, peso, evoluiDe,
 }));
 export const POKEMON_POR_ID = Object.fromEntries(BASE.map((p) => [p.id, p]));
 
@@ -140,6 +140,9 @@ const criarCarta = (numero, p, variante, raridade, extra = {}, ajuste = 0) => {
         colecao: "A1",
         ataques: gerarAtaques(p, ex ? 40 : 0, ajuste),
         fraqueza: TIPOS[p.tipos[0]].fraqueza,
+        altura: p.altura / 10, // metros
+        peso: p.peso / 10, // quilos
+        evoluiDe: p.evoluiDe ? nomeBonito(POKEMON_POR_ID[p.evoluiDe].nome) : null,
         recuo: limitar(p.estagio + (p.total >= 500 ? 1 : 0) + (p.defesa >= 100 ? 1 : 0), 0, 4),
         ...extra,
     };

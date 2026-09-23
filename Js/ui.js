@@ -25,8 +25,38 @@ export const formatarTempo = (ms) => {
 const ESTAGIOS = ["Básico", "Estágio 1", "Estágio 2"];
 const FULL_ART = ["arte", "sr", "im", "coroa"];
 
-export const iconeTipo = (tipo) =>
-    `<span class="icone-tipo" style="--cor:${TIPOS[tipo].cor}" title="${TIPOS[tipo].nome}"></span>`;
+// Símbolo de cada tipo (desenhado em branco dentro da bolinha colorida).
+// "f" = forma preenchida, "s" = só traço.
+const SIMBOLOS = {
+    normal: { f: "M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6l-5.4 2.9 1.2-6-4.5-4.2 6.1-.7z" },
+    fire: { f: "M12 2c1 3.5 5 5.6 5 10.6a5 5 0 0 1-10 0c0-2 .9-3.6 2-4.6.1 2 1 3 2 3.3C11 8 10.4 5 12 2z" },
+    water: { f: "M12 2.5C9 7 6 10.5 6 14a6 6 0 0 0 12 0c0-3.5-3-7-6-11.5z" },
+    electric: { f: "M13.5 2L5 13.5h5.5L9.5 22 19 9.5h-5.5z" },
+    grass: { f: "M20 4C11 4 5 8.5 5 15c0 1.6.4 3 1 4l-2 2 1 1 2.2-2.2c1.3.8 2.8 1.2 4.3 1.2C17.5 21 20 14 20 4zM8.5 18.5c2-4.8 5-8 9-10-3.6 2.6-6.2 5.8-8 10.6z" },
+    ice: { s: "M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5" },
+    fighting: { f: "M6 9.5a2 2 0 0 1 3-1.7V6a2 2 0 0 1 4 0v.3a2 2 0 0 1 4 .2V8a2 2 0 0 1 3 1.7V14c0 4-3 7-7 7s-7-3-7-6.5z" },
+    poison: { f: "M3.5 13.5a5 5 0 1 0 10 0 5 5 0 1 0-10 0zM14 6.5a3 3 0 1 0 6 0 3 3 0 1 0-6 0zM15 16.5a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0z" },
+    ground: { f: "M2 19.5l7-11 4 6 3-4 6 9z" },
+    flying: { f: "M3 17.5C8 17.5 13 13 21 4c-1 7-4 13-10 15H5l3-1.5z" },
+    psychic: { f: "M12 6C7 6 3.5 9 2 12c1.5 3 5 6 10 6s8.5-3 10-6c-1.5-3-5-6-10-6zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" },
+    bug: { f: "M8 14a4 5.5 0 1 0 8 0 4 5.5 0 1 0-8 0zM9.5 6.5a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0z" },
+    rock: { f: "M7 4l8-1.5 6 7.5-3 10H6l-3-8z" },
+    ghost: { f: "M12 3a7 7 0 0 0-7 7v11l2.5-2 2.3 2 2.2-2 2.2 2 2.3-2 2.5 2V10a7 7 0 0 0-7-7zm-2.5 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" },
+    dragon: { f: "M4 3c3 6 8 9 16.5 9-5.2 2-8.3 5-9.5 9.5-1-6.2-4-11.5-7-18.5z" },
+    dark: { f: "M15 3a9 9 0 1 0 6.3 15A8 8 0 0 1 15 3z" },
+    steel: { f: "M12 2l8.5 5v10L12 22l-8.5-5V7zm0 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" },
+    fairy: { f: "M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z" },
+};
+
+const svgTipo = (tipo) => {
+    const { f, s } = SIMBOLOS[tipo] || SIMBOLOS.normal;
+    return f
+        ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${f}"/></svg>`
+        : `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="${s}"/></svg>`;
+};
+
+export const iconeTipo = (tipo, classe = "") =>
+    `<span class="icone-tipo ${classe}" style="--cor:${TIPOS[tipo].cor}" title="${TIPOS[tipo].nome}">${svgTipo(tipo)}</span>`;
 
 // Ícones de traço simples (usam a cor do texto)
 const ICONES = {
@@ -43,19 +73,35 @@ export const icone = (nome) =>
     `<svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome]}</svg>`;
 
 // Nomes compridos (ex.: "Gyarados ex") diminuem um pouco para caber
-const tamanhoNome = (nome) => (nome.length > 10 ? `style="font-size:${(7 * Math.max(0.72, 10 / nome.length)).toFixed(2)}cqw"` : "");
+const tamanhoNome = (nome) => (70 / nome.length < 7.4 ? `style="font-size:${Math.max(4.6, 70 / nome.length).toFixed(2)}cqw"` : "");
+
+const decimal = (n) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+// "Charizard ex" → Charizard + selo "ex" estilizado
+const nomeDaCarta = (c) => {
+    const nome = c.nomeFace || c.nome;
+    const ex = nome.endsWith(" ex");
+    const base = ex ? nome.slice(0, -3) : nome;
+    return `<span class="carta-nome" ${tamanhoNome(nome)}>${base}${ex ? `<i class="selo-ex">ex</i>` : ""}</span>`;
+};
 
 export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
     <div class="carta r${c.raridade} v-${c.variante} ${FULL_ART.includes(c.variante) ? "full-art" : ""} ${classe}"
          data-id="${c.id}" style="--cor:${TIPOS[c.tipo].cor}">
         <div class="carta-face">
-            <div class="carta-arte"><img src="${c.imagem}" alt="${c.nome}" loading="lazy" draggable="false">${c.forma ? `<span class="carta-forma">${c.forma}</span>` : ""}</div>
+            <span class="carta-marca">${svgTipo(c.tipo)}</span>
             <div class="carta-topo">
                 <span class="carta-estagio">${ESTAGIOS[c.estagio]}</span>
-                <span class="carta-nome" ${tamanhoNome(c.nomeFace || c.nome)}>${c.nomeFace || c.nome}</span>
+                ${nomeDaCarta(c)}
                 <span class="carta-hp"><small>PS</small>${c.hp}</span>
-                ${iconeTipo(c.tipo)}
+                ${iconeTipo(c.tipo, "grande")}
             </div>
+            <div class="carta-arte">
+                <img src="${c.imagem}" alt="${c.nome}" loading="lazy" draggable="false">
+                ${c.evoluiDe ? `<span class="carta-evolui">Evolui de <b>${c.evoluiDe}</b></span>` : ""}
+                ${c.forma ? `<span class="carta-forma">${c.forma}</span>` : ""}
+            </div>
+            <div class="carta-dex">Nº ${String(c.pid).padStart(3, "0")} · ${TIPOS[c.tipo].nome} · Alt. ${decimal(c.altura)} m · ${decimal(c.peso)} kg</div>
             <div class="carta-corpo">
                 <div class="carta-ataques">
                     ${c.ataques.map((a, i) => `
@@ -66,11 +112,11 @@ export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
                         </div>`).join("")}
                 </div>
                 <div class="carta-rodape">
-                    <span>Fraqueza ${iconeTipo(c.fraqueza)}+20</span>
-                    <span>Recuo ${"●".repeat(c.recuo) || "—"}</span>
+                    <span><small>Fraqueza</small>${iconeTipo(c.fraqueza)}<b>+20</b></span>
+                    <span><small>Recuo</small>${c.recuo ? iconeTipo("normal", "incolor").repeat(c.recuo) : "<b>—</b>"}</span>
                 </div>
                 <div class="carta-info">
-                    <span>${numeroCarta(c)}</span>
+                    <span><i class="carta-colecao">${c.colecao}</i>${numeroCarta(c).replace(`${c.colecao} `, "")}</span>
                     <span class="carta-raridade">${RARIDADES[c.raridade].simbolo}</span>
                 </div>
             </div>

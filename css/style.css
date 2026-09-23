@@ -348,59 +348,119 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     container-type: inline-size;
     position: relative; width: 100%; aspect-ratio: 63 / 88;
     border-radius: 5% / 3.6%;
-    background: linear-gradient(145deg, #f7e27b, #d9b23c 40%, #fff1a8 55%, #caa033);
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+    /* moldura amarela clássica, com reflexo metálico */
+    background: linear-gradient(160deg, #fbe78a, #e8c04a 28%, #fff4bd 47%, #d6a82c 70%, #f6da73);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), inset 0 0 0 0.6cqw rgba(120, 84, 0, 0.35);
     transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
     transition: transform 0.4s ease;
     overflow: hidden; text-align: left; color: #1b1b1b;
 }
+/* reflexo fixo na moldura */
+.carta::before {
+    content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit;
+    background: linear-gradient(125deg, rgba(255, 255, 255, 0.4) 0%, transparent 22%, transparent 72%, rgba(255, 255, 255, 0.18) 100%);
+}
 .carta.inclinada { transition: transform 0.06s linear; }
 .carta-face {
-    position: absolute; inset: 3.5cqw; border-radius: 3cqw; overflow: hidden;
-    display: flex; flex-direction: column; gap: 2cqw; padding: 3cqw;
-    background: linear-gradient(170deg, color-mix(in srgb, var(--cor) 35%, #fff), color-mix(in srgb, var(--cor) 70%, #fff) 60%, color-mix(in srgb, var(--cor) 50%, #fff));
+    position: absolute; inset: 3.2cqw; border-radius: 2.6cqw; overflow: hidden;
+    display: flex; flex-direction: column; gap: 1.4cqw; padding: 2.4cqw 3cqw 2.2cqw;
+    background:
+        radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.6), transparent 42%),
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0 1.2cqw, transparent 1.2cqw 2.4cqw),
+        linear-gradient(172deg, color-mix(in srgb, var(--cor) 28%, #fff), color-mix(in srgb, var(--cor) 60%, #fff) 55%, color-mix(in srgb, var(--cor) 42%, #fff));
+    box-shadow: inset 0 0 0 0.5cqw rgba(0, 0, 0, 0.18);
 }
-.carta-topo { order: 1; display: flex; align-items: center; gap: 1.5cqw; position: relative; z-index: 2; }
-.carta-estagio { font-size: 3.6cqw; background: rgba(0, 0, 0, 0.18); padding: 0.5cqw 1.8cqw; border-radius: 99px; white-space: nowrap; font-weight: 700; }
-.carta-nome { flex: 1; font-weight: 800; font-size: 7cqw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.carta-forma {
-    position: absolute; top: 3cqw; left: 3cqw; z-index: 2; padding: 0.5cqw 2.5cqw; border-radius: 2cqw;
-    background: var(--tinta); color: #fff; font-size: 4.2cqw; font-weight: 800; text-transform: uppercase;
+/* símbolo do tipo bem grande e clarinho, como marca d'água */
+.carta-marca { position: absolute; right: -10cqw; bottom: 4cqw; width: 62cqw; color: rgba(255, 255, 255, 0.3); pointer-events: none; }
+.carta-marca svg { display: block; width: 100%; }
+
+.carta-topo { display: flex; align-items: center; gap: 1.2cqw; position: relative; z-index: 2; min-height: 8cqw; }
+.carta-estagio {
+    font-size: 2.6cqw; font-weight: 800; text-transform: uppercase; white-space: nowrap;
+    padding: 0.4cqw 1.3cqw; border-radius: 99px; background: rgba(255, 255, 255, 0.6); border: 0.35cqw solid rgba(0, 0, 0, 0.25);
 }
-.carta.full-art .carta-forma { top: 15cqw; }
-.carta-hp { font-weight: 800; font-size: 6.5cqw; white-space: nowrap; }
-.carta-hp small { font-size: 3.5cqw; margin-right: 0.5cqw; }
+.carta-nome { flex: 1; min-width: 0; font-weight: 800; font-size: 7.4cqw; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.selo-ex {
+    font-style: italic; font-weight: 900; margin-left: 0.8cqw; font-size: 1.1em; color: #fff;
+    -webkit-text-stroke: 0.55cqw #1b1b1b; paint-order: stroke fill; letter-spacing: -0.04em;
+}
+.carta-hp { font-weight: 900; font-size: 7.2cqw; white-space: nowrap; letter-spacing: -0.03em; }
+.carta-hp small { font-size: 3cqw; font-weight: 800; margin-right: 0.4cqw; }
 .icone-tipo {
-    display: inline-grid; place-items: center; width: 6.5cqw; height: 6.5cqw; border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.75) 0 18%, transparent 20%), var(--cor);
-    border: 0.5cqw solid rgba(0, 0, 0, 0.55);
+    display: inline-grid; place-items: center; flex-shrink: 0; width: 6cqw; height: 6cqw; border-radius: 50%; color: #fff;
+    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55) 0 16%, transparent 38%), var(--cor);
+    border: 0.45cqw solid rgba(0, 0, 0, 0.55); box-shadow: 0 0.3cqw 0 rgba(0, 0, 0, 0.25);
 }
+.icone-tipo svg { width: 68%; height: 68%; filter: drop-shadow(0 0.2cqw 0 rgba(0, 0, 0, 0.35)); }
+.icone-tipo.grande { width: 7.4cqw; height: 7.4cqw; }
+.icone-tipo.incolor { --cor: #eeeae0 !important; color: #77736a; }
+.icone-tipo.incolor svg { filter: none; }
+
+/* Janela da arte, com um "cenário" na cor do tipo */
 .carta-arte {
-    order: 2; position: relative; height: 44%;
-    border: 1.2cqw solid #d8b64a; border-radius: 1.5cqw;
-    background: radial-gradient(circle at 50% 60%, #fff, color-mix(in srgb, var(--cor) 55%, #fff) 70%);
+    --cena:
+        radial-gradient(ellipse 75% 26% at 50% 104%, color-mix(in srgb, var(--cor) 65%, #000) 0 60%, transparent 62%),
+        radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.95) 0 10%, transparent 46%),
+        repeating-conic-gradient(from 0deg at 50% 40%, rgba(255, 255, 255, 0.2) 0 6deg, transparent 6deg 18deg),
+        linear-gradient(180deg, color-mix(in srgb, var(--cor) 22%, #fff), color-mix(in srgb, var(--cor) 72%, #fff));
+    position: relative; height: 50cqw; flex-shrink: 0;
+    border: 1.1cqw solid transparent; border-radius: 1.4cqw;
+    background: var(--cena) padding-box, linear-gradient(135deg, #fff6c9, #b8871f 40%, #fff1a8 60%, #a77a12) border-box;
+    box-shadow: inset 0 0 3cqw rgba(0, 0, 0, 0.22), 0 0.6cqw 0 rgba(0, 0, 0, 0.12);
     display: grid; place-items: center; overflow: hidden;
 }
-.carta-arte img { width: 88%; height: 100%; object-fit: contain; filter: drop-shadow(0 1.5cqw 1.5cqw rgba(0, 0, 0, 0.35)); }
-.carta-corpo { order: 3; flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; z-index: 2; }
-.carta-ataques { display: flex; flex-direction: column; gap: 1.5cqw; margin-top: 1cqw; }
-.carta-ataque { display: flex; align-items: center; gap: 2cqw; font-size: 5.2cqw; font-weight: 800; }
-.carta-ataque .custo { display: flex; gap: 0.5cqw; min-width: 15cqw; }
-.carta-ataque .custo .icone-tipo { width: 5cqw; height: 5cqw; font-size: 3cqw; }
-.carta-ataque .nome-ataque { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.carta-ataque .dano { font-size: 6.5cqw; }
-.carta-rodape { display: flex; justify-content: space-between; font-size: 3.5cqw; font-weight: 600; border-top: 0.4cqw solid rgba(0, 0, 0, 0.2); padding-top: 1.2cqw; }
-.carta-rodape .icone-tipo { width: 4.5cqw; height: 4.5cqw; font-size: 2.6cqw; }
-.carta-info { display: flex; justify-content: space-between; align-items: center; font-size: 3.6cqw; font-weight: 700; }
-.carta-raridade { font-size: 4.5cqw; letter-spacing: -0.3cqw; }
+.carta-arte img { position: relative; z-index: 1; width: 90%; height: 100%; object-fit: contain; filter: drop-shadow(0 2cqw 1.4cqw rgba(0, 0, 0, 0.35)); }
+.carta-evolui {
+    position: absolute; top: 1.2cqw; left: 1.2cqw; z-index: 2; font-size: 2.8cqw; white-space: nowrap;
+    padding: 0.4cqw 1.6cqw; border-radius: 99px; background: rgba(255, 255, 255, 0.88); border: 0.3cqw solid rgba(0, 0, 0, 0.25);
+}
+.carta-forma {
+    position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 2; padding: 0.4cqw 2cqw; border-radius: 99px;
+    background: #1b1b1b; color: #fff; font-size: 3.2cqw; font-weight: 800; text-transform: uppercase;
+}
+/* Faixa com os dados da Pokédex, logo abaixo da arte */
+.carta-dex {
+    position: relative; z-index: 2; margin: -0.6cqw 5cqw 0; padding: 0.5cqw 2cqw; border-radius: 99px;
+    font-size: 2.8cqw; font-style: italic; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: #5a4210; background: linear-gradient(90deg, #e9c55a, #fff3bd 50%, #e9c55a);
+    box-shadow: 0 0.3cqw 0 rgba(0, 0, 0, 0.15);
+}
 
-/* Brilho holográfico */
-.carta-brilho { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; mix-blend-mode: color-dodge; opacity: 0; transition: opacity 0.3s; }
+.carta-corpo { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; z-index: 2; }
+.carta-ataques { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.carta-ataque {
+    display: grid; grid-template-columns: 17cqw 1fr auto; align-items: center; gap: 1.4cqw;
+    padding: 1.3cqw 0.4cqw; font-size: 5.3cqw; font-weight: 800; border-bottom: 0.3cqw solid rgba(0, 0, 0, 0.12);
+}
+.carta-ataque:last-child { border-bottom: none; }
+.carta-ataque .custo { display: flex; flex-wrap: wrap; gap: 0.5cqw; }
+.carta-ataque .custo .icone-tipo { width: 4.8cqw; height: 4.8cqw; }
+.carta-ataque .nome-ataque { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carta-ataque .dano { font-size: 7.4cqw; font-weight: 900; letter-spacing: -0.03em; }
+.carta-rodape {
+    display: flex; justify-content: space-between; align-items: center; gap: 2cqw;
+    padding: 0.9cqw 2cqw; border-radius: 1.6cqw; background: rgba(255, 255, 255, 0.45); font-size: 3.2cqw;
+}
+.carta-rodape span { display: flex; align-items: center; gap: 0.7cqw; }
+.carta-rodape small { font-size: 2.7cqw; font-weight: 800; text-transform: uppercase; opacity: 0.7; margin-right: 0.4cqw; }
+.carta-rodape .icone-tipo { width: 4.4cqw; height: 4.4cqw; }
+.carta-info { display: flex; justify-content: space-between; align-items: center; margin-top: 1.2cqw; font-size: 3.2cqw; font-weight: 700; }
+.carta-colecao { font-style: normal; background: #1b1b1b; color: #fff; padding: 0.2cqw 1.2cqw; border-radius: 0.8cqw; margin-right: 1.2cqw; font-size: 2.9cqw; }
+.carta-raridade { font-size: 4.4cqw; letter-spacing: -0.3cqw; }
+
+/* Cartas pequenas (grade do álbum): só o essencial */
+@container (max-width: 175px) {
+    .carta-dex, .carta-evolui, .carta-rodape small, .carta-estagio { display: none; }
+    .carta-arte { height: 54cqw; }
+}
+
+/* Brilho holográfico ao passar o dedo/mouse */
+.carta-brilho { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; mix-blend-mode: color-dodge; opacity: 0; transition: opacity 0.3s; }
 .carta.inclinada .carta-brilho { opacity: 1; }
 .carta.r1 .carta-brilho, .carta.r2 .carta-brilho { background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.35), transparent 50%); }
 .carta.r3 .carta-brilho { background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.55), transparent 55%); }
 .carta.r4 .carta-brilho, .carta.r5 .carta-brilho, .carta.r6 .carta-brilho, .carta.r7 .carta-brilho {
-    opacity: 0.35;
+    opacity: 0.15;
     background:
         radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.7), transparent 45%),
         linear-gradient(115deg, transparent 20%, #ff6ec4 35%, #7873f5 45%, #4ade80 55%, #fde047 65%, transparent 80%);
@@ -408,38 +468,82 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
     background-position: center, var(--mx) var(--my);
 }
 .carta.r8 .carta-brilho {
-    opacity: 0.45;
+    opacity: 0.25;
     background:
         radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.8), transparent 40%),
         repeating-linear-gradient(120deg, rgba(255, 215, 0, 0.5) 0 3%, rgba(255, 255, 255, 0.2) 5%, rgba(255, 180, 0, 0.5) 8%);
     background-size: 100% 100%, 300% 300%;
     background-position: center, var(--mx) var(--my);
 }
+.carta.inclinada:is(.r4, .r5, .r6, .r7, .r8) .carta-brilho { opacity: 0.6; }
+/* Raras (◆◆◆): arte holográfica atrás do Pokémon, como as cartas holo clássicas */
+.carta.r3.v-base .carta-arte::after {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; mix-blend-mode: overlay; opacity: 0.5;
+    background:
+        repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.35) 0 1.5cqw, transparent 1.5cqw 4cqw),
+        linear-gradient(115deg, #ff6ec4, #7873f5 30%, #4ade80 55%, #fde047 80%, #ff6ec4);
+    background-size: 100% 100%, 300% 300%;
+    background-position: center, var(--mx) var(--my);
+    transition: background-position 0.2s;
+}
 
 /* Moldura ex (prateada) */
-.carta.v-ex { background: linear-gradient(145deg, #e8ecf4, #9aa3b5 35%, #ffffff 50%, #8b93a6 70%, #dfe4ee); }
-.carta.v-ex .carta-nome::after { content: ""; }
-.carta.v-ex .carta-face { background: linear-gradient(170deg, color-mix(in srgb, var(--cor) 55%, #fff), color-mix(in srgb, var(--cor) 85%, #000) 110%); }
-.carta.v-ex .carta-arte { border-color: #c9d1e0; }
+.carta.v-ex { background: linear-gradient(160deg, #f4f6fb, #a9b1c2 28%, #ffffff 46%, #8e97aa 68%, #e3e7ef); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), inset 0 0 0 0.6cqw rgba(60, 70, 90, 0.35); }
+.carta.v-ex .carta-face {
+    background:
+        radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.45), transparent 40%),
+        repeating-linear-gradient(60deg, rgba(255, 255, 255, 0.1) 0 1cqw, transparent 1cqw 2cqw),
+        linear-gradient(172deg, color-mix(in srgb, var(--cor) 55%, #fff), color-mix(in srgb, var(--cor) 85%, #000) 105%);
+}
+.carta.v-ex .carta-arte { background: var(--cena) padding-box, linear-gradient(135deg, #ffffff, #8e97aa 40%, #f4f6fb 60%, #6f788c) border-box; }
+.carta.v-ex .carta-dex { color: #2c3140; background: linear-gradient(90deg, #aab2c3, #f4f6fb 50%, #aab2c3); }
+.carta.v-ex .carta-corpo { color: #fff; text-shadow: 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.6); }
+.carta.v-ex .carta-ataque { border-color: rgba(255, 255, 255, 0.22); }
+.carta.v-ex .carta-rodape { background: rgba(0, 0, 0, 0.25); }
+.carta.v-ex .carta-colecao { background: #fff; color: #1b1b1b; text-shadow: none; }
 
 /* Artes completas (☆, ☆☆, ☆☆☆, ♛) */
-.carta.full-art .carta-arte { position: absolute; inset: 0; height: auto; border: none; border-radius: 0; z-index: 0; }
-.carta.full-art .carta-arte img { width: 100%; height: 72%; margin-top: -8%; }
+.carta.full-art .carta-face { inset: 2.2cqw; }
+.carta.full-art .carta-arte { position: absolute; inset: 0; height: auto; border: none; border-radius: 0; z-index: 0; box-shadow: none; }
+.carta.full-art .carta-arte img { width: 100%; height: 74%; margin-top: -6%; }
+.carta.full-art .carta-dex, .carta.full-art .carta-marca { display: none; }
+.carta.full-art .carta-evolui { top: 12cqw; left: 3cqw; }
+.carta.full-art .carta-forma { top: 12cqw; right: 3cqw; }
 .carta.full-art .carta-topo, .carta.full-art .carta-corpo { color: #fff; text-shadow: 0 0.3cqw 1cqw rgba(0, 0, 0, 0.8); }
 .carta.full-art .carta-corpo { justify-content: flex-end; gap: 1cqw; }
-.carta.full-art .carta-ataques { background: rgba(0, 0, 0, 0.35); border-radius: 2cqw; padding: 1.5cqw 2cqw; backdrop-filter: blur(2px); }
-.carta.full-art .carta-estagio { background: rgba(255, 255, 255, 0.25); }
-.carta.full-art .carta-rodape { border-color: rgba(255, 255, 255, 0.3); }
+.carta.full-art .carta-ataques { flex: 0; background: rgba(0, 0, 0, 0.38); border-radius: 2cqw; padding: 0.6cqw 2cqw; backdrop-filter: blur(2px); }
+.carta.full-art .carta-ataque { border-color: rgba(255, 255, 255, 0.2); }
+.carta.full-art .carta-estagio { background: rgba(255, 255, 255, 0.25); border-color: rgba(255, 255, 255, 0.4); }
+.carta.full-art .carta-rodape { background: rgba(0, 0, 0, 0.3); }
+.carta.full-art .carta-colecao { background: #fff; color: #1b1b1b; text-shadow: none; }
+/* purpurina por cima da arte */
+.carta.full-art .carta-face::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; opacity: 0.7;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 0.3cqw, transparent 0.5cqw),
+        radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 0.2cqw, transparent 0.4cqw),
+        radial-gradient(circle, rgba(255, 250, 200, 0.8) 0 0.25cqw, transparent 0.45cqw);
+    background-size: 13cqw 17cqw, 19cqw 11cqw, 23cqw 29cqw;
+    background-position: 2cqw 3cqw, 9cqw 7cqw, 15cqw 1cqw;
+}
 
-.carta.v-arte { background: linear-gradient(145deg, #fff, #e7e7e7); }
-.carta.v-arte .carta-arte { background: radial-gradient(circle at 50% 40%, #fff 0%, color-mix(in srgb, var(--cor) 50%, #fff) 45%, color-mix(in srgb, var(--cor) 80%, #222) 100%); }
+.carta.v-arte { background: linear-gradient(160deg, #ffffff, #dcdcdc 35%, #ffffff 55%, #cfcfcf); }
+.carta.v-arte .carta-arte { background: radial-gradient(circle at 50% 38%, #fff 0%, color-mix(in srgb, var(--cor) 50%, #fff) 45%, color-mix(in srgb, var(--cor) 80%, #222) 100%); }
 
-.carta.v-sr { background: linear-gradient(145deg, #e8ecf4, #9aa3b5 35%, #fff 50%, #8b93a6 70%, #dfe4ee); }
-.carta.v-sr .carta-arte { background: conic-gradient(from 0deg at 50% 45%, var(--cor), #ff6ec4, #7873f5, #4ade80, #fde047, var(--cor)); animation: girarFundo 12s linear infinite; }
-.carta.v-sr .carta-arte::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.6), transparent 60%), repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 2cqw, transparent 2cqw 4cqw); }
+.carta.v-sr { background: linear-gradient(160deg, #f4f6fb, #a9b1c2 28%, #ffffff 46%, #8e97aa 68%, #e3e7ef); }
+/* o arco-íris gira só no fundo, sem mudar a cor do Pokémon */
+.carta.v-sr .carta-arte { background: var(--cor); }
+.carta.v-sr .carta-arte::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.6), transparent 60%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 2cqw, transparent 2cqw 4cqw),
+        conic-gradient(from 0deg at 50% 45%, var(--cor), #ff6ec4, #7873f5, #4ade80, #fde047, var(--cor));
+    animation: girarFundo 12s linear infinite;
+}
 @keyframes girarFundo { to { filter: hue-rotate(360deg); } }
 
-.carta.v-im { background: linear-gradient(145deg, #2a1b5c, #5b3fbf 40%, #ff7bd5 55%, #3c2a86); }
+.carta.v-im { background: linear-gradient(160deg, #2a1b5c, #5b3fbf 40%, #ff7bd5 55%, #3c2a86); }
 .carta.v-im .carta-arte {
     background:
         radial-gradient(1px 1px at 20% 30%, #fff, transparent), radial-gradient(1.5px 1.5px at 70% 20%, #fff, transparent),
@@ -448,7 +552,7 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 }
 .carta.v-im .carta-arte img { width: 118%; height: 80%; }
 
-.carta.v-coroa { background: linear-gradient(145deg, #fff3b0, #d4a017 30%, #fff7cc 50%, #b8860b 70%, #ffe680); box-shadow: 0 0 18px rgba(255, 200, 0, 0.6); }
+.carta.v-coroa { background: linear-gradient(160deg, #fff3b0, #d4a017 30%, #fff7cc 50%, #b8860b 70%, #ffe680); box-shadow: 0 0 18px rgba(255, 200, 0, 0.6); }
 .carta.v-coroa .carta-arte { background: radial-gradient(circle at 50% 40%, #fff8d6, #f5c542 45%, #8a5a00); }
 .carta.v-coroa .carta-arte::before { content: "♛"; position: absolute; top: 12%; right: 6%; font-size: 12cqw; color: rgba(255, 255, 255, 0.6); }
 .carta.v-coroa .carta-face { box-shadow: inset 0 0 0 0.8cqw rgba(255, 230, 128, 0.8); }
