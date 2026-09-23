@@ -16,7 +16,9 @@ Um jogo de colecionar cartas Pokémon no navegador, inspirado no **Pokémon TCG 
 - **Pontos de pacote**: cada pacote dá 5 pontos ✨ para pegar qualquer carta do álbum.
 - **Pokédex**: a busca original por nome ou número, com evoluções, status e favoritos.
 
-O progresso fica salvo no próprio navegador (localStorage).
+- **Conta com login**: crie uma conta com usuário e senha para salvar o progresso na nuvem e jogar em qualquer aparelho. A autenticação de 2 fatores por app autenticador (Google Authenticator, Microsoft Authenticator ou Authy) é obrigatória e vem com 8 códigos de recuperação.
+
+Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar uma conta, esse progresso vai junto para a nuvem.
 
 ## 🗂️ Estrutura
 
@@ -27,9 +29,41 @@ O progresso fica salvo no próprio navegador (localStorage).
 - `Js/state.js`: save, moedas, pacotes grátis, missões
 - `Js/packs.js`: sorteio das cartas dos pacotes
 - `Js/trades.js`: ofertas dos bots
+- `Js/conta.js`: telas de login e sincronização com a nuvem
 - `Js/ui.js` e `Js/main.js`: telas e interações
 
-O deploy no GitHub Pages é feito pelo workflow `.github/workflows/pages.yml` a cada push na `main`.
+- `api/`: servidor (Vercel Functions) com cadastro, login, 2FA e save na nuvem
+- `scripts/dev.mjs`: servidor local que imita a Vercel; `scripts/api.test.mjs`: testes do login
+
+## ☁️ Publicando na Vercel (com login)
+
+O login precisa de um servidor e de um banco de dados, então o jogo completo roda na Vercel. No GitHub Pages ele continua funcionando, só que sem o botão de conta.
+
+1. Em [vercel.com](https://vercel.com), clique em **Add New → Project** e importe este repositório (Framework Preset: **Other**, sem build).
+2. No projeto, abra **Storage → Create Database → Neon (Postgres)** e conecte ao projeto. A variável `DATABASE_URL` é criada sozinha.
+3. Em **Settings → Environment Variables**, crie `SESSION_SECRET` com um texto aleatório de pelo menos 32 caracteres. Para gerar um:
+   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+4. Faça um novo deploy (**Deployments → Redeploy**). As tabelas do banco são criadas automaticamente no primeiro acesso.
+
+### Segurança do login
+
+- Senhas guardadas com hash `scrypt` e sal aleatório, nunca em texto puro
+- 2FA obrigatório com códigos TOTP de 6 dígitos; cada código só pode ser usado uma vez
+- Segredo do 2FA criptografado no banco (AES-256-GCM)
+- 8 códigos de recuperação de uso único, guardados só como hash
+- Conta bloqueada por 15 minutos depois de 5 erros seguidos
+- Sessão em cookie `HttpOnly`, `Secure` e `SameSite=Lax`, válida por 30 dias
+- Se o mesmo jogador usar dois aparelhos, o progresso mais novo nunca é sobrescrito por um aparelho desatualizado
+
+### Rodando no computador
+
+1. Instale o Node.js 20+ e o PostgreSQL
+2. `npm install`
+3. Copie `.env.example` para `.env.local` e preencha `DATABASE_URL` e `SESSION_SECRET`
+4. `npm run dev` e abra http://localhost:3000
+5. Com o servidor ligado, `npm test` roda os testes do login
+
+O workflow `.github/workflows/pages.yml` continua publicando a versão sem login no GitHub Pages a cada push na `main`.
 
 ## 🚀 Minha Jornada no Mundo do Desenvolvimento Web
 Olá! Este é meu primeiro projeto utilizando JavaScript e consumindo uma API externa. Foi um desafio proposto por um programador que conheço no Discord, o Yan Dias. A partir desse desafio, desenvolvi uma Pokédex funcional que permite buscar informações sobre diferentes Pokémon.

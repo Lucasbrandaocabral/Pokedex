@@ -1,0 +1,20 @@
+{
+  "name": "pokedex-pocket",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test scripts/api.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "otpauth": "^9.5.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "pg": "^8.16.3"
+  }
+}
