@@ -23,6 +23,9 @@ import {
     iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas, processarConvite,
 } from "./social.js";
 
+// O endereço antigo do GitHub Pages não tem servidor: manda para o jogo na Vercel
+if (location.hostname.endsWith("github.io")) location.replace(`https://pokepalword.vercel.app/${location.hash}`);
+
 const app = $("#app");
 let telaAtual = "inicio";
 let pacoteSelecionado = "charizard";
@@ -334,98 +337,115 @@ const ligarPulos = () => {
     $("[data-abertura=pular-pacote]", overlay)?.addEventListener("click", proximoPacote);
 };
 
+// Cor da luz atrás da carta, de acordo com a raridade
+const LUZ_RARIDADE = { 1: "comum", 2: "comum", 3: "rara", 4: "ex", 5: "estrela", 6: "estrela", 7: "estrela", 8: "coroa" };
+
+// Abertura de um pacote: corte, o pacote desce e as cartas sobem de dentro dele
 const animarPacote = () => {
     const pacote = sequencia.pacotes[sequencia.atual];
+    const cores = PACOTES[pacoteSelecionado].cores;
+    const total = pacote.cartas.length;
+    const ultimoPacote = sequencia.atual === sequencia.pacotes.length - 1;
     overlay.className = "abertura aberta";
     overlay.innerHTML = `
-        ${topoSequencia("pacote")}
-        <div class="abertura-palco">
+        <div class="abertura-barra">${topoSequencia("pacote")}</div>
+        <div class="abertura-palco palco-pacote fase-pacote" style="--c1:${cores[0]};--c2:${cores[1]}">
+            <div class="luz-fundo"><div class="raios"></div></div>
             ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
-            <p class="dica">Arraste sobre a linha pontilhada para abrir o pacote</p>
-            <div class="pacote-abrir">
-                ${htmlPacote(pacoteSelecionado, "grande")}
-                <div class="linha-corte"><div class="progresso-corte"></div></div>
+            <p class="dica" id="dica-abertura">Arraste o dedo sobre a linha para abrir o pacote</p>
+            <div class="area-abertura">
+                <div class="pilha">
+                    ${pacote.cartas.map(({ carta }, i) => `
+                        <div class="pilha-item ${carta.raridade >= 5 ? "virada" : ""}" style="z-index:${total - i}" data-i="${i}">
+                            <div class="gira">
+                                <div class="lado frente">${htmlCarta(carta)}</div>
+                                <div class="lado tras">${htmlVerso(`brilho-r${carta.raridade}`)}</div>
+                            </div>
+                        </div>`).join("")}
+                </div>
+                <div class="pacote-abrir">
+                    ${htmlPacote(pacoteSelecionado, "grande")}
+                    <div class="linha-corte"><div class="progresso-corte"></div></div>
+                </div>
             </div>
+            <div class="pontos-cartas">${pacote.cartas.map(() => "<i></i>").join("")}</div>
             <button class="btn secundario pequeno" data-abertura="cortar">Toque para abrir</button>
         </div>`;
     ligarPulos();
+    const palco = $(".palco-pacote", overlay);
     const alvo = $(".pacote-abrir", overlay);
     const progresso = $(".progresso-corte", overlay);
-    let inicioX = null;
+    const itens = $$(".pilha-item", overlay);
+    const pilha = $(".pilha", overlay);
+    const pontos = $$(".pontos-cartas i", overlay);
+    let indice = 0;
+    let cartasProntas = false;
+
+    // ---------- 1. Cortar o pacote ----------
+    let inicioCorte = null;
     let aberto = false;
     const cortar = () => {
         if (aberto) return;
         aberto = true;
         sons.rasgar();
-        alvo.classList.add("cortado");
+        palco.classList.add("cortado");
+        $("[data-abertura=cortar]", overlay).remove();
         setTimeout(() => {
-            if (sequencia?.pacotes[sequencia.atual] === pacote && overlay.classList.contains("aberta")) mostrarCartas(pacote);
-        }, 750);
+            if (sequencia?.pacotes[sequencia.atual] !== pacote || !overlay.classList.contains("aberta")) return;
+            palco.classList.replace("fase-pacote", "fase-cartas");
+            $(".abertura-barra", overlay).innerHTML = topoSequencia("cartas");
+            ligarPulos();
+            $("#dica-abertura").textContent = "Arraste a carta para o lado (ou toque) para ver a próxima";
+            cartasProntas = true;
+            destacar();
+        }, 1150);
     };
     alvo.addEventListener("pointerdown", (e) => {
-        inicioX = e.clientX;
+        inicioCorte = e.clientX;
         alvo.setPointerCapture(e.pointerId);
     });
     alvo.addEventListener("pointermove", (e) => {
-        if (inicioX === null) return;
+        if (inicioCorte === null || aberto) return;
         const largura = alvo.getBoundingClientRect().width;
-        const p = Math.min(1, Math.abs(e.clientX - inicioX) / (largura * 0.7));
+        const p = Math.min(1, Math.abs(e.clientX - inicioCorte) / (largura * 0.7));
         progresso.style.width = `${p * 100}%`;
         if (p >= 1) cortar();
     });
     alvo.addEventListener("pointerup", () => {
-        inicioX = null;
+        inicioCorte = null;
         if (!aberto) progresso.style.width = "0";
     });
     $("[data-abertura=cortar]", overlay).addEventListener("click", cortar);
-};
 
-const mostrarCartas = (pacote) => {
-    let indice = 0;
-    const total = pacote.cartas.length;
-    const ultimoPacote = sequencia.atual === sequencia.pacotes.length - 1;
-    overlay.innerHTML = `
-        ${topoSequencia("cartas")}
-        <div class="abertura-palco">
-            ${pacote.god ? `<div class="god-banner">GOD PACK</div>` : ""}
-            <p class="contador-cartas"><span id="contador">1</span>/${total}</p>
-            <div class="pilha">
-                ${pacote.cartas.map(({ carta }, i) => `
-                    <div class="pilha-item ${carta.raridade >= 5 ? "virada" : ""}" style="z-index:${total - i}" data-i="${i}">
-                        <div class="gira">
-                            <div class="lado frente">${htmlCarta(carta)}</div>
-                            <div class="lado tras">${htmlVerso(`brilho-r${carta.raridade}`)}</div>
-                        </div>
-                    </div>`).join("")}
-            </div>
-            <p class="dica">Arraste a carta para o lado (ou toque) para ver a próxima</p>
-        </div>`;
-    ligarPulos();
-    const itens = $$(".pilha-item", overlay);
-    const pilha = $(".pilha", overlay);
-
+    // ---------- 2. Revelar as cartas ----------
     const marcarNova = (i) => {
         if (pacote.cartas[i].nova) itens[i].querySelector(".carta").insertAdjacentHTML("beforeend", `<span class="carta-nova">NOVA</span>`);
     };
+    const luz = (raridade) => { palco.dataset.luz = LUZ_RARIDADE[raridade] || "comum"; };
     const destacar = () => {
         const { carta } = pacote.cartas[indice];
         const item = itens[indice];
         item.classList.add("em-cima");
-        $("#contador").textContent = indice + 1;
-        if (item.classList.contains("virada")) return sons.carta();
+        pontos.forEach((p, i) => p.classList.toggle("ativo", i === indice));
+        pontos.forEach((p, i) => p.classList.toggle("visto", i < indice));
+        if (item.classList.contains("virada")) {
+            luz(carta.raridade);
+            return sons.carta();
+        }
+        luz(carta.raridade);
         if (carta.raridade >= 3) sons.raro(carta.raridade);
         else sons.carta();
         marcarNova(indice);
     };
-    destacar();
-
     const revelar = (item) => {
         item.classList.remove("virada");
         item.classList.add("revelada");
+        palco.classList.remove("clarao");
+        void palco.offsetWidth; // reinicia a animação do clarão
+        palco.classList.add("clarao");
         sons.raro(pacote.cartas[indice].carta.raridade);
         marcarNova(indice);
     };
-
     // A carta de cima sai voando para o lado escolhido
     const passar = (direcao) => {
         const item = itens[indice];
@@ -434,14 +454,16 @@ const mostrarCartas = (pacote) => {
         item.classList.add("saiu", direcao);
         indice++;
         if (indice < total) destacar();
-        else setTimeout(() => (ultimoPacote ? finalizarSequencia() : proximoPacote()), 380);
+        else {
+            palco.dataset.luz = "comum";
+            setTimeout(() => (ultimoPacote ? finalizarSequencia() : proximoPacote()), 420);
+        }
     };
 
-    // Arrastar com o dedo/mouse; toque simples também funciona
     let inicio = null;
     let deslocamento = 0;
     pilha.addEventListener("pointerdown", (e) => {
-        if (!itens[indice]) return;
+        if (!cartasProntas || !itens[indice]) return;
         inicio = e.clientX;
         deslocamento = 0;
         pilha.setPointerCapture(e.pointerId);
