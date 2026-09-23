@@ -1,64 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jersey+20&family=League+Spartan&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/stylex.css">
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-    <script src="https://unicons.iconscout.com/release/v4.0.8/script/monochrome/bundle.js"></script>
-    <script src="https://unicons.iconscout.com/release/v4.0.8/script/monochrome/bundle.js"></script>
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/thinline.css">
-    <script src="https://kit.fontawesome.com/a45f4a70e6.js" crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokedex</title>
+    <meta name="description" content="Pokédex Pocket: abra pacotes, colecione cartas Pokémon no seu álbum e troque com bots.">
+    <meta name="theme-color" content="#101428">
+    <title>Pokédex Pocket</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+20&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <main>
-        <section class="container">
-            <div id="pokedex">
-                <h2>Pokedex</h2>
-            </div>
-            <div id="campo__de__pesquisa">
-                <input type="text" id="input__pesquisa" placeholder="Nome ou ID do Pokémon">
-                <button id="brn__buscar">
-                    Buscar
-                </button>
-                <button id="brn__favoritos">
-                    <a href="favoritos.html">favoritos</a>
-                </button>
-            </div>
-            <div id="pokemons">
-                <div id="qual__pokemon" class="hidden">
-                    <p>Qual é esse Pokémon!!</p>
-                </div>
-                <div id="pokemon__infos" class="hidden">
-                    <div id="nome__favorito">
-                        <button class="favoritar nao_favorito" id="brn__estrela">
-                            <i class="uil uil-favorite"></i>
-                        </button>
-                        <h2 id="nome__pokemon"></h2>
-                    </div>
-                    <img id="pokemon__img" src="" alt="pokemin raro">
-                    <p id="tipo__do__pokemon"></p>
-                </div>
-                <div id="deu__ruim" class="hidden">
-                    <p>Error 404 - Tá maluco, que Pokémon é esse?</p>
-                </div>
-            </div>
-            <div id="evolucaos" class="hidden">
-                <p>Evoluções</p>
-                <div id="todas__as__evolocoes">
-                    <img src="" alt="" id="pokemon__kid" class="pokemon__evolucao">
-                    <i class="uil uil-arrow-right"></i>
-                    <img src="" alt="" id="pokemon__raro" class="pokemon__evolucao">
-                    <i class="uil uil-arrow-right"></i>
-                    <img src="" alt="" id="pokemon__veio" class="pokemon__evolucao">
-                </div>
-            </div>
-        </section>
-    </main>
-    <script src="Js/scripts.js"></script>
+    <header class="topo">
+        <a class="logo" href="#inicio"><span class="pokebola-logo"></span>Pokédex <b>Pocket</b></a>
+        <div class="hud">
+            <a class="hud-item" href="#loja" title="Moedas">🪙 <span id="hud-moedas">0</span></a>
+            <span class="hud-item" title="Pontos de pacote">✨ <span id="hud-pontos">0</span></span>
+            <a class="hud-item" href="#pacotes" title="Pacotes disponíveis">🎁 <span id="hud-pacotes">0</span>
+                <small id="hud-gratis"></small></a>
+            <button class="hud-item" id="btn-som" data-acao="som" title="Som">🔊</button>
+        </div>
+    </header>
+
+    <main id="app"></main>
+
+    <nav class="nav">
+        <a class="nav-item" data-tela="inicio" href="#inicio"><span>🏠</span>Início<i class="badge" id="badge-inicio" hidden></i></a>
+        <a class="nav-item" data-tela="pacotes" href="#pacotes"><span>✂️</span>Pacotes</a>
+        <a class="nav-item" data-tela="album" href="#album"><span>📖</span>Álbum<i class="badge" id="badge-album" hidden></i></a>
+        <a class="nav-item" data-tela="trocas" href="#trocas"><span>🔄</span>Trocas</a>
+        <a class="nav-item" data-tela="loja" href="#loja"><span>🛒</span>Loja</a>
+        <a class="nav-item" data-tela="pokedex" href="#pokedex"><span>🔎</span>Pokédex</a>
+    </nav>
+
+    <div id="abertura" class="abertura"></div>
+    <div id="modal" class="modal">
+        <div class="modal-caixa">
+            <button class="modal-fechar" aria-label="Fechar">✕</button>
+            <div id="modal-conteudo"></div>
+        </div>
+    </div>
+    <div id="avisos" class="avisos"></div>
+
+    <script type="module" src="Js/main.js"></script>
 </body>
 </html>
