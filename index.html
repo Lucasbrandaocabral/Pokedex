@@ -12,7 +12,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Jersey+20&family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="bloqueado">
+    <!-- Tela de entrada: o jogo só aparece depois do login -->
+    <div id="tela-login" class="tela-login">
+        <div class="login-lado">
+            <div class="login-marca">
+                <span class="lente"></span>
+                <span class="luzes"><i></i><i></i><i></i></span>
+            </div>
+            <h1 class="logo-texto">Pokédex <b>Pocket</b></h1>
+            <p class="login-slogan">Abra pacotes, complete o álbum da coleção <b>Origem Genética</b> e troque cartas com seus amigos.</p>
+            <div class="login-pacotes" aria-hidden="true"></div>
+        </div>
+        <div class="login-caixa">
+            <div id="login-conteudo">
+                <div class="carregando"><div class="pokebola-girando"></div><p>Conectando...</p></div>
+            </div>
+        </div>
+    </div>
+
     <header class="topo">
         <a class="logo" href="#inicio" aria-label="Início">
             <span class="lente"></span>
