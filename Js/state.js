@@ -58,6 +58,7 @@ const estadoInicial = () => {
         conta: null, // usuário dono deste save (null = jogando sem conta)
         salvoEm: 0,
         nuvemBase: 0, // salvoEm da última versão sincronizada com a nuvem
+        entregasAplicadas: [], // entregas de trocas já colocadas no álbum
     };
 };
 

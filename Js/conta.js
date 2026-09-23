@@ -147,6 +147,8 @@ const perguntarConflito = (nuvem) =>
         }));
     });
 
+const avisarMudancaConta = () => window.dispatchEvent(new CustomEvent("conta-mudou", { detail: conta.usuario }));
+
 const conectado = async (usuario, opcoes) => {
     conta.usuario = usuario;
     atualizarBotao();
@@ -157,12 +159,14 @@ const conectado = async (usuario, opcoes) => {
         agendarEnvio(15000);
     }
     atualizarBotao();
+    avisarMudancaConta();
 };
 
 const desconectado = () => {
     conta.usuario = null;
     conta.sincronizacao = "";
     atualizarBotao();
+    avisarMudancaConta();
 };
 
 // ---------------- Botão no cabeçalho ----------------
@@ -176,7 +180,8 @@ const atualizarBotao = () => {
         return;
     }
     const status = { salvando: "salvando...", salvo: "salvo", erro: "não salvo" }[conta.sincronizacao] || "";
-    botao.innerHTML = `<span class="avatar-conta conectado"></span><span>${escapar(conta.usuario)}</span><small class="sync-${conta.sincronizacao}">${status}</small>`;
+    botao.innerHTML = `<span class="avatar-conta conectado"></span><span>${escapar(conta.usuario)}</span><small class="sync-${conta.sincronizacao}">${status}</small><i class="badge badge-conta" id="badge-conta" hidden></i>`;
+    window.dispatchEvent(new CustomEvent("botao-conta-atualizado"));
     botao.title = "Sua conta";
 };
 
@@ -342,43 +347,45 @@ const telaCodigosRecuperacao = (usuario, codigos) => {
     });
 };
 
-const telaMinhaConta = () => {
+// ---------------- Usado pela tela de perfil e pelas trocas ----------------
+export { api };
+export const usuarioAtual = () => conta.usuario;
+export const contaDisponivel = () => conta.disponivel;
+
+export const textoSincronizacao = () => {
     const quando = conta.ultimoEnvio ? conta.ultimoEnvio.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
-    const status = {
+    return {
         salvando: "Salvando na nuvem...",
         salvo: `Progresso salvo na nuvem${quando ? ` às ${quando}` : ""}.`,
         erro: "Não foi possível salvar agora. Vamos tentar de novo automaticamente.",
     }[conta.sincronizacao] || "Progresso sincronizado com a nuvem.";
-    abrirModal(`
-        <h3>Minha conta</h3>
-        <div class="perfil-conta">
-            <span class="avatar-conta conectado grande"></span>
-            <div>
-                <b>${escapar(conta.usuario)}</b>
-                <small>2 fatores ativado</small>
-            </div>
-        </div>
-        <p class="modal-texto">${status}</p>
-        <div class="modal-botoes">
-            <button class="btn secundario" id="salvar-agora">Salvar agora</button>
-            <button class="btn perigo" id="sair-conta">Sair</button>
-        </div>`, "pequeno");
-    $("#salvar-agora").addEventListener("click", async () => {
-        await enviarSave();
-        telaMinhaConta();
-    });
-    $("#sair-conta").addEventListener("click", async () => {
-        if (!(await confirmar("Sair da conta?", "Seu progresso fica salvo na nuvem. Neste aparelho o jogo volta para o começo até você entrar de novo.", "Sair"))) return telaMinhaConta();
-        clearTimeout(temporizador);
-        if (envioPendente) await enviarSave();
-        try {
-            await api("auth/sair", { metodo: "POST" });
-        } catch (e) { /* mesmo sem resposta, limpamos o aparelho */ }
-        limparSaveLocal();
-    });
 };
 
-export const abrirConta = () => (conta.usuario ? telaMinhaConta() : telaEntrar());
+// Envia agora o que estiver pendente. Usado antes de trocas, para o servidor ter o save atualizado.
+export const salvarAgora = async () => {
+    clearTimeout(temporizador);
+    await enviarSave();
+    if (conta.sincronizacao === "erro") throw new Error("Não foi possível salvar seu progresso agora. Tente de novo.");
+};
+
+// Usa o save devolvido pelo servidor depois de uma troca
+export const aplicarSaveDoServidor = (save) => usarNuvem(save);
+
+export const sairDaConta = async () => {
+    if (!(await confirmar("Sair da conta?", "Seu progresso fica salvo na nuvem. Neste aparelho o jogo volta para o começo até você entrar de novo.", "Sair"))) return;
+    clearTimeout(temporizador);
+    if (envioPendente) await enviarSave();
+    try {
+        await api("auth/sair", { metodo: "POST" });
+    } catch (e) { /* mesmo sem resposta, limpamos o aparelho */ }
+    limparSaveLocal();
+};
+
+// Conectado: abre a tela de perfil. Sem conta: abre o login.
+export const abrirConta = () => {
+    if (conta.usuario) location.hash = "perfil";
+    else telaEntrar();
+};
 
 // ---------------- Início ----------------
 export const iniciarConta = async () => {

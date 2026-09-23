@@ -701,3 +701,92 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 }
 .opcao-save:hover { background: #fff4c7; }
 .opcao-save small { color: var(--tinta2); }
+
+/* ---------------- Perfil, amigos e trocas entre jogadores ---------------- */
+.btn-conta { position: relative; }
+.badge-conta { top: -8px; right: -8px; }
+.badge-inline {
+    display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-left: 4px;
+    border-radius: 9px; background: var(--vermelho); color: #fff; font-style: normal; font-size: 0.7rem; font-weight: 800;
+}
+.abas-tela { display: inline-flex; margin: 4px 0 18px; border: var(--linha); border-radius: 6px; overflow: hidden; box-shadow: 3px 3px 0 var(--tinta); }
+.abas-tela button { padding: 8px 22px; border: none; background: var(--papel2); font-weight: 700; cursor: pointer; display: flex; align-items: center; }
+.abas-tela button + button { border-left: var(--linha); }
+.abas-tela button.ativa { background: var(--tinta); color: var(--papel2); }
+
+.avatar-treinador { width: 48px; height: 48px; image-rendering: pixelated; border-radius: 50%; background: var(--papel); border: 2px solid var(--tinta); flex-shrink: 0; object-fit: contain; }
+.avatar-treinador.grande { width: 132px; height: 132px; border-width: 3px; background: radial-gradient(circle, #fff 0 45%, var(--papel3) 46%); }
+
+.perfil-topo {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center;
+    background: var(--papel2); border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); padding: 22px 26px;
+}
+.perfil-topo.no-modal { box-shadow: none; border: none; padding: 0; grid-template-columns: auto 1fr; }
+.perfil-info h1, .perfil-info h3 { margin: 0; }
+.perfil-info .btn { margin-top: 12px; }
+.perfil-bio { margin: 8px 0; max-width: 480px; }
+.perfil-numeros { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.perfil-numeros div { background: var(--papel); border: 2px solid var(--papel3); border-radius: 6px; padding: 4px 12px; display: flex; flex-direction: column; }
+.perfil-numeros b { font-family: "Jersey 20"; font-size: 1.6rem; font-weight: 400; line-height: 1.1; }
+.perfil-numeros small { color: var(--tinta2); font-size: 0.75rem; }
+.perfil-vitrine h3 { margin: 0 0 8px; text-align: center; }
+.vitrine-cartas { display: flex; gap: 8px; justify-content: center; }
+.vitrine-cartas .mini-carta { width: 92px; }
+.vitrine-vazia {
+    width: 92px; aspect-ratio: 63 / 88; border: 2px dashed #b3ab9b; border-radius: 8px; background: var(--papel3);
+    font-size: 2rem; color: var(--tinta2); cursor: pointer;
+}
+.vitrine-vazia:hover { border-color: var(--tinta); color: var(--tinta); }
+
+.linha-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.linha-form input { flex: 1; min-width: 180px; background: #fff; border: var(--linha); border-radius: 6px; padding: 9px 12px; font: inherit; }
+.linha-form input:focus { outline: none; box-shadow: 3px 3px 0 var(--amarelo); }
+.lista-pessoas { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.pessoa { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--papel); border: 2px solid var(--papel3); border-radius: 6px; flex-wrap: wrap; }
+.pessoa > div:not(.pessoa-botoes) { flex: 1; display: flex; flex-direction: column; min-width: 120px; }
+.pessoa small { color: var(--tinta2); }
+.pessoa-botoes { display: flex; gap: 6px; }
+.sem-conta { max-width: 520px; margin: 30px auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.texto-verde { color: var(--verde); }
+.vazio.pequeno { padding: 6px; font-size: 0.85rem; }
+
+.form-conta textarea { background: #fff; border: var(--linha); border-radius: 6px; padding: 10px 12px; font: inherit; font-weight: 400; resize: vertical; }
+.form-conta textarea:focus { outline: none; box-shadow: 3px 3px 0 var(--amarelo); }
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.rotulo { font-size: 0.85rem; font-weight: 700; }
+.campo input[type=search], .campo-busca { background: #fff; border: var(--linha); border-radius: 6px; padding: 8px 12px; font: inherit; width: 100%; margin: 8px 0; }
+.grade-avatares { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 4px; max-height: 220px; overflow-y: auto; padding: 6px; background: var(--papel); border: 2px solid var(--papel3); border-radius: 6px; }
+.opcao-avatar { background: none; border: 2px solid transparent; border-radius: 6px; cursor: pointer; padding: 0; }
+.opcao-avatar img { width: 100%; image-rendering: pixelated; display: block; }
+.opcao-avatar:hover { background: var(--papel2); }
+.opcao-avatar.escolhido { border-color: var(--tinta); background: var(--amarelo); }
+.grade-escolha { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; max-height: 260px; overflow-y: auto; padding: 6px; background: var(--papel); border: 2px solid var(--papel3); border-radius: 6px; }
+.grade-escolha.alta { max-height: 340px; }
+.opcao-carta { position: relative; background: none; border: 3px solid transparent; border-radius: 8px; padding: 0; cursor: pointer; transition: transform 0.1s; }
+.opcao-carta:hover { transform: translateY(-2px); }
+.opcao-carta.escolhido { border-color: var(--vermelho); }
+.selo-escolha { position: absolute; top: -8px; left: -8px; z-index: 6; min-width: 22px; height: 22px; border-radius: 11px; background: var(--vermelho); color: #fff; border: 2px solid var(--tinta); font-weight: 800; font-size: 0.8rem; display: grid; place-items: center; }
+
+.resumo-troca { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0; }
+.lado-troca { flex: 1; min-width: 0; }
+.lado-troca h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--tinta2); margin-bottom: 6px; }
+.chips-troca { display: flex; flex-wrap: wrap; gap: 4px; min-height: 70px; padding: 6px; background: var(--papel); border: 2px dashed #b3ab9b; border-radius: 6px; }
+.chip-carta { width: 46px; background: none; border: none; padding: 0; cursor: pointer; position: relative; }
+.chip-carta::after { content: "×"; position: absolute; top: -6px; right: -6px; z-index: 6; width: 18px; height: 18px; border-radius: 50%; background: var(--tinta); color: #fff; font-size: 0.8rem; line-height: 18px; text-align: center; }
+.resumo-troca .seta { align-self: center; font-size: 1.6rem; }
+
+.barra-acoes { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.troca-amigo .mini-carta { width: 72px; }
+.troca-amigo.status-aceita .tipo-oferta { background: var(--verde); }
+.troca-amigo.status-recusada .tipo-oferta, .troca-amigo.status-cancelada .tipo-oferta, .troca-amigo.status-expirada .tipo-oferta { background: var(--tinta2); }
+.troca-amigo:not(.status-pendente) { opacity: 0.75; box-shadow: none; }
+.mensagem-troca { background: var(--papel); border-left: 4px solid var(--amarelo); padding: 6px 10px; font-style: italic; border-radius: 4px; }
+.troca-amigo .modal-botoes { margin-top: 0; }
+
+@media (max-width: 700px) {
+    .perfil-topo { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .perfil-numeros { justify-content: center; }
+    .avatar-treinador.grande { width: 104px; height: 104px; }
+    .resumo-troca { flex-direction: column; align-items: stretch; }
+    .resumo-troca .seta { align-self: center; transform: rotate(90deg); }
+}

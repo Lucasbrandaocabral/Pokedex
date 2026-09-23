@@ -19,6 +19,7 @@ import {
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
 } from "./ui.js";
 import { iniciarConta, abrirConta } from "./conta.js";
+import { iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas } from "./social.js";
 
 const app = $("#app");
 let telaAtual = "inicio";
@@ -78,7 +79,11 @@ const TELAS = {
     inicio: () => telaInicio(),
     pacotes: () => telaPacotes(),
     album: () => telaAlbum(),
-    trocas: () => telaTrocas(),
+    trocas: (arg) => {
+        if (arg === "amigos" || arg === "bots") abaTrocas = arg;
+        telaTrocas();
+    },
+    perfil: () => telaPerfil(app),
     loja: () => telaLoja(),
     pokedex: (arg) => telaPokedex(arg),
 };
@@ -649,11 +654,32 @@ const htmlOferta = (o) => {
     </article>`;
 };
 
+let abaTrocas = "bots";
+
+const abasTrocas = () => {
+    const recebidas = quantidadeTrocasRecebidas();
+    return `
+    <div class="abas-tela">
+        <button class="${abaTrocas === "bots" ? "ativa" : ""}" data-acao="aba-trocas" data-aba="bots">Bots</button>
+        <button class="${abaTrocas === "amigos" ? "ativa" : ""}" data-acao="aba-trocas" data-aba="amigos">Amigos${recebidas ? ` <i class="badge-inline">${recebidas}</i>` : ""}</button>
+    </div>`;
+};
+
 const telaTrocas = () => {
+    if (abaTrocas === "amigos") {
+        app.innerHTML = `
+        <section>
+            <h1>Trocas com amigos</h1>
+            ${abasTrocas()}
+            ${htmlTrocasAmigos()}
+        </section>`;
+        return;
+    }
     sincronizarTrocas();
     const tempo = tempoProximaRodada();
     app.innerHTML = `
     <section>
+        ${abasTrocas()}
         <div class="titulo-trocas">
             <div>
                 <h1>Trocas com bots</h1>
@@ -920,6 +946,12 @@ const ACOES = {
         aviso(ativo ? "Adicionado aos favoritos" : "Removido dos favoritos");
     },
     conta: () => abrirConta(),
+    "aba-trocas": (el) => {
+        abaTrocas = el.dataset.aba;
+        history.replaceState(null, "", `#trocas/${abaTrocas}`);
+        renderizar();
+        if (abaTrocas === "amigos") atualizarSocial();
+    },
     som: () => {
         estado.som = !estado.som;
         salvar();
@@ -988,4 +1020,13 @@ limparNotificacoes("album");
 limparNotificacoes("inicio");
 atualizarCabecalho();
 navegar();
+aoAtualizarSocial(() => {
+    const aberto = $("#modal").classList.contains("aberto") || overlay.classList.contains("aberta");
+    if (!aberto && (telaAtual === "perfil" || telaAtual === "trocas")) {
+        const y = window.scrollY;
+        renderizar();
+        window.scrollTo({ top: y });
+    }
+});
+iniciarSocial();
 iniciarConta();
