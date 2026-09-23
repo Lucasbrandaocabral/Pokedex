@@ -18,6 +18,10 @@ Um jogo de colecionar cartas Pokémon no navegador, inspirado no **Pokémon TCG 
 
 - **Conta com login**: crie uma conta com usuário e senha para salvar o progresso na nuvem e jogar em qualquer aparelho. A autenticação de 2 fatores por app autenticador (Google Authenticator, Microsoft Authenticator ou Authy) é obrigatória e vem com 8 códigos de recuperação.
 
+- **Perfil de treinador**: apelido, avatar (qualquer um dos 151 Pokémon), bio e uma vitrine com até 3 cartas favoritas. Dá para trocar a senha pela tela de perfil.
+- **Amigos**: adicione outros jogadores pelo nome de usuário e aceite ou recuse pedidos de amizade.
+- **Trocas entre amigos**: escolha cartas suas e cartas do álbum do amigo, mande uma mensagem e espere a resposta. As cartas oferecidas ficam reservadas até a resposta e voltam se a troca for recusada, cancelada ou expirar (7 dias).
+
 Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar uma conta, esse progresso vai junto para a nuvem.
 
 ## 🗂️ Estrutura
@@ -30,10 +34,11 @@ Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar
 - `Js/packs.js`: sorteio das cartas dos pacotes
 - `Js/trades.js`: ofertas dos bots
 - `Js/conta.js`: telas de login e sincronização com a nuvem
+- `Js/social.js`: perfil, amigos e trocas entre jogadores
 - `Js/ui.js` e `Js/main.js`: telas e interações
 
-- `api/`: servidor (Vercel Functions) com cadastro, login, 2FA e save na nuvem
-- `scripts/dev.mjs`: servidor local que imita a Vercel; `scripts/api.test.mjs`: testes do login
+- `api/`: servidor (Vercel Functions) com cadastro, login, 2FA, save na nuvem (`save.js`) e perfil, amigos e trocas (`social.js`)
+- `scripts/dev.mjs`: servidor local que imita a Vercel; `scripts/*.test.mjs`: testes do login, dos amigos e das trocas
 
 ## ☁️ Publicando na Vercel (com login)
 
@@ -54,6 +59,7 @@ O login precisa de um servidor e de um banco de dados, então o jogo completo ro
 - Conta bloqueada por 15 minutos depois de 5 erros seguidos
 - Sessão em cookie `HttpOnly`, `Secure` e `SameSite=Lax`, válida por 30 dias
 - Se o mesmo jogador usar dois aparelhos, o progresso mais novo nunca é sobrescrito por um aparelho desatualizado
+- Nas trocas, o servidor confere as cartas dos dois lados e cada troca só pode ser aceita uma vez, então não dá para duplicar cartas
 
 ### Rodando no computador
 

@@ -53,7 +53,40 @@ CREATE TABLE IF NOT EXISTS saves (
     usuario_id INT PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
     dados JSONB NOT NULL,
     atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);`;
+);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS apelido TEXT;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar INT NOT NULL DEFAULT 25;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT '';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS vitrine TEXT[] NOT NULL DEFAULT '{}';
+CREATE TABLE IF NOT EXISTS amizades (
+    id SERIAL PRIMARY KEY,
+    de_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    para_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pendente',
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (de_id, para_id)
+);
+CREATE TABLE IF NOT EXISTS trocas (
+    id SERIAL PRIMARY KEY,
+    de_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    para_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    da TEXT[] NOT NULL DEFAULT '{}',
+    quer TEXT[] NOT NULL DEFAULT '{}',
+    mensagem TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pendente',
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolvido_em TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS entregas (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    cartas TEXT[] NOT NULL,
+    motivo TEXT NOT NULL,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS trocas_para ON trocas (para_id, status);
+CREATE INDEX IF NOT EXISTS trocas_de ON trocas (de_id, status);
+CREATE INDEX IF NOT EXISTS entregas_usuario ON entregas (usuario_id);`;
 
 let esquemaPronto;
 export const consulta = async (texto, params = []) => {
