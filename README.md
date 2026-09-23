@@ -22,7 +22,7 @@ Um jogo de colecionar cartas Pokémon no navegador, inspirado no **Pokémon TCG 
 - **Amigos**: adicione outros jogadores pelo nome de usuário ou pelo **código de amigo** (ex.: `K7QM-3XPA`), ou mande um **link de convite**. Aceite ou recuse pedidos de amizade.
 - **Trocas entre amigos**: escolha cartas suas e cartas do álbum do amigo, mande uma mensagem e espere a resposta. As cartas oferecidas ficam reservadas até a resposta e voltam se a troca for recusada, cancelada ou expirar (7 dias).
 
-Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar uma conta, esse progresso vai junto para a nuvem.
+Para jogar é preciso entrar com uma conta: a primeira tela é a de login/cadastro. O progresso fica salvo na nuvem e também no navegador (localStorage). Quem já jogava antes sem conta leva o progresso junto ao criar a conta no mesmo aparelho.
 
 ## 🗂️ Estrutura
 
@@ -42,7 +42,7 @@ Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar
 
 ## ☁️ Publicando na Vercel (com login)
 
-O login precisa de um servidor e de um banco de dados, então o jogo completo roda na Vercel. No GitHub Pages ele continua funcionando, só que sem o botão de conta.
+O login precisa de um servidor e de um banco de dados, então o jogo roda na Vercel. No GitHub Pages (que só hospeda arquivos) a tela de entrada mostra "Sem conexão com o servidor".
 
 1. Em [vercel.com](https://vercel.com), clique em **Add New → Project** e importe este repositório (Framework Preset: **Other**, sem build).
 2. No projeto, abra **Storage → Create Database → Neon (Postgres)** e conecte ao projeto. A variável `DATABASE_URL` é criada sozinha.
@@ -69,7 +69,7 @@ O login precisa de um servidor e de um banco de dados, então o jogo completo ro
 4. `npm run dev` e abra http://localhost:3000
 5. Com o servidor ligado, `npm test` roda os testes do login
 
-O workflow `.github/workflows/pages.yml` continua publicando a versão sem login no GitHub Pages a cada push na `main`.
+O workflow `.github/workflows/pages.yml` ainda publica os arquivos no GitHub Pages a cada push na `main`, mas lá o login não funciona. Use o endereço da Vercel.
 
 ## 🚀 Minha Jornada no Mundo do Desenvolvimento Web
 Olá! Este é meu primeiro projeto utilizando JavaScript e consumindo uma API externa. Foi um desafio proposto por um programador que conheço no Discord, o Yan Dias. A partir desse desafio, desenvolvi uma Pokédex funcional que permite buscar informações sobre diferentes Pokémon.

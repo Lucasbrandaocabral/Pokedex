@@ -3,7 +3,8 @@
 // e sincronização do progresso com a nuvem
 // ====================================================
 import { estado, salvar, aoSalvar, substituirEstado, temProgresso, limparSaveLocal } from "./state.js";
-import { $, $$, abrirModal, fecharModal, aviso, escapar, confirmar, sons } from "./ui.js";
+import { $, $$, abrirModal, fecharModal, aviso, escapar, confirmar, sons, htmlPacote } from "./ui.js";
+import { PACOTES } from "./cards.js";
 
 const conta = {
     disponivel: false, // false quando o site está sem servidor (ex.: GitHub Pages)
@@ -167,6 +168,7 @@ const desconectado = () => {
     conta.sincronizacao = "";
     atualizarBotao();
     avisarMudancaConta();
+    mostrarTelaLogin("Sua sessão terminou. Entre de novo para continuar.");
 };
 
 // ---------------- Botão no cabeçalho ----------------
@@ -195,20 +197,38 @@ const erroForm = (msg) => {
     if (msg) sons.erro();
 };
 
+// ---------------- Tela de entrada (obrigatória para jogar) ----------------
+const painel = (html) => {
+    $("#login-conteudo").innerHTML = html;
+    $("#tela-login").scrollTo?.({ top: 0 });
+};
+
+const mostrarTelaLogin = (mensagem = "") => {
+    document.body.classList.add("bloqueado");
+    fecharModal();
+    telaEntrar();
+    if (mensagem) erroForm(mensagem);
+};
+
+const liberarJogo = () => {
+    document.body.classList.remove("bloqueado");
+    window.scrollTo({ top: 0 });
+};
+
 const carregando = (form, ativo) => {
     $$("button, input", form).forEach((el) => { el.disabled = ativo; });
 };
 
 const telaEntrar = (aba = "entrar") => {
     const cadastro = aba === "cadastro";
-    abrirModal(`
+    painel(`
         <div class="abas-conta">
             <button class="${cadastro ? "" : "ativa"}" data-aba="entrar">Entrar</button>
             <button class="${cadastro ? "ativa" : ""}" data-aba="cadastro">Criar conta</button>
         </div>
         <p class="sutil">${cadastro
-            ? "Crie uma conta para guardar seu progresso na nuvem e jogar em qualquer aparelho."
-            : "Entre para carregar seu progresso salvo na nuvem."}</p>
+            ? "Crie sua conta para começar a colecionar. Seu progresso fica salvo na nuvem e você joga em qualquer aparelho."
+            : "Entre com seu usuário e senha para continuar sua coleção."}</p>
         <form id="form-conta" class="form-conta" autocomplete="on">
             <label>Usuário
                 <input name="usuario" autocomplete="username" required minlength="3" maxlength="20"
@@ -223,10 +243,17 @@ const telaEntrar = (aba = "entrar") => {
             </label>
             <p class="sutil">Usuário: 3 a 20 letras, números ou _. Senha: pelo menos 8 caracteres.</p>` : ""}
             <p id="erro-conta" class="erro-conta" hidden></p>
-            <button class="btn grande" type="submit">${cadastro ? "Criar conta" : "Continuar"}</button>
-        </form>`, "pequeno");
+            <button class="btn grande" type="submit">${cadastro ? "Criar conta" : "Entrar"}</button>
+        </form>
+        <p class="login-rodape">${cadastro
+            ? `Já tem conta? <a href="#" data-aba="entrar">Entrar</a>`
+            : `Ainda não tem conta? <a href="#" data-aba="cadastro">Criar conta grátis</a>`}</p>
+        ${cadastro && temProgresso() ? `<p class="sutil login-aviso">Você já jogava neste aparelho sem conta? Seu progresso vai junto para a conta nova.</p>` : ""}`);
 
-    $$("[data-aba]").forEach((b) => b.addEventListener("click", () => telaEntrar(b.dataset.aba)));
+    $$("[data-aba]").forEach((b) => b.addEventListener("click", (e) => {
+        e.preventDefault();
+        telaEntrar(b.dataset.aba);
+    }));
     const form = $("#form-conta");
     form.usuario.focus();
     form.addEventListener("submit", async (e) => {
@@ -250,7 +277,7 @@ const telaEntrar = (aba = "entrar") => {
 const formatarChave = (chave) => chave.replace(/(.{4})/g, "$1 ").trim();
 
 const telaConfigurar2fa = ({ qr, segredo, usuario }) => {
-    abrirModal(`
+    painel(`
         <h3>Proteja sua conta</h3>
         <p class="sutil">A autenticação de 2 fatores é obrigatória. Além da senha, você vai precisar de um código do celular para entrar.</p>
         <ol class="passos-2fa">
@@ -267,12 +294,12 @@ const telaConfigurar2fa = ({ qr, segredo, usuario }) => {
                    pattern="[0-9 ]{6,7}" maxlength="7" placeholder="000000" required>
             <p id="erro-conta" class="erro-conta" hidden></p>
             <button class="btn grande" type="submit">Ativar e entrar</button>
-        </form>`, "pequeno");
+        </form>`);
     ligarFormCodigo(usuario);
 };
 
 const telaCodigo = () => {
-    abrirModal(`
+    painel(`
         <h3>Código de verificação</h3>
         <p class="sutil">Abra o app autenticador no celular e digite o código de 6 dígitos da conta Pokédex Pocket.</p>
         <form id="form-conta" class="form-conta">
@@ -280,7 +307,7 @@ const telaCodigo = () => {
             <p id="erro-conta" class="erro-conta" hidden></p>
             <button class="btn grande" type="submit">Entrar</button>
         </form>
-        <p class="sutil">Perdeu o celular? Digite um dos seus <b>códigos de recuperação</b> no lugar do código.</p>`, "pequeno");
+        <p class="sutil">Perdeu o celular? Digite um dos seus <b>códigos de recuperação</b> no lugar do código.</p>`);
     ligarFormCodigo();
 };
 
@@ -294,13 +321,16 @@ const ligarFormCodigo = () => {
         try {
             const r = await api("auth/verificar", { metodo: "POST", corpo: { codigo: form.codigo.value } });
             sons.moeda();
-            if (r.codigosRecuperacao) telaCodigosRecuperacao(r.usuario, r.codigosRecuperacao);
-            else {
-                fecharModal();
+            if (r.codigosRecuperacao) {
+                // Conta nova: mostra os códigos antes de liberar o jogo
+                telaCodigosRecuperacao(r.usuario, r.codigosRecuperacao);
+                await conectado(r.usuario);
+            } else {
+                liberarJogo();
                 aviso(`Bem-vindo de volta, <b>${escapar(r.usuario)}</b>!`, "sucesso");
                 if (r.usouRecuperacao) aviso(`Você usou um código de recuperação. Restam ${r.codigosRestantes}.`, "erro");
+                await conectado(r.usuario);
             }
-            await conectado(r.usuario);
         } catch (err) {
             carregando(form, false);
             form.codigo.value = "";
@@ -313,7 +343,7 @@ const ligarFormCodigo = () => {
 
 const telaCodigosRecuperacao = (usuario, codigos) => {
     const texto = `Pokédex Pocket - códigos de recuperação da conta ${usuario}\n\n${codigos.join("\n")}\n\nCada código funciona uma única vez.`;
-    abrirModal(`
+    painel(`
         <h3>Guarde seus códigos</h3>
         <p class="sutil">Se você perder o celular, use um destes códigos no lugar do código do app. Cada um funciona <b>uma única vez</b> e eles não serão mostrados de novo.</p>
         <div class="codigos-recuperacao">${codigos.map((c) => `<code>${c}</code>`).join("")}</div>
@@ -324,7 +354,7 @@ const telaCodigosRecuperacao = (usuario, codigos) => {
         <label class="confirmar-codigos"><input type="checkbox" id="guardei"> Guardei meus códigos em um lugar seguro</label>
         <div class="modal-botoes">
             <button class="btn" id="concluir-conta" disabled>Concluir</button>
-        </div>`, "pequeno");
+        </div>`);
     $("#baixar-codigos").addEventListener("click", () => {
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([texto], { type: "text/plain" }));
@@ -342,8 +372,8 @@ const telaCodigosRecuperacao = (usuario, codigos) => {
     });
     $("#guardei").addEventListener("change", (e) => { $("#concluir-conta").disabled = !e.target.checked; });
     $("#concluir-conta").addEventListener("click", () => {
-        fecharModal();
-        aviso(`Conta criada! Seu progresso agora fica salvo na nuvem.`, "sucesso");
+        liberarJogo();
+        aviso(`Conta criada! Bem-vindo, <b>${escapar(usuario)}</b>. Seus 5 pacotes grátis já estão esperando!`, "sucesso");
     });
 };
 
@@ -392,7 +422,7 @@ export const sairDaConta = async () => {
 // Conectado: abre a tela de perfil. Sem conta: abre o login.
 export const abrirConta = () => {
     if (conta.usuario) location.hash = "perfil";
-    else telaEntrar();
+    else mostrarTelaLogin();
 };
 
 // ---------------- Início ----------------
@@ -402,17 +432,28 @@ export const iniciarConta = async () => {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") enviarAoSair();
     });
+    $(".login-pacotes").innerHTML = Object.keys(PACOTES).map((p) => htmlPacote(p)).join("");
+    let r;
     try {
-        const r = await fetch("/api/auth/eu", { credentials: "same-origin" });
-        if (r.status === 401) {
-            conta.disponivel = true;
-            // Save de uma conta que não está mais conectada neste aparelho: não mistura com o jogo sem conta
-            if (estado.conta) limparSaveLocal();
-            avisarMudancaConta();
-        } else if (r.ok) {
-            conta.disponivel = true;
-            await conectado((await r.json()).usuario, { perguntar: false });
-        }
-    } catch (e) { /* sem servidor: o jogo funciona só com o save local */ }
+        r = await fetch("/api/auth/eu", { credentials: "same-origin" });
+    } catch (e) {
+        r = null;
+    }
+    if (r?.status === 401) {
+        conta.disponivel = true;
+        // Save de uma conta que saiu deste aparelho: começa limpo
+        if (estado.conta) return limparSaveLocal();
+        avisarMudancaConta();
+        telaEntrar();
+    } else if (r?.ok) {
+        conta.disponivel = true;
+        liberarJogo();
+        await conectado((await r.json()).usuario, { perguntar: false });
+    } else {
+        painel(`
+            <h3>Sem conexão com o servidor</h3>
+            <p class="sutil">Não foi possível conectar agora. Confira sua internet e tente de novo em alguns instantes.</p>
+            <button class="btn grande" onclick="location.reload()">Tentar de novo</button>`);
+    }
     atualizarBotao();
 };
