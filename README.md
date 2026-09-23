@@ -1,116 +1,103 @@
-## 🎮 Pokédex Pocket
+# Pokédex Pocket
 
-Um jogo de colecionar cartas Pokémon no navegador, inspirado no **Pokémon TCG Pocket**, que nasceu da minha primeira Pokédex em JavaScript.
+Um jogo de colecionar cartas Pokémon que roda no navegador. Você abre pacotes, completa o álbum e troca cartas com os amigos, meio no estilo do Pokémon TCG Pocket.
 
-👉 Jogue em: https://lucasbrandaocabral.github.io/Pokedex/
+![Tela de entrada](docs/imagens/login.jpg)
 
-## 🃏 Como funciona
+## De onde veio
 
-- **Pacotes**: escolha entre os pacotes *Charizard*, *Mewtwo* e *Pikachu* da coleção **Origem Genética**, deslize para cortar e revele as 5 cartas uma a uma. Também dá para abrir 10 ou 25 de uma vez.
-- **Raridades**: ◆ Comum, ◆◆ Incomum, ◆◆◆ Rara, ◆◆◆◆ ex, ☆ Arte Rara, ☆☆ Super Rara, ☆☆☆ Arte Imersiva e ♛ Coroa. Existe até o raríssimo **God Pack**!
-- **Álbum**: 200 cartas para colecionar, com filtros, efeito holográfico 3D e silhuetas das que faltam.
-- **Pacotes grátis**: 5 por dia, 1 a cada 4h48, acumulando até 5.
-- **Moedas**: venda cartas repetidas, resgate o bônus diário, complete missões e conquistas.
-- **Loja**: compre pacotes com moedas do jogo: avulso, kits de 5 e 10 ou a **caixa com 25 pacotes**.
-- **Trocas com bots**: a cada 2 minutos chegam ofertas novas: trocas 1 por 1, 3 repetidas por uma carta melhor, bots que compram suas repetidas e bots que vendem cartas.
-- **Pontos de pacote**: cada pacote dá 5 pontos ✨ para pegar qualquer carta do álbum.
-- **Pokédex**: a busca original por nome ou número, com evoluções, status e favoritos.
+Esse projeto começou como a minha primeira Pokédex em JavaScript, um desafio que o Yan Dias me passou no Discord: buscar um Pokémon pelo nome ou número na PokeAPI, mostrar a imagem, os tipos e as evoluções, e favoritar os preferidos. Foi ali que aprendi `fetch`, `async/await`, manipular o DOM e salvar coisas no `localStorage`.
 
-- **Conta com login**: crie uma conta com usuário e senha para salvar o progresso na nuvem e jogar em qualquer aparelho. A autenticação de 2 fatores por app autenticador (Google Authenticator, Microsoft Authenticator ou Authy) é obrigatória e vem com 8 códigos de recuperação.
+Depois resolvi transformar a Pokédex num jogo de verdade. A busca original continua lá, numa aba própria, mas agora o foco são as cartas.
 
-- **Perfil de treinador**: apelido, avatar (qualquer um dos 151 Pokémon), bio e uma vitrine com até 3 cartas favoritas. Dá para trocar a senha e mudar o nome de usuário (uma vez a cada 6 meses) pela tela de perfil.
-- **Amigos**: adicione outros jogadores pelo nome de usuário ou pelo **código de amigo** (ex.: `K7QM-3XPA`), ou mande um **link de convite**. Aceite ou recuse pedidos de amizade.
-- **Trocas entre amigos**: escolha cartas suas e cartas do álbum do amigo, mande uma mensagem e espere a resposta. As cartas oferecidas ficam reservadas até a resposta e voltam se a troca for recusada, cancelada ou expirar (7 dias).
+## Como é o jogo
 
-Para jogar é preciso entrar com uma conta: a primeira tela é a de login/cadastro. O progresso fica salvo na nuvem e também no navegador (localStorage). Quem já jogava antes sem conta leva o progresso junto ao criar a conta no mesmo aparelho.
+Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). São três pacotes da coleção Origem Genética, com Charizard, Mewtwo e Pikachu na capa. Você corta o pacote arrastando o dedo e passa as cartas para o lado, uma de cada vez.
 
-## 🗂️ Estrutura
+<p>
+  <img src="docs/imagens/abrindo.jpg" width="49%" alt="Abrindo um pacote">
+  <img src="docs/imagens/carta.jpg" width="49%" alt="Revelando as cartas">
+</p>
 
-- `index.html`: página do jogo
-- `css/style.css`: estilos (cartas, pacotes e animações)
-- `Js/pokemon-data.js`: dados dos 151 Pokémon da 1ª geração
-- `Js/cards.js`: monta as 200 cartas da coleção
-- `Js/state.js`: save, moedas, pacotes grátis, missões
-- `Js/packs.js`: sorteio das cartas dos pacotes
-- `Js/trades.js`: ofertas dos bots
-- `Js/conta.js`: telas de login e sincronização com a nuvem
-- `Js/social.js`: perfil, amigos e trocas entre jogadores
-- `Js/ui.js` e `Js/main.js`: telas e interações
+O álbum tem 200 cartas, do ◆ comum até a ♛ coroa, com silhueta nas que faltam. As mais raras têm arte completa e brilho holográfico quando você passa o mouse.
 
-- `api/`: servidor (Vercel Functions) com cadastro, login, 2FA, save na nuvem (`save.js`) e perfil, amigos e trocas (`social.js`)
-- `scripts/dev.mjs`: servidor local que imita a Vercel; `scripts/*.test.mjs`: testes do login, dos amigos e das trocas
+<p>
+  <img src="docs/imagens/album.jpg" width="49%" alt="Álbum">
+  <img src="docs/imagens/carta-coroa.jpg" width="49%" alt="Carta rara no álbum">
+</p>
 
-## ☁️ Publicando na Vercel (com login)
+Carta repetida dá para vender por moedas e usar na loja (tem até uma caixa com 25 pacotes), ou guardar para trocar. Os bots trazem ofertas novas a cada 2 minutos. Também dá para trocar com amigos: você escolhe cartas do seu álbum e do álbum da outra pessoa, manda uma mensagem e espera ela aceitar.
 
-O login precisa de um servidor e de um banco de dados, então o jogo roda na Vercel. No GitHub Pages (que só hospeda arquivos) a tela de entrada mostra "Sem conexão com o servidor".
+<p>
+  <img src="docs/imagens/inicio.jpg" width="49%" alt="Tela inicial com missões e pacotes grátis">
+  <img src="docs/imagens/trocas-amigos.jpg" width="49%" alt="Proposta de troca de uma amiga">
+</p>
 
-1. Em [vercel.com](https://vercel.com), clique em **Add New → Project** e importe este repositório (Framework Preset: **Other**, sem build).
-2. No projeto, abra **Storage → Create Database → Neon (Postgres)** e conecte ao projeto. A variável `DATABASE_URL` é criada sozinha.
-3. Em **Settings → Environment Variables**, crie `SESSION_SECRET` com um texto aleatório de pelo menos 32 caracteres. Para gerar um:
-   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-4. Faça um novo deploy (**Deployments → Redeploy**). As tabelas do banco são criadas automaticamente no primeiro acesso.
+Cada jogador tem um perfil com apelido, avatar, bio e uma vitrine com 3 cartas. Os amigos se adicionam pelo nome de usuário, por um código curto (tipo `K7QM-3XPA`) ou por um link de convite.
 
-### Segurança do login
+<p>
+  <img src="docs/imagens/perfil.jpg" width="66%" alt="Perfil do treinador">
+  <img src="docs/imagens/celular-login.jpg" width="26%" alt="Versão de celular">
+</p>
 
-- Senhas guardadas com hash `scrypt` e sal aleatório, nunca em texto puro
-- 2FA obrigatório com códigos TOTP de 6 dígitos; cada código só pode ser usado uma vez
-- Segredo do 2FA criptografado no banco (AES-256-GCM)
-- 8 códigos de recuperação de uso único, guardados só como hash
-- Conta bloqueada por 15 minutos depois de 5 erros seguidos, e limite de tentativas de login e cadastro por IP
-- Trocar a senha desconecta os outros aparelhos; também há o botão "Desconectar outros aparelhos"
-- O servidor limpa o save recebido (cartas inexistentes, números absurdos), então um save adulterado não quebra a tela de ninguém
-- Cabeçalhos de segurança (Content-Security-Policy, X-Frame-Options, nosniff) e textos dos jogadores sempre escapados contra XSS
-- Sessão em cookie `HttpOnly`, `Secure` e `SameSite=Lax`, válida por 30 dias
-- Se o mesmo jogador usar dois aparelhos, o progresso mais novo nunca é sobrescrito por um aparelho desatualizado
-- Nas trocas, o servidor confere as cartas dos dois lados e cada troca só pode ser aceita uma vez, então não dá para duplicar cartas
+## Conta e segurança
 
-### Limites conhecidos
+Só dá para jogar com conta. O progresso fica salvo na nuvem, então dá para continuar no celular ou em outro computador.
 
-O progresso (moedas, pacotes, cartas) é calculado no navegador e enviado ao servidor. Quem sabe programar consegue editar o próprio save para ter mais moedas ou cartas. O servidor impede dados inválidos e protege as trocas (reserva de cartas, cada troca só uma vez), mas não consegue saber se uma carta foi "ganha de verdade". Para bloquear isso seria preciso mover a abertura de pacotes e a economia para o servidor.
+Na hora de criar a conta, a verificação em duas etapas é obrigatória: você escaneia um QR code no Google Authenticator (ou Authy, Microsoft Authenticator) e recebe 8 códigos de recuperação para o caso de perder o celular.
 
-### Rodando no computador
+No servidor, a senha é guardada com hash (scrypt), cada código do app só vale uma vez e a conta trava por 15 minutos depois de 5 erros seguidos. Também tem limite de tentativas por IP. Trocar a senha desconecta os outros aparelhos.
 
-1. Instale o Node.js 20+ e o PostgreSQL
-2. `npm install`
-3. Copie `.env.example` para `.env.local` e preencha `DATABASE_URL` e `SESSION_SECRET`
-4. `npm run dev` e abra http://localhost:3000
-5. Com o servidor ligado, `npm test` roda os testes do login
+Nas trocas, as cartas oferecidas ficam reservadas até a resposta, então ninguém consegue oferecer a mesma carta duas vezes. Se a troca for recusada, cancelada ou passar de 7 dias, as cartas voltam.
 
-O workflow `.github/workflows/pages.yml` ainda publica os arquivos no GitHub Pages a cada push na `main`, mas lá o login não funciona. Use o endereço da Vercel.
+Um limite que ainda existe: moedas e pacotes são calculados no navegador. Quem manja de programação consegue editar o próprio progresso. O servidor barra dados inválidos, mas não sabe se uma carta foi ganha de verdade. Para resolver isso eu teria que levar a abertura de pacotes para o servidor.
 
-## 🚀 Minha Jornada no Mundo do Desenvolvimento Web
-Olá! Este é meu primeiro projeto utilizando JavaScript e consumindo uma API externa. Foi um desafio proposto por um programador que conheço no Discord, o Yan Dias. A partir desse desafio, desenvolvi uma Pokédex funcional que permite buscar informações sobre diferentes Pokémon.
+## Tecnologias
 
-## 📱 Sobre o Projeto original
-- A primeira versão da Pokedex permitia:
-- Buscar Pokémon por nome ou ID
-- Visualizar imagens e tipos de cada Pokémon
-- Ver a cadeia de evolução completa
-- Favoritar seus Pokémon preferidos
-- Acessar uma página de favoritos
+- HTML, CSS e JavaScript puro no front, sem framework
+- [PokeAPI](https://pokeapi.co/) para os dados e as imagens dos Pokémon
+- Vercel Functions (Node.js) no back-end, na pasta `api/`
+- Postgres no [Neon](https://neon.tech/) para contas, amigos e trocas
 
-## 🔧 Tecnologias Utilizadas
-- HTML5: Estruturação da página
-- CSS3: Estilização e design responsivo
-- JavaScript: Lógica de programação e interatividade
-- PokeAPI: API pública que fornece todos os dados e imagens dos Pokémon
+## Organização do código
 
-## 💡 O Que Aprendi
-Este projeto representou meu primeiro contato real com JavaScript e consumo de APIs. Durante o desenvolvimento, aprendi:
-- Como fazer requisições assíncronas com fetch e async/await
-- Manipulação do DOM para atualizar a interface dinamicamente
-- Tratamento de erros em requisições de API
-- Armazenamento local com localStorage para salvar favoritos
-- Criação de interfaces interativas com eventos JavaScript
+```
+index.html            página do jogo
+css/style.css         visual (cartas, pacotes em pixel art, animações)
+Js/pokemon-data.js    dados dos 151 Pokémon
+Js/cards.js           monta as 200 cartas da coleção
+Js/packs.js           sorteio das cartas de cada pacote
+Js/state.js           progresso, moedas, pacotes grátis e missões
+Js/trades.js          ofertas dos bots
+Js/conta.js           login, 2FA e sincronização com a nuvem
+Js/social.js          perfil, amigos e trocas entre jogadores
+Js/main.js            telas e navegação
+api/                  servidor (cadastro, login, save, social)
+scripts/              servidor local e testes
+```
 
-## 🎯 Desafios Superados
-Como iniciante em JavaScript, enfrentei diversos desafios:
-- Entender o funcionamento assíncrono das requisições
-- Manipular os dados retornados pela API
-- Implementar a lógica de exibição das evoluções
-- Tratar erros quando um Pokémon não é encontrado
-- Criar um sistema de favoritos persistente
+## Rodando no seu computador
 
-## 🙏 Agradecimentos
+Precisa de Node.js 20 ou mais novo e de um Postgres.
 
-Agradeço ao Everton Dev pelo vídeo que me ajudou a entender e implementar o uso do LocalStorage e ao Artigo Tech pelo conteúdo sobre a PokeAPI.
+```bash
+npm install
+cp .env.example .env.local   # preencha DATABASE_URL e SESSION_SECRET
+npm run dev                  # abre em http://localhost:3000
+npm test                     # com o servidor ligado, roda os testes
+```
+
+## Publicando na Vercel
+
+1. Importe o repositório na Vercel (Application Preset: Other, sem build).
+2. Em Storage, crie um banco Neon e conecte ao projeto. A `DATABASE_URL` aparece sozinha.
+3. Em Settings → Environment Variables, crie `SESSION_SECRET` com um texto aleatório de pelo menos 32 caracteres. Dá para gerar um no console do navegador com `crypto.randomUUID() + crypto.randomUUID()`.
+4. Faça um Redeploy. As tabelas do banco são criadas no primeiro acesso.
+
+O GitHub Pages só serve arquivos estáticos, então lá o jogo abre mas mostra "sem conexão com o servidor". O endereço certo para jogar é o da Vercel.
+
+## Agradecimentos
+
+Ao Yan Dias pelo desafio que começou tudo, ao Everton Dev pelo vídeo que me ajudou a entender o `localStorage` e ao Artigo Tech pelo conteúdo sobre a PokeAPI.
+
+Pokémon e todos os nomes relacionados são marcas da Nintendo, Game Freak e The Pokémon Company. Este é um projeto de fã, sem fins lucrativos.
