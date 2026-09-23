@@ -368,6 +368,14 @@ export const salvarAgora = async () => {
     if (conta.sincronizacao === "erro") throw new Error("Não foi possível salvar seu progresso agora. Tente de novo.");
 };
 
+// Depois de mudar o nome de usuário
+export const definirUsuario = (novo) => {
+    conta.usuario = novo;
+    estado.conta = novo;
+    salvar();
+    atualizarBotao();
+};
+
 // Usa o save devolvido pelo servidor depois de uma troca
 export const aplicarSaveDoServidor = (save) => usarNuvem(save);
 
@@ -400,6 +408,7 @@ export const iniciarConta = async () => {
             conta.disponivel = true;
             // Save de uma conta que não está mais conectada neste aparelho: não mistura com o jogo sem conta
             if (estado.conta) limparSaveLocal();
+            avisarMudancaConta();
         } else if (r.ok) {
             conta.disponivel = true;
             await conectado((await r.json()).usuario, { perguntar: false });

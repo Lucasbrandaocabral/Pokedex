@@ -18,8 +18,8 @@ Um jogo de colecionar cartas Pokémon no navegador, inspirado no **Pokémon TCG 
 
 - **Conta com login**: crie uma conta com usuário e senha para salvar o progresso na nuvem e jogar em qualquer aparelho. A autenticação de 2 fatores por app autenticador (Google Authenticator, Microsoft Authenticator ou Authy) é obrigatória e vem com 8 códigos de recuperação.
 
-- **Perfil de treinador**: apelido, avatar (qualquer um dos 151 Pokémon), bio e uma vitrine com até 3 cartas favoritas. Dá para trocar a senha pela tela de perfil.
-- **Amigos**: adicione outros jogadores pelo nome de usuário e aceite ou recuse pedidos de amizade.
+- **Perfil de treinador**: apelido, avatar (qualquer um dos 151 Pokémon), bio e uma vitrine com até 3 cartas favoritas. Dá para trocar a senha e mudar o nome de usuário (uma vez a cada 6 meses) pela tela de perfil.
+- **Amigos**: adicione outros jogadores pelo nome de usuário ou pelo **código de amigo** (ex.: `K7QM-3XPA`), ou mande um **link de convite**. Aceite ou recuse pedidos de amizade.
 - **Trocas entre amigos**: escolha cartas suas e cartas do álbum do amigo, mande uma mensagem e espere a resposta. As cartas oferecidas ficam reservadas até a resposta e voltam se a troca for recusada, cancelada ou expirar (7 dias).
 
 Sem conta, o progresso fica salvo no próprio navegador (localStorage). Ao criar uma conta, esse progresso vai junto para a nuvem.

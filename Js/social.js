@@ -6,6 +6,7 @@ import { estado, salvar, adicionarCarta, quantidade, cartasUnicas } from "./stat
 import { $, $$, escapar, numero, htmlCarta, abrirModal, fecharModal, aviso, confirmar, sons } from "./ui.js";
 import {
     api, usuarioAtual, contaDisponivel, textoSincronizacao, salvarAgora, aplicarSaveDoServidor, sairDaConta,
+    definirUsuario, abrirConta,
 } from "./conta.js";
 
 const MAX_POR_LADO = 10;
@@ -78,7 +79,11 @@ const atualizarBadges = () => {
 };
 
 export const iniciarSocial = () => {
-    window.addEventListener("conta-mudou", atualizarSocial);
+    window.addEventListener("conta-mudou", async () => {
+        await atualizarSocial();
+        // Convite aberto antes de entrar: continua de onde parou
+        if (conviteGuardado()) processarConvite(conviteGuardado());
+    });
     window.addEventListener("botao-conta-atualizado", atualizarBadges);
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") atualizarSocial();
@@ -161,8 +166,18 @@ export const telaPerfil = (app) => {
     <div class="grade-painel">
         <section class="painel">
             <h2>Amigos</h2>
+            <div class="codigo-amigo">
+                <div>
+                    <small>Seu código de amigo</small>
+                    <b>${escapar(p.codigoAmigo || "")}</b>
+                </div>
+                <div class="pessoa-botoes">
+                    <button class="btn pequeno secundario" data-social="copiar-codigo">Copiar código</button>
+                    <button class="btn pequeno" data-social="convidar">${navigator.share ? "Compartilhar convite" : "Copiar convite"}</button>
+                </div>
+            </div>
             <form id="form-amigo" class="linha-form">
-                <input name="usuario" placeholder="Nome de usuário do amigo" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20" required>
+                <input name="usuario" placeholder="Nome de usuário ou código de amigo" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="24" required>
                 <button class="btn" type="submit">Adicionar</button>
             </form>
             ${resumo.pedidosRecebidos.length ? `
@@ -181,16 +196,17 @@ export const telaPerfil = (app) => {
                 ? `<ul class="lista-pessoas">${resumo.amigos.map((x) => htmlPessoa(x, `
                     <button class="btn pequeno secundario" data-social="ver-amigo" data-usuario="${x.usuario}">Perfil</button>
                     <button class="btn pequeno" data-social="nova-troca" data-usuario="${x.usuario}">Trocar</button>`)).join("")}</ul>`
-                : `<p class="vazio">Você ainda não tem amigos. Peça o nome de usuário de alguém e adicione acima!</p>`}
+                : `<p class="vazio">Você ainda não tem amigos. Mande seu convite ou peça o código de amigo de alguém e adicione acima!</p>`}
         </section>
 
         <section class="painel">
             <h2>Conta</h2>
-            <p>Seu nome de usuário é <b>@${escapar(p.usuario)}</b>. É ele que seus amigos usam para te adicionar.</p>
+            <p>Seu nome de usuário é <b>@${escapar(p.usuario)}</b>. Seus amigos podem te adicionar por ele ou pelo código de amigo.</p>
             <p class="sutil">${textoSincronizacao()}</p>
             <p class="sutil">Autenticação de 2 fatores: <b class="texto-verde">ativada</b></p>
             <div class="acoes-carta">
                 <button class="btn secundario" data-social="salvar-agora">Salvar agora</button>
+                <button class="btn secundario" data-social="trocar-nome">Mudar nome de usuário</button>
                 <button class="btn secundario" data-social="trocar-senha">Trocar senha</button>
                 <button class="btn perigo" data-social="sair">Sair da conta</button>
             </div>
@@ -203,7 +219,7 @@ export const telaPerfil = (app) => {
         try {
             const r = await acao("adicionar-amigo", { usuario });
             sons.moeda();
-            aviso(r.aceito ? `Agora você e <b>@${escapar(usuario)}</b> são amigos!` : `Pedido enviado para <b>@${escapar(usuario)}</b>.`, "sucesso");
+            aviso(r.aceito ? `Agora você e <b>@${escapar(r.usuario)}</b> são amigos!` : `Pedido enviado para <b>@${escapar(r.usuario)}</b>.`, "sucesso");
             await atualizarSocial();
         } catch (err) {
             sons.erro();
@@ -320,6 +336,117 @@ const modalTrocarSenha = () => {
             erro.hidden = false;
         }
     });
+};
+
+const dataCurta = (data) => new Date(data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+const modalTrocarNome = () => {
+    const p = resumo.perfil;
+    if (p.proximaTrocaNome) {
+        abrirModal(`
+            <h3>Mudar nome de usuário</h3>
+            <p class="modal-texto">Você só pode mudar o nome de usuário uma vez a cada 6 meses. Poderá mudar de novo em <b>${dataCurta(p.proximaTrocaNome)}</b>.</p>
+            <p class="sutil">Enquanto isso, você pode mudar o <b>apelido</b> quando quiser em "Editar perfil".</p>
+            <div class="modal-botoes"><button class="btn" data-acao="fechar-modal">Entendi</button></div>`, "pequeno");
+        return;
+    }
+    abrirModal(`
+        <h3>Mudar nome de usuário</h3>
+        <p class="sutil">Seu nome atual é <b>@${escapar(p.usuario)}</b>. Depois de mudar, você entra com o nome novo e só poderá mudar de novo daqui a <b>6 meses</b>. Seus amigos, cartas e trocas continuam iguais, e seu código de amigo não muda.</p>
+        <p class="sutil">Quer só mudar o nome que aparece para os outros? Use o <b>apelido</b> em "Editar perfil": ele pode ser mudado a qualquer hora.</p>
+        <form id="form-nome" class="form-conta">
+            <label>Novo nome de usuário
+                <input name="novo" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocapitalize="none" spellcheck="false" autocomplete="username">
+            </label>
+            <label>Sua senha <input name="senha" type="password" autocomplete="current-password" required></label>
+            <p class="sutil">3 a 20 letras, números ou _.</p>
+            <p id="erro-conta" class="erro-conta" hidden></p>
+            <button class="btn grande" type="submit">Mudar nome</button>
+        </form>`, "pequeno");
+    const form = $("#form-nome");
+    form.novo.focus();
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const novo = form.novo.value.trim();
+        if (!(await confirmarDentroDoModal(`Mudar para @${novo.toLowerCase()}? Você só poderá mudar de novo em 6 meses.`))) return;
+        try {
+            const r = await acao("trocar-nome", { novo, senha: form.senha.value });
+            definirUsuario(r.usuario);
+            fecharModal();
+            sons.moeda();
+            aviso(`Pronto! Agora você é <b>@${escapar(r.usuario)}</b>. Use esse nome para entrar.`, "sucesso");
+            await atualizarSocial();
+        } catch (err) {
+            $("#erro-conta").textContent = err.message;
+            $("#erro-conta").hidden = false;
+        }
+    });
+};
+
+// Confirmação simples sem fechar o formulário aberto
+const confirmarDentroDoModal = (texto) => Promise.resolve(window.confirm(texto));
+
+// ---------------- Código de amigo e convites ----------------
+const linkConvite = () => `${location.origin}${location.pathname}#amigo/${encodeURIComponent(resumo.perfil.codigoAmigo)}`;
+
+const copiar = async (texto, mensagem) => {
+    try {
+        await navigator.clipboard.writeText(texto);
+        aviso(mensagem, "sucesso");
+    } catch (e) {
+        abrirModal(`<h3>Copie o texto</h3><p class="chave-2fa">${escapar(texto)}</p>`, "pequeno");
+    }
+};
+
+const convidar = async () => {
+    const texto = `Bora trocar cartas no Pokédex Pocket! Meu código de amigo é ${resumo.perfil.codigoAmigo}`;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: "Pokédex Pocket", text: texto, url: linkConvite() });
+            return;
+        } catch (e) {
+            if (e.name === "AbortError") return;
+        }
+    }
+    copiar(`${texto}\n${linkConvite()}`, "Convite copiado! Cole para seu amigo.");
+};
+
+const CHAVE_CONVITE = "pokepocket_convite";
+
+// Alguém abriu um link de convite (#amigo/CODIGO)
+export const processarConvite = async (codigo) => {
+    if (!codigo) return;
+    if (!usuarioAtual()) {
+        try { sessionStorage.setItem(CHAVE_CONVITE, codigo); } catch (e) { /* sem armazenamento */ }
+        if (contaDisponivel()) {
+            aviso("Entre ou crie uma conta para adicionar esse amigo.");
+            abrirConta();
+        }
+        return;
+    }
+    try { sessionStorage.removeItem(CHAVE_CONVITE); } catch (e) { /* sem armazenamento */ }
+    try {
+        const p = await api(`social?acao=perfil&usuario=${encodeURIComponent(codigo)}`);
+        if (p.usuario === usuarioAtual()) return aviso("Esse é o seu próprio convite. Mande para um amigo!");
+        if (p.amigo) return aviso(`Você e <b>@${escapar(p.usuario)}</b> já são amigos.`);
+        abrirModal(`
+            <h3>Convite de amizade</h3>
+            <div class="pessoa grande">
+                ${avatar(p.avatar)}
+                <div><b>${escapar(p.apelido)}</b><small>@${escapar(p.usuario)} • ${p.cartas}/${TOTAL_CARTAS} cartas</small></div>
+            </div>
+            <p class="modal-texto">Quer adicionar esse treinador como amigo?</p>
+            <div class="modal-botoes">
+                <button class="btn secundario" data-acao="fechar-modal">Agora não</button>
+                <button class="btn" data-social="aceitar-convite" data-usuario="${escapar(codigo)}">Adicionar amigo</button>
+            </div>`, "pequeno");
+    } catch (e) {
+        aviso(escapar(e.message), "erro");
+    }
+};
+
+const conviteGuardado = () => {
+    try { return sessionStorage.getItem(CHAVE_CONVITE); } catch (e) { return null; }
 };
 
 // ---------------- Perfil de um amigo ----------------
@@ -575,6 +702,16 @@ const ACOES = {
     recarregar: () => { erroResumo = null; renderizarTela(); atualizarSocial(); },
     "editar-perfil": () => resumo && modalEditarPerfil(),
     "trocar-senha": modalTrocarSenha,
+    "trocar-nome": () => resumo && modalTrocarNome(),
+    "copiar-codigo": () => resumo && copiar(resumo.perfil.codigoAmigo, "Código de amigo copiado!"),
+    convidar: () => resumo && convidar(),
+    "aceitar-convite": async (el) => {
+        fecharModal();
+        await executar(async () => {
+            const r = await acao("adicionar-amigo", { usuario: el.dataset.usuario });
+            aviso(r.aceito ? `Agora você e <b>@${escapar(r.usuario)}</b> são amigos!` : `Pedido enviado para <b>@${escapar(r.usuario)}</b>. Quando aceitarem, vocês já podem trocar.`, "sucesso");
+        });
+    },
     "salvar-agora": () => executar(salvarAgora, "Progresso salvo na nuvem."),
     sair: sairDaConta,
     "aceitar-amigo": (el) => executar(() => acao("responder-amigo", { id: el.dataset.id, aceitar: true }), "Pedido aceito! Agora vocês são amigos."),

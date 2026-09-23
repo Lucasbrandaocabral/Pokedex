@@ -143,6 +143,40 @@ test("trocar senha exige a senha atual", async () => {
     assert.equal(login.dados.etapa, "codigo");
 });
 
+test("código de amigo: aparece no perfil e serve para adicionar", async () => {
+    const eevee = await criarJogador("eevee", {});
+    const { perfil } = (await eevee.api("/api/social?acao=resumo")).dados;
+    assert.match(perfil.codigoAmigo, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    assert.equal((await eevee.api("/api/social?acao=resumo")).dados.perfil.codigoAmigo, perfil.codigoAmigo, "o código não muda");
+
+    // Com hífen, sem hífen, minúsculo: tudo funciona
+    const r = await misty.api.acao("adicionar-amigo", { usuario: perfil.codigoAmigo.replace("-", "").toLowerCase() });
+    assert.equal(r.status, 200);
+    assert.equal(r.dados.usuario, eevee.usuario);
+    assert.equal((await misty.api(`/api/social?acao=perfil&usuario=${perfil.codigoAmigo}`)).dados.usuario, eevee.usuario);
+    assert.equal((await misty.api.acao("adicionar-amigo", { usuario: "ZZZZ-ZZZZ" })).status, 404);
+});
+
+test("mudar o nome de usuário: exige senha e só a cada 6 meses", async () => {
+    const pikachu = await criarJogador("pika", {});
+    const novo = `raichu_${Math.random().toString(36).slice(2, 7)}`;
+    assert.equal((await pikachu.api.acao("trocar-nome", { novo, senha: "errada" })).status, 400);
+    assert.equal((await pikachu.api.acao("trocar-nome", { novo: "a!", senha: "senha-forte-1" })).status, 400);
+    assert.equal((await pikachu.api.acao("trocar-nome", { novo: misty.usuario, senha: "senha-forte-1" })).status, 409, "nome em uso");
+
+    const ok = await pikachu.api.acao("trocar-nome", { novo: novo.toUpperCase(), senha: "senha-forte-1" });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.dados.usuario, novo);
+    assert.deepEqual((await pikachu.api("/api/auth/eu")).dados, { usuario: novo }, "a sessão continua valendo");
+    assert.ok((await pikachu.api("/api/social?acao=resumo")).dados.perfil.proximaTrocaNome, "mostra quando pode mudar de novo");
+
+    assert.equal((await pikachu.api.acao("trocar-nome", { novo: `${novo}x`, senha: "senha-forte-1" })).status, 429);
+    const antigo = await cliente()("/api/auth/entrar", { metodo: "POST", corpo: { usuario: pikachu.usuario, senha: "senha-forte-1" } });
+    assert.equal(antigo.status, 401, "o nome antigo não entra mais");
+    const atual = await cliente()("/api/auth/entrar", { metodo: "POST", corpo: { usuario: novo, senha: "senha-forte-1" } });
+    assert.equal(atual.dados.etapa, "codigo");
+});
+
 test("sem login não acessa nada social", async () => {
     assert.equal((await cliente()("/api/social?acao=resumo")).status, 401);
 });
