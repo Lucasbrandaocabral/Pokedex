@@ -55,6 +55,9 @@ const estadoInicial = () => {
         missoesVistas: 0,
         favoritos: favoritosAntigos,
         som: true,
+        conta: null, // usuário dono deste save (null = jogando sem conta)
+        salvoEm: 0,
+        nuvemBase: 0, // salvoEm da última versão sincronizada com a nuvem
     };
 };
 
@@ -70,15 +73,33 @@ export const estado = carregar();
 
 const ouvintes = new Set();
 export const aoMudar = (fn) => ouvintes.add(fn);
+// Chamados a cada gravação (usado para sincronizar com a nuvem)
+const ouvintesSalvar = new Set();
+export const aoSalvar = (fn) => ouvintesSalvar.add(fn);
 
 export const salvar = (notificar = true) => {
+    estado.salvoEm = Date.now();
     try {
         localStorage.setItem(CHAVE, JSON.stringify(estado));
     } catch (e) { /* armazenamento indisponível */ }
+    ouvintesSalvar.forEach((fn) => fn());
     if (notificar) ouvintes.forEach((fn) => fn());
 };
 
-export const resetar = () => {
+// Troca todo o progresso (ex.: ao carregar o save da nuvem)
+export const substituirEstado = (novo) => {
+    Object.keys(estado).forEach((k) => delete estado[k]);
+    Object.assign(estado, estadoInicial(), novo);
+    salvar();
+};
+
+export const temProgresso = () => estado.stats.pacotes > 0 || Object.keys(estado.colecao).length > 0;
+
+// Apaga o progresso. Se houver conta conectada, o save zerado também vai para a nuvem.
+export const resetar = () => substituirEstado({ conta: estado.conta, som: estado.som });
+
+// Esquece o save deste aparelho (ao sair da conta)
+export const limparSaveLocal = () => {
     localStorage.removeItem(CHAVE);
     location.reload();
 };

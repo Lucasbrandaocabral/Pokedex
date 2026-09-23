@@ -18,6 +18,7 @@ import {
     icone, $, $$, escapar, numero, formatarTempo, htmlCarta, htmlVerso, htmlPacote,
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
 } from "./ui.js";
+import { iniciarConta, abrirConta } from "./conta.js";
 
 const app = $("#app");
 let telaAtual = "inicio";
@@ -837,7 +838,10 @@ const ACOES = {
         if (v) { sons.moeda(); aviso(`Conquista desbloqueada! +${numero(v)} moedas`, "sucesso"); }
     },
     resetar: async () => {
-        if (await confirmar("Apagar progresso?", "Todas as cartas, moedas e pacotes serão perdidos. Essa ação não pode ser desfeita.", "Apagar tudo")) resetar();
+        if (!(await confirmar("Apagar progresso?", "Todas as cartas, moedas e pacotes serão perdidos. Essa ação não pode ser desfeita.", "Apagar tudo"))) return;
+        novasVisita = {};
+        resetar();
+        aviso("Progresso apagado. Boa sorte na nova coleção!");
     },
     "selecionar-pacote": (el) => {
         pacoteSelecionado = el.dataset.id;
@@ -915,6 +919,7 @@ const ACOES = {
         el.classList.toggle("ativa", ativo);
         aviso(ativo ? "Adicionado aos favoritos" : "Removido dos favoritos");
     },
+    conta: () => abrirConta(),
     som: () => {
         estado.som = !estado.som;
         salvar();
@@ -983,3 +988,4 @@ limparNotificacoes("album");
 limparNotificacoes("inicio");
 atualizarCabecalho();
 navegar();
+iniciarConta();
