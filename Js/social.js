@@ -659,8 +659,19 @@ const modalNovaTroca = async (usuario) => {
     let busca = "";
     let colecao = "";
     // Filtro rápido de cada lado: no seu, só repetidas; no do amigo, só as que você não tem
-    const filtroRapido = { da: false, quer: false };
-    const TEXTO_FILTRO = { da: "Só minhas repetidas", quer: "Só as que eu não tenho" };
+    const amigoTem = (id) => (donos.quer[id] || 0) > 0;
+    const FILTROS = {
+        da: [
+            { id: "repetidas", texto: "Só minhas repetidas", passa: (c) => donos.da[c.id] > 1 },
+            { id: "amigo-nao-tem", texto: `Só as que @${escapar(amigo.usuario)} não tem`, passa: (c) => !amigoTem(c.id) },
+        ],
+        quer: [{ id: "eu-nao-tenho", texto: "Só as que eu não tenho", passa: (c) => !quantidade(c.id) }],
+    };
+    const ligados = new Set(); // ids dos filtros ligados (cada aba tem os seus)
+    const desenharFiltros = () => {
+        $("#filtros-rapidos").innerHTML = FILTROS[lado].map((f) =>
+            `<label class="filtro-rapido"><input type="checkbox" data-filtro="${f.id}" ${ligados.has(f.id) ? "checked" : ""}> ${f.texto}</label>`).join("");
+    };
 
     abrirModal(`
         <h3>Troca com ${escapar(amigo.apelido)}</h3>
@@ -676,7 +687,7 @@ const modalNovaTroca = async (usuario) => {
         </div>
         <input type="search" id="busca-troca" class="campo-busca" placeholder="Buscar carta por nome ou número">
         <div class="filtros-troca">
-            <label class="filtro-rapido"><input type="checkbox" id="filtro-rapido"> <span id="texto-filtro">${TEXTO_FILTRO.da}</span></label>
+            <div class="filtros-rapidos" id="filtros-rapidos"></div>
             <select id="colecao-troca">
                 <option value="">Todas as expansões</option>
                 ${COLECOES.map((c) => `<option value="${c.codigo}">${c.nome}</option>`).join("")}
@@ -696,7 +707,7 @@ const modalNovaTroca = async (usuario) => {
             .filter((c) => dono[c.id] > 0)
             .filter((c) => !busca || c.nome.toLowerCase().includes(busca) || c.id.toLowerCase().includes(busca))
             .filter((c) => !colecao || c.colecao === colecao)
-            .filter((c) => !filtroRapido[lado] || (lado === "da" ? dono[c.id] > 1 : !quantidade(c.id)))
+            .filter((c) => FILTROS[lado].every((f) => !ligados.has(f.id) || f.passa(c)))
             .sort((a, b) => b.raridade - a.raridade || a.numero - b.numero);
         $("#grade-troca").innerHTML = lista.length
             ? lista.map((c) => {
@@ -704,10 +715,11 @@ const modalNovaTroca = async (usuario) => {
                 return `<button type="button" class="opcao-carta ${usadas ? "escolhido" : ""}" data-carta="${c.id}">
                     ${htmlCarta(c, { qtd: dono[c.id] })}
                     ${usadas ? `<span class="selo-escolha">${usadas}</span>` : ""}
-                    ${lado === "quer" && !quantidade(c.id) ? `<span class="selo-falta">Falta</span>` : ""}
+                    ${lado === "quer" && !quantidade(c.id) ? `<span class="selo-falta" title="Você não tem essa carta">Falta</span>` : ""}
+                    ${lado === "da" && !amigoTem(c.id) ? `<span class="selo-falta amigo" title="@${escapar(amigo.usuario)} não tem essa carta">Não tem</span>` : ""}
                 </button>`;
             }).join("")
-            : `<p class="vazio">${lado === "da" ? "Você não tem cartas" : `@${escapar(amigo.usuario)} não tem cartas`}${busca || colecao || filtroRapido[lado] ? " com esses filtros" : ""}.</p>`;
+            : `<p class="vazio">${lado === "da" ? "Você não tem cartas" : `@${escapar(amigo.usuario)} não tem cartas`}${busca || colecao || FILTROS[lado].some((f) => ligados.has(f.id)) ? " com esses filtros" : ""}.</p>`;
     };
     const desenharResumo = () => {
         for (const l of ["da", "quer"]) {
@@ -718,18 +730,20 @@ const modalNovaTroca = async (usuario) => {
         }
         $("#valor-troca").innerHTML = `Valor de venda: você dá <i class="ic-moeda"></i> ${valorCartas(selecao.da)} • você recebe <i class="ic-moeda"></i> ${valorCartas(selecao.quer)}`;
     };
+    desenharFiltros();
     desenharGrade();
     desenharResumo();
 
     $$(".abas-conta [data-lado]").forEach((b) => b.addEventListener("click", () => {
         lado = b.dataset.lado;
         $$(".abas-conta [data-lado]").forEach((x) => x.classList.toggle("ativa", x === b));
-        $("#filtro-rapido").checked = filtroRapido[lado];
-        $("#texto-filtro").textContent = TEXTO_FILTRO[lado];
+        desenharFiltros();
         desenharGrade();
     }));
-    $("#filtro-rapido").addEventListener("change", (e) => {
-        filtroRapido[lado] = e.target.checked;
+    $("#filtros-rapidos").addEventListener("change", (e) => {
+        const f = e.target.dataset.filtro;
+        if (e.target.checked) ligados.add(f);
+        else ligados.delete(f);
         desenharGrade();
     });
     $("#colecao-troca").addEventListener("change", (e) => {
