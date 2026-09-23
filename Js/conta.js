@@ -3,7 +3,8 @@
 // e sincronização do progresso com a nuvem
 // ====================================================
 import { estado, salvar, aoSalvar, substituirEstado, temProgresso, limparSaveLocal } from "./state.js";
-import { $, $$, abrirModal, fecharModal, aviso, escapar, confirmar, sons, htmlPacote } from "./ui.js";
+import { $, $$, abrirModal, fecharModal, aviso, escapar, confirmar, sons } from "./ui.js";
+import { iniciarDemoLogin, pararDemoLogin } from "./login-demo.js";
 
 const conta = {
     disponivel: false, // false quando o site está sem servidor (ex.: GitHub Pages)
@@ -204,6 +205,7 @@ const painel = (html) => {
 
 const mostrarTelaLogin = (mensagem = "") => {
     document.body.classList.add("bloqueado");
+    iniciarDemoLogin();
     fecharModal();
     telaEntrar();
     if (mensagem) erroForm(mensagem);
@@ -211,6 +213,7 @@ const mostrarTelaLogin = (mensagem = "") => {
 
 const liberarJogo = () => {
     document.body.classList.remove("bloqueado");
+    pararDemoLogin();
     window.scrollTo({ top: 0 });
 };
 
@@ -431,7 +434,6 @@ export const iniciarConta = async () => {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") enviarAoSair();
     });
-    $(".login-pacotes").innerHTML = ["charizard", "mew", "pikachu"].map((p) => htmlPacote(p)).join("");
     let r;
     try {
         r = await fetch("/api/auth/eu", { credentials: "same-origin" });
@@ -443,6 +445,7 @@ export const iniciarConta = async () => {
         // Save de uma conta que saiu deste aparelho: começa limpo
         if (estado.conta) return limparSaveLocal();
         avisarMudancaConta();
+        iniciarDemoLogin();
         telaEntrar();
     } else if (r?.ok) {
         conta.disponivel = true;
