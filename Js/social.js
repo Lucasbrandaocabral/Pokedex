@@ -211,6 +211,11 @@ export const telaPerfil = (app) => {
                 <button class="btn secundario" data-social="sair-de-todos">Desconectar outros aparelhos</button>
                 <button class="btn perigo" data-social="sair">Sair da conta</button>
             </div>
+            <div class="zona-perigo">
+                <h3>Apagar progresso</h3>
+                <p class="sutil">Apaga todas as cartas, moedas e pacotes desta conta e começa do zero. Não dá para desfazer.</p>
+                <button class="btn perigo pequeno" data-acao="resetar">Apagar progresso</button>
+            </div>
         </section>
     </div>`;
 

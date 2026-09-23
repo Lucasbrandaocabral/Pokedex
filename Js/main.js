@@ -193,7 +193,6 @@ const telaInicio = () => {
                 <div><dt>Cartas no total</dt><dd>${numero(Object.values(estado.colecao).reduce((s, q) => s + q, 0))}</dd></div>
                 <div><dt>Pontos de pacote</dt><dd>${numero(estado.pontos)}</dd></div>
             </dl>
-            <button class="btn perigo pequeno" data-acao="resetar">Apagar progresso</button>
         </section>
         <section class="painel largo">
             <h2>Coleção</h2>
