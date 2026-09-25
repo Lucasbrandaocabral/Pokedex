@@ -27,6 +27,11 @@ export const AJUDANTES = [
     { id: "electrode", nome: "Electrode", plural: "Electrodes", pid: 101, custo: 1.4e6, prod: 1400, cor: "#c93a3a", desc: "Explode de energia (com cuidado)." },
     { id: "jolteon", nome: "Jolteon", plural: "Jolteons", pid: 135, custo: 2e7, prod: 7800, cor: "#f5d547", desc: "Seus pelos soltam raios de alta voltagem." },
     { id: "zapdos", nome: "Zapdos", plural: "Zapdos", pid: 145, custo: 3.3e8, prod: 44000, cor: "#f0b429", desc: "O pássaro lendário que controla as tempestades." },
+    { id: "porygon", nome: "Porygon", plural: "Porygons", pid: 137, custo: 5.1e9, prod: 260000, cor: "#f08aa8", desc: "Um Pokémon digital que gera energia dentro dos computadores." },
+    { id: "dragonite", nome: "Dragonite", plural: "Dragonites", pid: 149, custo: 7.5e10, prod: 1.6e6, cor: "#f2a65a", desc: "Voa em volta do mundo trazendo energia dos ventos." },
+    { id: "moltres", nome: "Moltres", plural: "Moltres", pid: 146, custo: 1e12, prod: 1e7, cor: "#ff7a2f", desc: "O pássaro de fogo que aquece as usinas com suas chamas." },
+    { id: "mewtwo", nome: "Mewtwo", plural: "Mewtwos", pid: 150, custo: 1.4e13, prod: 6.5e7, cor: "#b58ad6", desc: "Seu poder psíquico converte pensamento em energia pura." },
+    { id: "mew", nome: "Mew", plural: "Mews", pid: 151, custo: 1.7e14, prod: 4.3e8, cor: "#ff9fd0", desc: "O Pokémon mítico que carrega o DNA de todos os outros." },
 ];
 export const AJUDANTE_POR_ID = Object.fromEntries(AJUDANTES.map((a) => [a.id, a]));
 const CRESCIMENTO = 1.15; // cada compra deixa o próximo 15% mais caro
@@ -47,6 +52,11 @@ const NOMES_NIVEIS = {
     electrode: ["Brilho Intenso", "Explosão Contida", "Carga Máxima", "Rolagem Relâmpago", "Reação em Cadeia", "Big Bang"],
     jolteon: ["Pelos Eriçados", "Agulha de Trovão", "Velocidade Máxima", "Pedra do Trovão", "Choque Veloz", "Raio Absoluto"],
     zapdos: ["Pena Dourada", "Bico Broca", "Céu Carregado", "Olho da Tempestade", "Trovão Lendário", "Fúria dos Céus"],
+    porygon: ["Atualização de Sistema", "Processador Duplo", "Conversão", "Realidade Virtual", "Rede Neural", "Singularidade Digital"],
+    dragonite: ["Asas de Dragão", "Dança do Dragão", "Correntes de Vento", "Hiper-Raio", "Rota Global", "Rei dos Céus"],
+    moltres: ["Pena Flamejante", "Asa de Fogo", "Calor Solar", "Fênix Renascida", "Sol de Kanto", "Chama Eterna"],
+    mewtwo: ["Colher Dobrada", "Psicocinese", "Barreira Mental", "Onda Psíquica", "Clone Perfeito", "Mente Infinita"],
+    mew: ["Bolha Rosa", "Metronomo", "Transformação", "DNA Ancestral", "Ilha Mítica", "Origem de Tudo"],
 };
 const ROMANOS = ["I", "II", "III", "IV", "V", "VI"];
 
@@ -87,6 +97,8 @@ export const RARIDADES_ITEM = {
     raro: { nome: "Raro", peso: 22, cor: "#3b82f6" },
     epico: { nome: "Épico", peso: 7, cor: "#a855f7" },
     lendario: { nome: "Lendário", peso: 1, cor: "#f59e0b" },
+    // 0,01%: itens ligados aos Pokémon que controlam o tempo. Enchem a meta da evolução na hora.
+    temporal: { nome: "Temporal", peso: 0.01, cor: "#22d3ee" },
 };
 export const ITENS = [
     { id: "pilha", nome: "Pilha", raridade: "comum", icone: "🔋", efeito: "clique", valor: 0.01, desc: "+1% de energia por clique" },
@@ -99,6 +111,13 @@ export const ITENS = [
     { id: "pedra", nome: "Pedra do Trovão", raridade: "epico", icone: "💎", efeito: "producao", valor: 0.04, desc: "+4% de produção" },
     { id: "bola-luz", nome: "Bola de Luz", raridade: "epico", icone: "🟡", efeito: "clique", valor: 0.1, desc: "+10% de energia por clique" },
     { id: "pena", nome: "Pena de Zapdos", raridade: "lendario", icone: "🪶", efeito: "producao", valor: 0.08, desc: "+8% de produção" },
+    { id: "pedra-lunar", nome: "Pedra Lunar", raridade: "comum", icone: "🌙", efeito: "producao", valor: 0.005, desc: "+0,5% de produção" },
+    { id: "upgrade", nome: "Disco de Upgrade", raridade: "raro", icone: "💾", efeito: "ajudante", ajudantes: ["porygon", "magneton"], valor: 0.05, desc: "+5% de produção de Porygons e Magnetons" },
+    { id: "escama", nome: "Escama de Dragão", raridade: "raro", icone: "🐉", efeito: "ajudante", ajudantes: ["dragonite", "moltres"], valor: 0.05, desc: "+5% de produção de Dragonites e Moltres" },
+    { id: "colher", nome: "Colher Torta", raridade: "epico", icone: "🥄", efeito: "ajudante", ajudantes: ["mewtwo", "mew"], valor: 0.08, desc: "+8% de produção de Mewtwos e Mews" },
+    { id: "gene", nome: "Gene Mítico", raridade: "lendario", icone: "🧬", efeito: "clique", valor: 0.15, desc: "+15% de energia por clique" },
+    { id: "orbe", nome: "Orbe Adamante", raridade: "temporal", icone: "💠", efeito: "producao", valor: 0.25, desc: "+25% de produção. Brilha com o poder de Dialga, o senhor do tempo" },
+    { id: "sino", nome: "Sino de Celebi", raridade: "temporal", icone: "🔔", efeito: "clique", valor: 0.5, desc: "+50% de energia por clique. Celebi viaja pelo tempo" },
     { id: "cristal", nome: "Cristal de Energia", raridade: "lendario", icone: "🔮", efeito: "bau", valor: 0.03, desc: "Baús chegam 3% mais rápido" },
 ];
 export const ITEM_POR_ID = Object.fromEntries(ITENS.map((i) => [i.id, i]));
@@ -106,25 +125,28 @@ export const ITEM_POR_ID = Object.fromEntries(ITENS.map((i) => [i.id, i]));
 // ---------------- Conquistas (cada uma dá +1% de produção) ----------------
 const potencias = (valores, nomes, campo, texto) => valores.map((v, i) => ({ id: `${campo}-${v}`, nome: nomes[i], campo, meta: v, desc: texto(v) }));
 export const CONQUISTAS = [
-    ...potencias([1e3, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e14],
-        ["Pequena Faísca", "Bateria Cheia", "Megawatt", "Usina Particular", "Cidade Iluminada", "Kanto Energizada", "Gigawatt", "Terawatt", "Energia Infinita?", "Além do Infinito"],
+    ...potencias([1e3, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e14, 1e16, 1e18],
+        ["Pequena Faísca", "Bateria Cheia", "Megawatt", "Usina Particular", "Cidade Iluminada", "Kanto Energizada", "Gigawatt", "Terawatt", "Energia Infinita?", "Além do Infinito", "Petawatt", "Energia Cósmica"],
         "total", (v) => `Junte ${formatarGrande(v)} de energia no total`),
-    ...potencias([1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7],
-        ["Primeiro Ajudante", "Linha de Produção", "Fábrica de Raios", "Central Elétrica", "Rede Nacional", "Tempestade Eterna", "Sol Artificial", "Big Bang Elétrico"],
+    ...potencias([1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10],
+        ["Primeiro Ajudante", "Linha de Produção", "Fábrica de Raios", "Central Elétrica", "Rede Nacional", "Tempestade Eterna", "Sol Artificial", "Big Bang Elétrico", "Supernova", "Galáxia Elétrica", "Multiverso"],
         "eps", (v) => `Produza ${formatarGrande(v)} ⚡ por segundo`),
-    ...potencias([100, 1000, 5000, 20000, 50000],
-        ["Dedo Esperto", "Dedo Calejado", "Metralhadora", "Clique Lendário", "Dedo de Aço"],
+    ...potencias([100, 1000, 5000, 20000, 50000, 100000],
+        ["Dedo Esperto", "Dedo Calejado", "Metralhadora", "Clique Lendário", "Dedo de Aço", "Dedo Supersônico"],
         "cliques", (v) => `Clique ${formatarGrande(v)} vezes no Pikachu`),
     ...AJUDANTES.flatMap((a) => [
         { id: `tem-${a.id}-1`, nome: `${a.nome} no Time`, campo: "ajudante", ajudante: a.id, meta: 1, desc: `Tenha 1 ${a.nome}` },
         { id: `tem-${a.id}-50`, nome: `Bando de ${a.plural}`, campo: "ajudante", ajudante: a.id, meta: 50, desc: `Tenha 50 ${a.plural}` },
         { id: `tem-${a.id}-100`, nome: `Mestre dos ${a.plural}`, campo: "ajudante", ajudante: a.id, meta: 100, desc: `Tenha 100 ${a.plural}` },
     ]),
-    ...potencias([1, 7, 27], ["Sortudo", "Caçador de Pokébolas", "Mestre Pokébola"], "pokebolas", (v) => `Pegue ${v} pokébola${v > 1 ? "s" : ""} especia${v > 1 ? "is" : "l"}`),
-    ...potencias([1, 3, 10], ["Primeira Evolução", "Evolução Constante", "Forma Final"], "reinicios", (v) => `Evolua ${v} vez${v > 1 ? "es" : ""}`),
-    ...potencias([10, 25, 50], ["Colecionador de Melhorias", "Engenheiro", "Cientista Maluco"], "melhorias", (v) => `Compre ${v} melhorias numa partida`),
-    ...potencias([1, 50, 250, 1000], ["Primeiro Baú", "Caçador de Tesouros", "Arqueólogo", "Rei dos Baús"], "baus", (v) => `Abra ${formatarGrande(v)} baú${v > 1 ? "s" : ""}`),
-    ...potencias([1, 5], ["Achado Lendário", "Relíquias de Kanto"], "lendarios", (v) => `Encontre ${v} ite${v > 1 ? "ns" : "m"} lendário${v > 1 ? "s" : ""}`),
+    ...potencias([1, 7, 27, 77], ["Sortudo", "Caçador de Pokébolas", "Mestre Pokébola", "Pokébola de Ouro"], "pokebolas", (v) => `Pegue ${v} pokébola${v > 1 ? "s" : ""} especia${v > 1 ? "is" : "l"}`),
+    ...potencias([1, 3, 10, 25], ["Primeira Evolução", "Evolução Constante", "Forma Final", "Evolução Infinita"], "reinicios", (v) => `Evolua ${v} vez${v > 1 ? "es" : ""}`),
+    ...potencias([10, 25, 50, 75], ["Colecionador de Melhorias", "Engenheiro", "Cientista Maluco", "Gênio de Kanto"], "melhorias", (v) => `Compre ${v} melhorias numa partida`),
+    ...potencias([1, 50, 250, 1000, 5000], ["Primeiro Baú", "Caçador de Tesouros", "Arqueólogo", "Rei dos Baús", "Tesouro Infinito"], "baus", (v) => `Abra ${formatarGrande(v)} baú${v > 1 ? "s" : ""}`),
+    ...potencias([1, 5, 15], ["Achado Lendário", "Relíquias de Kanto", "Museu Lendário"], "lendarios", (v) => `Encontre ${v} ite${v > 1 ? "ns" : "m"} lendário${v > 1 ? "s" : ""}`),
+    ...potencias([1], ["Viajante do Tempo"], "temporais", () => "Encontre um item Temporal (0,01% de chance!)"),
+    ...potencias([10, 16], ["Mochila Arrumada", "Mochila Completa"], "itensDiferentes", (v) => v === 16 ? "Tenha todos os itens não temporais na mochila" : `Tenha ${v} itens diferentes na mochila`),
+    ...potencias([13], ["Time Completo"], "tiposAjudantes", () => "Tenha pelo menos 1 de cada um dos 13 ajudantes"),
 ];
 export const CONQUISTA_POR_ID = Object.fromEntries(CONQUISTAS.map((x) => [x.id, x]));
 
@@ -152,7 +174,7 @@ export const NO_POR_ID = Object.fromEntries(NOS.map((n) => [n.id, n]));
 
 // A meta para evoluir fica 8× maior a cada evolução (a árvore e os itens ajudam a alcançar)
 export const META_INICIAL = 5e10;
-export const CRESCIMENTO_META = 2;
+export const CRESCIMENTO_META = 4;
 export const metaEvolucao = (c) => META_INICIAL * CRESCIMENTO_META ** c.reinicios;
 export const PACOTE_CUSTO_PEDRAS = 10;
 export const PACOTES_POR_DIA = 5;
@@ -193,6 +215,8 @@ export const clickerInicial = () => ({
     bauProgresso: 0, // cliques desde o último baú
     baus: 0,
     lendarios: 0,
+    temporais: 0,
+    conquistasPagas: 0, // quantas conquistas já deram pacote no jogo de cartas
     itens: {}, // { id: cópias } — ficam depois de evoluir
     pacotesHoje: { dia: "", qtd: 0 },
 });
@@ -205,7 +229,7 @@ export const normalizarClicker = (c) => {
     x.itens = x.itens && typeof x.itens === "object" ? { ...x.itens } : {};
     for (const k of ["melhorias", "arvore", "conquistas"]) x[k] = Array.isArray(x[k]) ? [...x[k]] : [];
     x.pacotesHoje = x.pacotesHoje && typeof x.pacotesHoje === "object" ? x.pacotesHoje : { dia: "", qtd: 0 };
-    for (const k of ["energia", "totalPartida", "totalGeral", "cliques", "pedras", "pedrasTotal", "reinicios", "recorde", "douradaAte", "cadeiaAte", "pokebolas", "tempoJogado", "bauProgresso", "baus", "lendarios"]) {
+    for (const k of ["energia", "totalPartida", "totalGeral", "cliques", "pedras", "pedrasTotal", "reinicios", "recorde", "douradaAte", "cadeiaAte", "pokebolas", "tempoJogado", "bauProgresso", "baus", "lendarios", "temporais", "conquistasPagas"]) {
         x[k] = Number.isFinite(x[k]) && x[k] > 0 ? x[k] : 0;
     }
     if (!Number.isFinite(x.ultimoTick)) x.ultimoTick = Date.now();
@@ -347,11 +371,14 @@ export const abrirBau = (c, agora = Date.now(), rnd = Math.random) => {
     const item = opcoes[Math.floor(rnd() * opcoes.length)];
     const repetido = copias(c, item.id) >= MAX_COPIAS;
     // Item no máximo vira energia extra
-    const energia = Math.max(energiaPorSegundo({ ...c, douradaAte: 0 }, agora) * 15, energiaPorClique({ ...c, cadeiaAte: 0 }, agora) * 10)
+    let energia = Math.max(energiaPorSegundo({ ...c, douradaAte: 0 }, agora) * 15, energiaPorClique({ ...c, cadeiaAte: 0 }, agora) * 10)
         * (repetido ? 3 : 1);
+    // Temporal: o tempo avança de uma vez e dá a energia inteira da meta de evolução
+    if (raridade === "temporal") energia = Math.max(energia, metaEvolucao(c));
     ganhar(c, energia);
     if (!repetido) c.itens[item.id] = (c.itens[item.id] || 0) + 1;
     if (raridade === "lendario") c.lendarios++;
+    if (raridade === "temporal") c.temporais++;
     return { item, energia, repetido };
 };
 
@@ -408,6 +435,8 @@ const valorConquista = (c, q, agora) => {
     if (q.campo === "eps") return energiaPorSegundo({ ...c, douradaAte: 0 }, agora);
     if (q.campo === "ajudante") return quantos(c, q.ajudante);
     if (q.campo === "melhorias") return c.melhorias.length;
+    if (q.campo === "itensDiferentes") return ITENS.filter((i) => i.raridade !== "temporal" && copias(c, i.id) > 0).length;
+    if (q.campo === "tiposAjudantes") return AJUDANTES.filter((a) => quantos(c, a.id) > 0).length;
     return c[q.campo] || 0;
 };
 
@@ -487,5 +516,12 @@ export const NOTICIAS = [
     { texto: "Equipe Rocket tenta roubar sua energia. Pikachu dá um choque neles.", se: (c) => c.totalGeral >= 1e7 },
     { texto: "Kanto agora exporta energia para Johto.", se: (c) => c.totalGeral >= 1e10 },
     { texto: "\"Nunca vi tanta energia na minha vida\", diz o Professor Carvalho.", se: (c) => c.totalGeral >= 1e12 },
+    { texto: "Porygon entra na internet e sai com o dobro de energia.", se: (c) => quantos(c, "porygon") > 0 },
+    { texto: "Dragonite entrega energia para o mundo todo em menos de 16 horas.", se: (c) => quantos(c, "dragonite") > 0 },
+    { texto: "Onda de calor em Kanto! Moltres jura que não foi ele.", se: (c) => quantos(c, "moltres") > 0 },
+    { texto: "Mewtwo dobra uma colher e a usina triplica a produção.", se: (c) => quantos(c, "mewtwo") > 0 },
+    { texto: "Mew foi visto brincando dentro da bola do Pikachu.", se: (c) => quantos(c, "mew") > 0 },
+    { texto: "Dizem que um Celebi deixou um sino perdido num baú... e que ele volta no tempo.", se: (c) => c.baus >= 50 },
+    { texto: "Cientistas detectam uma distorção temporal: Dialga estaria de olho na sua usina.", se: (c) => c.temporais > 0 },
 ];
 export const noticiasDisponiveis = (c) => NOTICIAS.filter((n) => n.se(c));

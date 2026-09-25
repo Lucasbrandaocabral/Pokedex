@@ -364,6 +364,8 @@ const limparClicker = (c) => {
         bauProgresso: numeroLivre(c.bauProgresso, 1e4),
         baus: numeroLivre(c.baus, 1e12),
         lendarios: numeroLivre(c.lendarios, 1e9),
+        temporais: numeroLivre(c.temporais, 1e9),
+        conquistasPagas: Math.floor(numeroLivre(c.conquistasPagas, 1000)),
         itens,
         conquistas: listaTextos(c.conquistas),
         ajudantes,
