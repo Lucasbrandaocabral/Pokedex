@@ -9,7 +9,7 @@ import {
     definirUsuario, abrirConta,
 } from "./conta.js";
 
-const MAX_POR_LADO = 10;
+const MAX_POR_LADO = 50;
 const INTERVALO_ATUALIZACAO = 30 * 1000;
 
 let resumo = null;
@@ -688,6 +688,7 @@ const modalNovaTroca = async (usuario) => {
         <input type="search" id="busca-troca" class="campo-busca" placeholder="Buscar carta por nome ou número">
         <div class="filtros-troca">
             <div class="filtros-rapidos" id="filtros-rapidos"></div>
+            <div class="acoes-rapidas" id="acoes-rapidas"></div>
             <select id="colecao-troca">
                 <option value="">Todas as expansões</option>
                 ${COLECOES.map((c) => `<option value="${c.codigo}">${c.nome}</option>`).join("")}
@@ -721,6 +722,25 @@ const modalNovaTroca = async (usuario) => {
             }).join("")
             : `<p class="vazio">${lado === "da" ? "Você não tem cartas" : `@${escapar(amigo.usuario)} não tem cartas`}${busca || colecao || FILTROS[lado].some((f) => ligados.has(f.id)) ? " com esses filtros" : ""}.</p>`;
     };
+    // Minhas repetidas que o amigo não tem e que ainda não estão na troca (mais raras primeiro)
+    const repetidasParaAmigo = () => CARTAS
+        .filter((c) => donos.da[c.id] > 1 && !amigoTem(c.id) && !selecao.da.includes(c.id))
+        .filter((c) => !busca || c.nome.toLowerCase().includes(busca) || c.id.toLowerCase().includes(busca))
+        .filter((c) => !colecao || c.colecao === colecao)
+        .sort((a, b) => b.raridade - a.raridade || a.numero - b.numero);
+    const desenharAcoes = () => {
+        const area = $("#acoes-rapidas");
+        if (lado !== "da") {
+            area.innerHTML = "";
+            return;
+        }
+        const n = repetidasParaAmigo().length;
+        area.innerHTML = `
+            <button type="button" class="btn pequeno dourado" data-rapido="adicionar" ${n && selecao.da.length < MAX_POR_LADO ? "" : "disabled"}>
+                + Minhas repetidas que @${escapar(amigo.usuario)} não tem (${n})
+            </button>
+            ${selecao.da.length ? `<button type="button" class="btn pequeno secundario" data-rapido="limpar">Limpar o que dou</button>` : ""}`;
+    };
     const desenharResumo = () => {
         for (const l of ["da", "quer"]) {
             $(`#qtd-${l}`).textContent = selecao[l].length;
@@ -729,6 +749,7 @@ const modalNovaTroca = async (usuario) => {
                 : `<p class="vazio pequeno">Nenhuma</p>`;
         }
         $("#valor-troca").innerHTML = `Valor de venda: você dá <i class="ic-moeda"></i> ${valorCartas(selecao.da)} • você recebe <i class="ic-moeda"></i> ${valorCartas(selecao.quer)}`;
+        desenharAcoes();
     };
     desenharFiltros();
     desenharGrade();
@@ -739,7 +760,26 @@ const modalNovaTroca = async (usuario) => {
         $$(".abas-conta [data-lado]").forEach((x) => x.classList.toggle("ativa", x === b));
         desenharFiltros();
         desenharGrade();
+        desenharAcoes();
     }));
+    $("#acoes-rapidas").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-rapido]");
+        if (!b || b.disabled) return;
+        if (b.dataset.rapido === "limpar") {
+            selecao.da = [];
+        } else {
+            const espaco = MAX_POR_LADO - selecao.da.length;
+            const lista = repetidasParaAmigo();
+            const entram = lista.slice(0, espaco).map((c) => c.id);
+            selecao.da.push(...entram);
+            sons.clique();
+            aviso(lista.length > espaco
+                ? `${entram.length} cartas adicionadas. Chegou no limite de ${MAX_POR_LADO} por troca.`
+                : `${entram.length} carta${entram.length > 1 ? "s" : ""} adicionada${entram.length > 1 ? "s" : ""}.`, "sucesso");
+        }
+        desenharGrade();
+        desenharResumo();
+    });
     $("#filtros-rapidos").addEventListener("change", (e) => {
         const f = e.target.dataset.filtro;
         if (e.target.checked) ligados.add(f);
@@ -749,10 +789,12 @@ const modalNovaTroca = async (usuario) => {
     $("#colecao-troca").addEventListener("change", (e) => {
         colecao = e.target.value;
         desenharGrade();
+        desenharAcoes();
     });
     $("#busca-troca").addEventListener("input", (e) => {
         busca = e.target.value.trim().toLowerCase();
         desenharGrade();
+        desenharAcoes();
     });
     $("#grade-troca").addEventListener("click", (e) => {
         const b = e.target.closest(".opcao-carta");

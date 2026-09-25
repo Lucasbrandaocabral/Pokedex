@@ -18,7 +18,7 @@ import {
 } from "./_lib.js";
 import { validarUsuario } from "./auth/cadastro.js";
 
-const MAX_CARTAS_POR_LADO = 10;
+const MAX_CARTAS_POR_LADO = 50;
 const MAX_TROCAS_PENDENTES = 10;
 const MAX_PEDIDOS_AMIZADE = 20;
 const DIAS_EXPIRAR_TROCA = 7;

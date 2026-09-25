@@ -243,3 +243,15 @@ test("cartas das outras expansões: salvar e trocar", async () => {
     assert.equal(ok.status, 200);
     assert.equal(ok.dados.save.colecao["A1a-001"], 1);
 });
+
+test("troca aceita até 50 cartas de cada lado", async () => {
+    const colecao = Object.fromEntries(Array.from({ length: 51 }, (_, i) => [String(i + 1).padStart(3, "0"), 1]));
+    const red = await criarJogador("red", colecao);
+    const blue = await criarJogador("blue", { "150": 1 });
+    await red.api.acao("adicionar-amigo", { usuario: blue.usuario });
+    const { pedidosRecebidos } = (await blue.api("/api/social?acao=resumo")).dados;
+    await blue.api.acao("responder-amigo", { id: pedidosRecebidos[0].id, aceitar: true });
+    const ids = Object.keys(colecao);
+    assert.equal((await red.api.acao("propor-troca", { para: blue.usuario, da: ids, quer: [] })).status, 400, "51 cartas é demais");
+    assert.equal((await red.api.acao("propor-troca", { para: blue.usuario, da: ids.slice(0, 50), quer: ["150"] })).status, 200);
+});
