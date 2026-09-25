@@ -1417,3 +1417,126 @@ body.modo-clicker .hud-cartas { display: none; }
     .topo-nos { flex-direction: column; }
 }
 .clicker-offline { font-family: "Jersey 20", monospace; font-size: 2.6rem; text-align: center; color: var(--vermelho); margin: 8px 0; }
+
+/* ---------- Fundo vivo do palco (vai ganhando detalhes com as compras) ---------- */
+.clicker-palco > .clicker-placar, .clicker-palco > .cl-efeitos, .clicker-palco > .cl-pikachu-area,
+.clicker-palco > .clicker-por-clique, .clicker-palco > .cl-bau { position: relative; z-index: 1; }
+.cl-fundo { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; transition: background 0.15s; }
+.clicker-palco.clarao .cl-fundo { background: rgba(255, 255, 255, 0.35); }
+.cl-fundo .nova, .cl-fundo.nova { animation: aparecerFundo 1.4s ease-out; }
+@keyframes aparecerFundo { 0% { opacity: 0; transform: scale(0.85); filter: brightness(2.5); } 60% { opacity: 1; filter: brightness(1.6); } }
+
+/* Anéis de Magnemites em volta do Pikachu */
+.cl-pikachu-area { position: relative; display: grid; place-items: center; }
+.cl-pikachu-area .clicker-pikachu { z-index: 1; }
+.cl-aneis { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 0; }
+.cl-anel { position: absolute; left: 0; top: 0; --raio: calc(min(230px, 62vw) / 2 + 24px); animation: girar 40s linear infinite; }
+.cl-anel.externo { --raio: calc(min(230px, 62vw) / 2 + 56px); animation-duration: 64s; animation-direction: reverse; }
+.cl-anel img {
+    position: absolute; width: 30px; height: 30px; left: -15px; top: -15px; image-rendering: pixelated;
+    transform: rotate(var(--a)) translateY(calc(var(--raio) * -1)); filter: drop-shadow(0 0 4px rgba(180, 200, 255, 0.7));
+}
+
+/* Choque do Trovão: estrelinhas piscando */
+.cl-estrelinhas {
+    position: absolute; inset: 0;
+    background-image:
+        radial-gradient(2px 2px at 12% 18%, #fff, transparent), radial-gradient(2px 2px at 82% 12%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 30% 40%, #ffe98a, transparent), radial-gradient(2px 2px at 70% 34%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 90% 52%, #ffe98a, transparent), radial-gradient(2px 2px at 8% 62%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 55% 8%, #fff, transparent), radial-gradient(2px 2px at 46% 70%, #ffe98a, transparent);
+    animation: piscarCeu 2.4s steps(2) infinite;
+}
+@keyframes piscarCeu { 50% { opacity: 0.35; } }
+
+/* Trovoada: nuvens de tempestade */
+.cl-nuvens { position: absolute; left: 0; right: 0; top: -18px; height: 110px; }
+.cl-nuvens i {
+    position: absolute; top: 0; width: 170px; height: 70px; border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 60%, #53607f 0 30%, transparent 31%),
+        radial-gradient(circle at 55% 40%, #5e6b8c 0 34%, transparent 35%),
+        radial-gradient(circle at 78% 62%, #4a5675 0 28%, transparent 29%);
+    opacity: 0.85; animation: nuvem 38s linear infinite;
+}
+.cl-nuvens i:nth-child(1) { left: -10%; }
+.cl-nuvens i:nth-child(2) { left: 35%; top: 14px; transform: scale(0.8); animation-duration: 52s; animation-delay: -20s; }
+.cl-nuvens i:nth-child(3) { left: 70%; animation-duration: 45s; animation-delay: -8s; }
+@keyframes nuvem { from { translate: -30% 0; } to { translate: 40% 0; } }
+
+/* Tempestade, Raio Supremo e Mil Volts: chuva cada vez mais forte */
+.cl-chuva {
+    position: absolute; inset: 0; opacity: 0.35;
+    background: repeating-linear-gradient(105deg, rgba(200, 220, 255, 0.5) 0 1px, transparent 1px 16px);
+    background-size: 100% 60px; animation: chover 0.5s linear infinite;
+}
+.cl-chuva.nivel-2 { opacity: 0.5; background-image: repeating-linear-gradient(105deg, rgba(200, 220, 255, 0.55) 0 1px, transparent 1px 11px); }
+.cl-chuva.nivel-3 { opacity: 0.65; background-image: repeating-linear-gradient(105deg, rgba(220, 230, 255, 0.6) 0 1.5px, transparent 1.5px 8px); }
+@keyframes chover { to { background-position: -16px 60px; } }
+
+/* Ajudantes gigantes no horizonte (3º nível de melhoria de cada um) */
+.cl-silhuetas { position: absolute; left: 0; right: 0; bottom: 16%; display: flex; justify-content: space-around; align-items: flex-end; }
+.cl-silhuetas img {
+    width: min(130px, calc(96% / var(--n))); image-rendering: pixelated;
+    filter: brightness(0) invert(1) opacity(0.18); animation: respirar 4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.7s);
+}
+.cl-silhuetas img.nova { animation: aparecerFundo 1.4s ease-out, respirar 4s 1.4s ease-in-out infinite; }
+@keyframes respirar { 50% { transform: translateY(-4px) scale(1.02); } }
+
+/* Melhorias de produção: torres de energia com fios */
+.cl-torres { position: absolute; left: 0; right: 0; bottom: 0; height: 58%; }
+.cl-torre {
+    position: absolute; bottom: 0; left: calc(6% + var(--i) * 26%); width: 44px; height: 82%;
+    background: #0d1330; opacity: 0.85;
+    clip-path: polygon(44% 0, 56% 0, 58% 12%, 100% 16%, 100% 20%, 60% 22%, 64% 40%, 90% 43%, 90% 47%, 66% 49%, 100% 100%, 82% 100%, 50% 58%, 18% 100%, 0 100%, 34% 49%, 10% 47%, 10% 43%, 36% 40%, 40% 22%, 0 20%, 0 16%, 42% 12%);
+}
+.cl-fio {
+    position: absolute; left: calc(6% + 22px); top: 22%; height: 18px;
+    border-bottom: 2px solid rgba(255, 230, 120, 0.45); border-radius: 0 0 50% 50%;
+}
+.torres-2 .cl-fio { width: 26%; }
+.torres-3 .cl-fio { width: 52%; }
+.torres-4 .cl-fio { width: 78%; }
+.cl-fio b { position: absolute; bottom: -4px; width: 6px; height: 6px; border-radius: 50%; background: #fff6b0; box-shadow: 0 0 8px 3px #ffe34a; animation: correrLuz 2.2s linear infinite; }
+@keyframes correrLuz { from { left: 0; } to { left: 100%; } }
+
+/* Amizade: corações subindo */
+.cl-coracoes span {
+    position: absolute; bottom: -24px; left: var(--x); color: #ff7eb6; font-size: 16px; opacity: 0;
+    animation: subirCoracao 7s linear infinite; animation-delay: calc(var(--i) * 0.8s);
+}
+@keyframes subirCoracao { 10% { opacity: 0.8; } 80% { opacity: 0.6; } to { transform: translateY(-420px) translateX(20px); opacity: 0; } }
+
+/* "Leite" de energia: sobe com as conquistas */
+.cl-leite {
+    --c1: #ffe36b; --c2: #f2a900;
+    position: absolute; left: 0; right: 0; bottom: 0; height: var(--nivel);
+    background: linear-gradient(180deg, var(--c1), var(--c2)); opacity: 0.85; transition: height 1.2s ease;
+}
+.cl-leite::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 10px;
+    background: radial-gradient(circle at 12px 12px, var(--c1) 0 10px, transparent 10.5px) 0 0 / 24px 12px repeat-x;
+    animation: ondas 1.6s linear infinite;
+}
+@keyframes ondas { to { background-position: 24px 0; } }
+.cl-leite.cor-1 { --c1: #ffb45c; --c2: #e8641c; }
+.cl-leite.cor-2 { --c1: #ff9fd0; --c2: #d6408f; }
+.cl-leite.cor-3 { --c1: #9fe7ff; --c2: #a36bff; animation: girarFundo 6s linear infinite; }
+
+/* Raios caindo (mais quanto maior a produção) */
+.cl-raio-caindo {
+    position: absolute; top: -40px; width: var(--tam); height: calc(var(--tam) * 1.8); opacity: 0.75;
+    background: #ffe36b; clip-path: polygon(55% 0, 10% 58%, 45% 58%, 30% 100%, 90% 38%, 55% 38%, 75% 0);
+    animation: cairRaio 3s linear forwards;
+}
+.cl-raio-caindo.dourado { background: #ffd700; filter: drop-shadow(0 0 4px #ffae00); opacity: 1; }
+@keyframes cairRaio { to { transform: translateY(620px) rotate(25deg); } }
+
+/* Relâmpago riscando o céu */
+.cl-relampago {
+    position: absolute; top: 0; width: 34px; height: 55%; background: #fffbe0;
+    filter: drop-shadow(0 0 10px #fff27a);
+    clip-path: polygon(40% 0, 60% 0, 45% 35%, 75% 35%, 30% 100%, 45% 50%, 15% 50%);
+    animation: relampago 0.5s ease-out forwards;
+}
+@keyframes relampago { 0% { opacity: 1; } 30% { opacity: 0.2; } 45% { opacity: 1; } to { opacity: 0; } }
