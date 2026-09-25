@@ -1025,6 +1025,9 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .resumo-troca { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0; }
 .lado-troca { flex: 1; min-width: 0; }
 .lado-troca h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--tinta2); margin-bottom: 6px; }
+.acoes-rapidas { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+.acoes-rapidas:empty { display: none; }
+.chips-troca { max-height: 190px; overflow-y: auto; }
 .chips-troca { display: flex; flex-wrap: wrap; gap: 4px; min-height: 70px; padding: 6px; background: var(--papel); border: 2px dashed #b3ab9b; border-radius: 6px; }
 .chip-carta { width: 46px; background: none; border: none; padding: 0; cursor: pointer; position: relative; }
 .chip-carta::after { content: "×"; position: absolute; top: -6px; right: -6px; z-index: 6; width: 18px; height: 18px; border-radius: 50%; background: var(--tinta); color: #fff; font-size: 0.8rem; line-height: 18px; text-align: center; }
