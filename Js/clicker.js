@@ -20,6 +20,10 @@ const SALVAR_JOGANDO = 15 * 1000;
 const SALVAR_FORA = 60 * 1000;
 const RAMOS = [["clique", "Clique"], ["ajudantes", "Ajudantes"], ["tempo", "Tempo"]];
 const ICONE_TIPO = { clique: "⚡", global: "🔋", amizade: "❤️" };
+const MELHORIAS_CLIQUE = ["choque", "trovoada", "faisca", "relampago", "tempestade", "supremo", "milvolts"];
+const CORES_ELETRONS = ["#fff27a", "#7fd4ff", "#ff9fd0", "#9fffb0", "#ffc46b", "#c9a4ff", "#ffffff"];
+const FALAS = ["Pika!", "Pikachu!", "Pika pika!", "Chuuu~", "Pi-ka-CHU!", "Pika? ⚡", "Pikaaa!"];
+const calmo = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const NOME_TIPO = { clique: "Melhoria de clique", global: "Melhoria de produção", amizade: "Melhoria de amizade", ajudante: "Melhoria de ajudante" };
 
 let app = null;
@@ -36,6 +40,11 @@ let novidadesColecao = 0;
 let contadorTicks = 0;
 let proximaNoticia = 0;
 let ultimoPonteiro = "mouse";
+// Bola do Pikachu (só visual)
+let combo = 0;
+let ultimoClique = 0;
+let ultimaOnda = 0;
+let proximaFala = 0;
 
 const c = () => estado.clicker;
 const hoje = () => {
@@ -83,6 +92,7 @@ const tick = () => {
             talvezPokebola(agora);
             if (contadorTicks % 8 === 0) chuvaDeRaios(agora);
             talvezRelampago();
+            tickBola(agora);
             if (agora > proximaNoticia) trocarNoticia();
             if (contadorTicks % 4 === 0) conferirLoja();
         }
@@ -177,7 +187,13 @@ const atualizarNumeros = () => {
         areaEfeitos.innerHTML = efeitos.join("");
         areaEfeitos.dataset.html = efeitos.join("");
     }
-    $("#clicker-palco")?.classList.toggle("em-frenesi", frenesiAtivo(c(), agora) || cadeiaAtiva(c(), agora));
+    const palco = $("#clicker-palco");
+    if (palco) {
+        palco.classList.toggle("em-frenesi", frenesiAtivo(c(), agora) || cadeiaAtiva(c(), agora));
+        // Quanto maior a produção, mais forte o brilho em volta da bola (0 a 1)
+        const forca = Math.min(1, Math.log10(energiaPorSegundo(c(), agora) + 1) / 9).toFixed(2);
+        if (palco.style.getPropertyValue("--forca") !== forca) palco.style.setProperty("--forca", forca);
+    }
 };
 
 // Redesenha a loja quando aparece uma melhoria ou ajudante novo
@@ -223,12 +239,19 @@ const telaJogar = () => {
                         <small><b data-cl="eps">0</b> ⚡/s</small>
                     </div>
                     <div class="cl-efeitos" data-cl="efeitos"></div>
-                    <div class="cl-pikachu-area">
+                    <div class="cl-pikachu-area ${classesBola()}" id="cl-pikachu-area">
                         <div class="cl-aneis" id="cl-aneis">${htmlAneis()}</div>
+                        <span class="bola-halo"></span>
                         <button class="clicker-pikachu" id="botao-pikachu" aria-label="Clicar no Pikachu">
+                            <span class="bola-textura"></span>
                             <span class="clicker-aura"></span>
                             <img src="${imagemPixel(25)}" alt="Pikachu" draggable="false">
+                            <span class="bola-brilho"></span>
+                            <svg class="bola-arcos" viewBox="0 0 100 100" aria-hidden="true"></svg>
                         </button>
+                        <span class="bola-eletrons" id="bola-eletrons">${htmlEletrons()}</span>
+                        <span class="bola-combo" id="bola-combo"></span>
+                        <span class="bola-fala" id="bola-fala"></span>
                     </div>
                     <p class="clicker-por-clique">+<b data-cl="clique">1</b> ⚡ por clique</p>
                     <div class="cl-bau" title="A cada ${cliquesPorBau(c())} cliques você ganha um baú com um item">
@@ -272,6 +295,18 @@ const telaJogar = () => {
         e.preventDefault();
         clicarNoPikachu(e);
     });
+    // No PC a bola inclina na direção do mouse e o reflexo acompanha
+    botao.addEventListener("pointermove", (e) => {
+        if (e.pointerType !== "mouse") return;
+        const r = botao.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top) / r.height;
+        botao.style.setProperty("--ry", `${((x - 0.5) * 16).toFixed(1)}deg`);
+        botao.style.setProperty("--rx", `${((0.5 - y) * 16).toFixed(1)}deg`);
+        botao.style.setProperty("--mx", `${(x * 100).toFixed(0)}%`);
+        botao.style.setProperty("--my", `${(y * 100).toFixed(0)}%`);
+    });
+    botao.addEventListener("pointerleave", () => ["--rx", "--ry", "--mx", "--my"].forEach((v) => botao.style.removeProperty(v)));
     botao.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" && e.key !== " ") return;
         e.preventDefault();
@@ -321,7 +356,7 @@ const htmlAneis = () => {
     const n = Math.min(quantos(c(), "magnemite"), 40);
     if (!n) return "";
     const anel = (qtd, classe) => `<div class="cl-anel ${classe}">${Array.from({ length: qtd }, (_, i) =>
-        `<img src="${imagemSprite(81)}" alt="" style="--a:${(i * 360) / qtd}deg">`).join("")}</div>`;
+        `<img src="${imagemPixel(81)}" alt="" style="--a:${(i * 360) / qtd}deg">`).join("")}</div>`;
     return anel(Math.min(n, 20), "interno") + (n > 20 ? anel(n - 20, "externo") : "");
 };
 
@@ -330,6 +365,117 @@ const atualizarFundo = (novos) => {
     if (fundo) fundo.innerHTML = htmlFundoPalco(novos);
     const aneis = $("#cl-aneis", app);
     if (aneis) aneis.innerHTML = htmlAneis();
+    atualizarBola(novos);
+};
+
+// ---------- Bola do Pikachu: muda com as melhorias de clique e reage aos cliques ----------
+const melhoriasDeClique = () => MELHORIAS_CLIQUE.filter((id) => temMelhoria(c(), id));
+const classesBola = () => melhoriasDeClique().map((id) => `m-${id}`).join(" ");
+
+// Um "elétron" girando em volta da bola para cada melhoria de clique
+const htmlEletrons = () => melhoriasDeClique().map((id, i) =>
+    `<i class="eletron" style="--t:${(i * 52) % 180}deg;--vel:${(1.3 + (i % 3) * 0.35).toFixed(2)}s;--cor:${CORES_ELETRONS[i]};--atraso:${(-i * 0.37).toFixed(2)}s"><b></b></i>`).join("");
+
+const atualizarBola = (novos) => {
+    const area = $("#cl-pikachu-area", app);
+    if (!area) return;
+    MELHORIAS_CLIQUE.forEach((id) => area.classList.toggle(`m-${id}`, temMelhoria(c(), id)));
+    const eletrons = $("#bola-eletrons", app);
+    if (eletrons) eletrons.innerHTML = htmlEletrons();
+    if (novos && [...novos].some((id) => MELHORIAS_CLIQUE.includes(id))) {
+        const botao = $("#botao-pikachu", app);
+        botao.classList.remove("evoluiu");
+        void botao.offsetWidth;
+        botao.classList.add("evoluiu");
+        falarPikachu("Pika!! ⚡");
+    }
+};
+
+// Arco elétrico em zigue-zague que estala pela borda da bola
+const arcoEletrico = (forte = false) => {
+    const svg = $(".bola-arcos", app);
+    if (!svg || calmo() || svg.childElementCount > 6) return;
+    const r = 43;
+    const a1 = Math.random() * Math.PI * 2;
+    const a2 = a1 + (0.5 + Math.random() * 1.1) * (Math.random() < 0.5 ? -1 : 1);
+    const pontos = [];
+    const passos = 7;
+    for (let i = 0; i <= passos; i++) {
+        const ang = a1 + ((a2 - a1) * i) / passos;
+        // As pontas encostam na bola; o meio do arco se afasta e treme
+        const raio = i === 0 || i === passos ? r : r + 3 + Math.random() * 7;
+        pontos.push(`${(50 + Math.cos(ang) * raio + (Math.random() - 0.5) * 3).toFixed(1)},${(50 + Math.sin(ang) * raio + (Math.random() - 0.5) * 3).toFixed(1)}`);
+    }
+    const linha = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    linha.setAttribute("points", pontos.join(" "));
+    if (forte) linha.setAttribute("class", "forte");
+    svg.appendChild(linha);
+    setTimeout(() => linha.remove(), 340);
+};
+
+// Onda que sai da borda da bola a cada clique
+const ondaDeChoque = (critico) => {
+    const agora = performance.now();
+    if (agora - ultimaOnda < 60 || calmo()) return;
+    ultimaOnda = agora;
+    const area = $("#cl-pikachu-area", app);
+    if (!area) return;
+    const onda = document.createElement("i");
+    onda.className = `bola-onda${critico ? " critico" : ""}`;
+    onda.addEventListener("animationend", () => onda.remove());
+    area.appendChild(onda);
+};
+
+// Combo: cliques seguidos (menos de 0,6s entre eles). Só visual.
+const registrarCombo = () => {
+    const agora = performance.now();
+    combo = agora - ultimoClique < 600 ? combo + 1 : 1;
+    ultimoClique = agora;
+    if (combo < 10) return;
+    $("#cl-pikachu-area", app)?.classList.add("carregada");
+    const el = $("#bola-combo", app);
+    if (el) {
+        el.textContent = `COMBO ×${combo}`;
+        el.classList.remove("pop");
+        void el.offsetWidth;
+        el.classList.add("pop", "visivel");
+    }
+    if (combo % 10 === 0) arcoEletrico(true);
+    if (combo === 50 || combo === 100 || combo === 250) falarPikachu(`Pika pika pika! ×${combo}`);
+};
+
+const terminarCombo = () => {
+    if (!combo || performance.now() - ultimoClique < 700) return;
+    combo = 0;
+    $("#cl-pikachu-area", app)?.classList.remove("carregada");
+    $("#bola-combo", app)?.classList.remove("visivel");
+};
+
+// Balão de fala com um pulinho do Pikachu
+const falarPikachu = (texto) => {
+    const bolha = $("#bola-fala", app);
+    if (!bolha || calmo()) return;
+    bolha.textContent = texto || FALAS[Math.floor(Math.random() * FALAS.length)];
+    bolha.classList.remove("mostrando");
+    void bolha.offsetWidth;
+    bolha.classList.add("mostrando");
+    const img = $("#botao-pikachu img", app);
+    if (img) {
+        img.classList.remove("pulando");
+        void img.offsetWidth;
+        img.classList.add("pulando");
+    }
+    proximaFala = Date.now() + 20000 + Math.random() * 25000;
+};
+
+// Chamado no tick: arcos aleatórios, fala sozinho de vez em quando e fim do combo
+const tickBola = (agora) => {
+    terminarCombo();
+    const n = melhoriasDeClique().length;
+    const chance = (combo >= 10 ? 0.35 : 0) + (n ? 0.04 + n * 0.025 + (temMelhoria(c(), "relampago") ? 0.06 : 0) : 0.015);
+    if (Math.random() < chance) arcoEletrico();
+    if (!proximaFala) proximaFala = agora + 15000 + Math.random() * 20000;
+    if (agora > proximaFala) falarPikachu();
 };
 
 // Raios caindo do céu: quanto maior a produção, mais raios (como os biscoitos caindo)
@@ -379,6 +525,16 @@ const clicarNoPikachu = (e) => {
     botao.classList.add("apertado");
     numeroFlutuante(e, `+${fmt(valor)}`, critico);
     faiscas(e);
+    ondaDeChoque(critico);
+    registrarCombo();
+    if (critico) {
+        arcoEletrico(true);
+        arcoEletrico(true);
+        const palco = $("#clicker-palco");
+        palco?.classList.remove("tremendo");
+        void palco?.offsetWidth;
+        palco?.classList.add("tremendo");
+    }
     if (bau) soltarBau();
     atualizarNumeros();
     atualizarHud();
@@ -442,6 +598,7 @@ const soltarBau = () => {
         setTimeout(() => el.remove(), 3000);
     }
     if (item.raridade === "epico" || item.raridade === "lendario") aviso(`🎁 Item ${r.nome.toLowerCase()}: <b>${item.nome}</b>!`, "sucesso");
+    falarPikachu(item.raridade === "lendario" ? "PIKA!!! ✨" : "Pika pika!");
     salvarClicker();
 };
 
@@ -567,6 +724,7 @@ const talvezPokebola = (agora) => {
         txt.style.top = bola.style.top;
         document.body.appendChild(txt);
         setTimeout(() => txt.remove(), 1500);
+        falarPikachu("Pikachu!!");
         salvarClicker();
         atualizarNumeros();
     });
