@@ -214,6 +214,8 @@ export const normalizarClicker = (c) => {
 
 export const tem = (c, id) => c.arvore.includes(id);
 export const temMelhoria = (c, id) => c.melhorias.includes(id);
+// Quanto do "leite" de energia aparece no palco (0 a 1), pela porcentagem de conquistas
+export const nivelLeite = (c) => c.conquistas.length / CONQUISTAS.length;
 export const quantos = (c, id) => c.ajudantes[id] || 0;
 
 // ---------------- Compras de ajudantes ----------------

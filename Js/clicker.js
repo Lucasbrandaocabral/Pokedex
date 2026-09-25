@@ -12,7 +12,7 @@ import {
     comprarAjudante, comprarMelhoria, melhoriasNaLoja, producaoAjudante, quantos, podeEvoluir, pedrasDoReinicio, evoluir,
     metaEvolucao, tem, noDisponivel, comprarNo, arvoreCompleta, pacotesRestantesHoje, trocarPorPacote, frenesiAtivo,
     cadeiaAtiva, sortearPokebola, pegarPokebola, intervaloPokebola, duracaoPokebola, verificarConquistas, bonusConquistas,
-    abrirBau, cliquesPorBau, copias, noticiasDisponiveis, romano, multiplicador, formatarGrande as fmt,
+    abrirBau, cliquesPorBau, copias, noticiasDisponiveis, romano, multiplicador, temMelhoria, nivelLeite, formatarGrande as fmt,
 } from "./clicker-dados.js";
 
 const TICK = 250;
@@ -81,6 +81,8 @@ const tick = () => {
         if (aba === "jogar") {
             atualizarNumeros();
             talvezPokebola(agora);
+            if (contadorTicks % 8 === 0) chuvaDeRaios(agora);
+            talvezRelampago();
             if (agora > proximaNoticia) trocarNoticia();
             if (contadorTicks % 4 === 0) conferirLoja();
         }
@@ -96,6 +98,7 @@ const checarConquistas = () => {
     novas.slice(0, 3).forEach((q) => aviso(`🏆 Conquista: <b>${q.nome}</b> <small>(+produção)</small>`, "sucesso"));
     salvarClicker();
     if (ativo && aba === "colecao") redesenhar();
+    if (ativo && aba === "jogar") atualizarFundo(); // o "leite" sobe com as conquistas
 };
 
 export const iniciarClicker = () => {
@@ -213,16 +216,20 @@ const telaJogar = () => {
         <div class="cl-grade">
             <div class="cl-esquerda">
                 <div class="clicker-palco" id="clicker-palco">
+                    <div class="cl-fundo" id="cl-fundo">${htmlFundoPalco()}</div>
                     <div class="clicker-placar">
                         <b data-cl="energia">0</b>
                         <span>energia</span>
                         <small><b data-cl="eps">0</b> ⚡/s</small>
                     </div>
                     <div class="cl-efeitos" data-cl="efeitos"></div>
-                    <button class="clicker-pikachu" id="botao-pikachu" aria-label="Clicar no Pikachu">
-                        <span class="clicker-aura"></span>
-                        <img src="${imagemPixel(25)}" alt="Pikachu" draggable="false">
-                    </button>
+                    <div class="cl-pikachu-area">
+                        <div class="cl-aneis" id="cl-aneis">${htmlAneis()}</div>
+                        <button class="clicker-pikachu" id="botao-pikachu" aria-label="Clicar no Pikachu">
+                            <span class="clicker-aura"></span>
+                            <img src="${imagemPixel(25)}" alt="Pikachu" draggable="false">
+                        </button>
+                    </div>
                     <p class="clicker-por-clique">+<b data-cl="clique">1</b> ⚡ por clique</p>
                     <div class="cl-bau" title="A cada ${cliquesPorBau(c())} cliques você ganha um baú com um item">
                         <span class="cl-bau-icone">🎁</span>
@@ -271,6 +278,96 @@ const telaJogar = () => {
         const r = botao.getBoundingClientRect();
         clicarNoPikachu({ clientX: r.left + r.width / 2, clientY: r.top + r.height / 3 });
     });
+};
+
+// ---------- Fundo do palco: vai ganhando detalhes com as compras ----------
+const TORRES = ["carga", "bateria", "reator", "rede"];
+const CHUVA = ["tempestade", "supremo", "milvolts"];
+const AMIZADE = ["amizade1", "amizade2", "amizade3"];
+
+const htmlFundoPalco = (novos = new Set()) => {
+    const cl = c();
+    const nova = (...ids) => (ids.some((id) => novos.has(id)) ? " nova" : "");
+    const partes = [];
+    if (temMelhoria(cl, "choque")) partes.push(`<div class="cl-estrelinhas${nova("choque")}"></div>`);
+    if (temMelhoria(cl, "trovoada")) partes.push(`<div class="cl-nuvens${nova("trovoada")}"><i></i><i></i><i></i></div>`);
+    const chuva = CHUVA.filter((id) => temMelhoria(cl, id));
+    if (chuva.length) partes.push(`<div class="cl-chuva nivel-${chuva.length}${nova(...CHUVA)}"></div>`);
+    // Ajudantes com o 3º nível de melhoria aparecem gigantes no horizonte
+    const silhuetas = AJUDANTES.filter((a) => temMelhoria(cl, `${a.id}-3`));
+    if (silhuetas.length) {
+        partes.push(`<div class="cl-silhuetas">${silhuetas.map((a, i) =>
+            `<img class="${novos.has(`${a.id}-3`) ? "nova" : ""}" src="${imagemSprite(a.pid)}" alt="" style="--i:${i};--n:${silhuetas.length}">`).join("")}</div>`);
+    }
+    const torres = TORRES.filter((id) => temMelhoria(cl, id));
+    if (torres.length) {
+        partes.push(`<div class="cl-torres torres-${torres.length}">
+            ${torres.map((id, i) => `<i class="cl-torre${nova(id)}" style="--i:${i}"></i>`).join("")}
+            ${torres.length > 1 ? `<i class="cl-fio"><b></b></i>` : ""}
+        </div>`);
+    }
+    const amizade = AMIZADE.filter((id) => temMelhoria(cl, id)).length;
+    if (amizade) {
+        partes.push(`<div class="cl-coracoes${nova(...AMIZADE)}">${Array.from({ length: amizade * 3 }, (_, i) =>
+            `<span style="--i:${i};--x:${(i * 37) % 90 + 5}%">❤</span>`).join("")}</div>`);
+    }
+    const leite = nivelLeite(cl);
+    if (leite > 0) partes.push(`<div class="cl-leite cor-${amizade}" style="--nivel:${(4 + leite * 18).toFixed(1)}%"></div>`);
+    return partes.join("");
+};
+
+// Um Magnemite girando em volta do Pikachu para cada um comprado (como os cursores)
+const htmlAneis = () => {
+    const n = Math.min(quantos(c(), "magnemite"), 40);
+    if (!n) return "";
+    const anel = (qtd, classe) => `<div class="cl-anel ${classe}">${Array.from({ length: qtd }, (_, i) =>
+        `<img src="${imagemSprite(81)}" alt="" style="--a:${(i * 360) / qtd}deg">`).join("")}</div>`;
+    return anel(Math.min(n, 20), "interno") + (n > 20 ? anel(n - 20, "externo") : "");
+};
+
+const atualizarFundo = (novos) => {
+    const fundo = $("#cl-fundo", app);
+    if (fundo) fundo.innerHTML = htmlFundoPalco(novos);
+    const aneis = $("#cl-aneis", app);
+    if (aneis) aneis.innerHTML = htmlAneis();
+};
+
+// Raios caindo do céu: quanto maior a produção, mais raios (como os biscoitos caindo)
+const chuvaDeRaios = (agora) => {
+    const palco = $("#clicker-palco");
+    const fundo = $("#cl-fundo");
+    if (!palco || !fundo) return;
+    const eps = energiaPorSegundo(c(), agora);
+    if (eps <= 0) return;
+    const frenesi = frenesiAtivo(c(), agora);
+    let qtd = Math.min(6, Math.ceil(Math.log10(eps + 1))) * (frenesi ? 2 : 1);
+    qtd = Math.min(qtd, 18 - $$(".cl-raio-caindo", fundo).length);
+    for (let i = 0; i < qtd; i++) {
+        const r = document.createElement("i");
+        r.className = `cl-raio-caindo${frenesi ? " dourado" : ""}`;
+        r.style.left = `${Math.random() * 96}%`;
+        r.style.animationDuration = `${2.2 + Math.random() * 1.6}s`;
+        r.style.animationDelay = `${Math.random() * 1.8}s`;
+        r.style.setProperty("--tam", `${8 + Math.random() * 10}px`);
+        r.addEventListener("animationend", () => r.remove());
+        fundo.appendChild(r);
+    }
+};
+
+// Com Faísca/Relâmpago, de vez em quando um relâmpago risca o céu
+const talvezRelampago = () => {
+    const chance = ["faisca", "relampago"].filter((id) => temMelhoria(c(), id)).length * 0.008;
+    if (!chance || Math.random() > chance) return;
+    const palco = $("#clicker-palco");
+    const fundo = $("#cl-fundo");
+    if (!palco || !fundo) return;
+    const raio = document.createElement("i");
+    raio.className = "cl-relampago";
+    raio.style.left = `${10 + Math.random() * 75}%`;
+    fundo.appendChild(raio);
+    palco.classList.add("clarao");
+    setTimeout(() => palco.classList.remove("clarao"), 160);
+    setTimeout(() => raio.remove(), 500);
 };
 
 const clicarNoPikachu = (e) => {
@@ -616,6 +713,7 @@ const ACOES = {
         salvarClicker();
         desenharLoja();
         desenharCampo();
+        atualizarFundo(new Set([id]));
     },
     comprar: (el) => {
         const a = AJUDANTES.find((x) => x.id === el.dataset.id);
@@ -625,6 +723,7 @@ const ACOES = {
         salvarClicker();
         desenharLoja();
         desenharCampo();
+        atualizarFundo();
     },
     quantidade: (el) => {
         qtdCompra = el.dataset.q === "max" ? "max" : Number(el.dataset.q);
