@@ -12,7 +12,7 @@ import {
     comprarAjudante, comprarMelhoria, melhoriasNaLoja, producaoAjudante, quantos, podeEvoluir, pedrasDoReinicio, evoluir,
     metaEvolucao, tem, noDisponivel, comprarNo, arvoreCompleta, pacotesRestantesHoje, trocarPorPacote, frenesiAtivo,
     cadeiaAtiva, sortearPokebola, pegarPokebola, intervaloPokebola, duracaoPokebola, verificarConquistas, bonusConquistas,
-    abrirBau, cliquesPorBau, copias, noticiasDisponiveis, romano, multiplicador, temMelhoria, nivelLeite, formatarGrande as fmt,
+    abrirBau, cliquesPorBau, copias, noticiasDisponiveis, romano, multiplicador, temMelhoria, nivelLeite, CRESCIMENTO_META, formatarGrande as fmt,
 } from "./clicker-dados.js";
 
 const TICK = 250;
@@ -100,12 +100,27 @@ const tick = () => {
     if (agora - ultimoSalvo > (ativo ? SALVAR_JOGANDO : SALVAR_FORA)) salvarClicker();
 };
 
+// Cada conquista dá 1 pacote no jogo de cartas (inclusive as que já foram desbloqueadas antes)
+const pagarConquistas = (recentes = 0) => {
+    const devidas = c().conquistas.length - c().conquistasPagas;
+    if (devidas <= 0) return;
+    c().conquistasPagas = c().conquistas.length;
+    estado.comprados += devidas;
+    // Conquistas antigas (de antes dessa recompensa existir) ganham um aviso próprio
+    if (devidas > recentes) aviso(`🎁 <b>+${devidas} pacote${devidas > 1 ? "s" : ""}</b> pelas conquistas! Já ${devidas > 1 ? "estão" : "está"} na tela de Pacotes.`, "sucesso");
+    salvarClicker();
+};
+
 const checarConquistas = () => {
     const novas = verificarConquistas(c());
+    pagarConquistas(novas.length);
     if (!novas.length) return;
     novidadesColecao += novas.length;
     sons.raro(3);
-    novas.slice(0, 3).forEach((q) => aviso(`🏆 Conquista: <b>${q.nome}</b> <small>(+produção)</small>`, "sucesso"));
+    // Um aviso só, mesmo quando várias conquistas chegam juntas
+    aviso(novas.length === 1
+        ? `🏆 Conquista: <b>${novas[0].nome}</b> <small>(+produção e +1 pacote)</small>`
+        : `🏆 <b>${novas.length} conquistas</b>: ${novas.slice(0, 3).map((q) => q.nome).join(", ")}${novas.length > 3 ? "…" : ""} <small>(+${novas.length} pacotes)</small>`, "sucesso");
     salvarClicker();
     if (ativo && aba === "colecao") redesenhar();
     if (ativo && aba === "jogar") atualizarFundo(); // o "leite" sobe com as conquistas
@@ -191,6 +206,16 @@ const atualizarNumeros = () => {
     if (palco) {
         palco.classList.toggle("em-frenesi", frenesiAtivo(c(), agora) || cadeiaAtiva(c(), agora));
         // Quanto maior a produção, mais forte o brilho em volta da bola (0 a 1)
+        // Centro da bola dentro do palco: as luzes e os raios do fundo giram em volta dele
+        const bola = $("#botao-pikachu", palco);
+        if (bola) {
+            const rp = palco.getBoundingClientRect();
+            const rb = bola.getBoundingClientRect();
+            const cx = `${Math.round(rb.left - rp.left + rb.width / 2)}px`;
+            const cy = `${Math.round(rb.top - rp.top + rb.height / 2)}px`;
+            if (palco.style.getPropertyValue("--cx") !== cx) palco.style.setProperty("--cx", cx);
+            if (palco.style.getPropertyValue("--cy") !== cy) palco.style.setProperty("--cy", cy);
+        }
         const forca = Math.min(1, Math.log10(energiaPorSegundo(c(), agora) + 1) / 9).toFixed(2);
         if (palco.style.getPropertyValue("--forca") !== forca) palco.style.setProperty("--forca", forca);
     }
@@ -242,14 +267,19 @@ const telaJogar = () => {
                     <div class="cl-pikachu-area ${classesBola()}" id="cl-pikachu-area">
                         <div class="cl-aneis" id="cl-aneis">${htmlAneis()}</div>
                         <span class="bola-halo"></span>
+                        <span class="bola-vento"></span>
+                        <span class="bola-chamas"></span>
+                        <span class="bola-psiquico"><i></i><i></i></span>
                         <button class="clicker-pikachu" id="botao-pikachu" aria-label="Clicar no Pikachu">
                             <span class="bola-textura"></span>
+                            <span class="bola-digital"></span>
                             <span class="clicker-aura"></span>
                             <img src="${imagemPixel(25)}" alt="Pikachu" draggable="false">
                             <span class="bola-brilho"></span>
                             <svg class="bola-arcos" viewBox="0 0 100 100" aria-hidden="true"></svg>
                         </button>
                         <span class="bola-eletrons" id="bola-eletrons">${htmlEletrons()}</span>
+                        <span class="bola-bolhas">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</span>
                         <span class="bola-combo" id="bola-combo"></span>
                         <span class="bola-fala" id="bola-fala"></span>
                     </div>
@@ -370,7 +400,10 @@ const atualizarFundo = (novos) => {
 
 // ---------- Bola do Pikachu: muda com as melhorias de clique e reage aos cliques ----------
 const melhoriasDeClique = () => MELHORIAS_CLIQUE.filter((id) => temMelhoria(c(), id));
-const classesBola = () => melhoriasDeClique().map((id) => `m-${id}`).join(" ");
+// Os 5 ajudantes do fim do jogo dão uma animação nova para a bola
+const AJUDANTES_BOLA = ["porygon", "dragonite", "moltres", "mewtwo", "mew"];
+const ajudantesNaBola = () => AJUDANTES_BOLA.filter((id) => quantos(c(), id) > 0);
+const classesBola = () => [...melhoriasDeClique().map((id) => `m-${id}`), ...ajudantesNaBola().map((id) => `h-${id}`)].join(" ");
 
 // Um "elétron" girando em volta da bola para cada melhoria de clique
 const htmlEletrons = () => melhoriasDeClique().map((id, i) =>
@@ -380,6 +413,7 @@ const atualizarBola = (novos) => {
     const area = $("#cl-pikachu-area", app);
     if (!area) return;
     MELHORIAS_CLIQUE.forEach((id) => area.classList.toggle(`m-${id}`, temMelhoria(c(), id)));
+    AJUDANTES_BOLA.forEach((id) => area.classList.toggle(`h-${id}`, quantos(c(), id) > 0));
     const eletrons = $("#bola-eletrons", app);
     if (eletrons) eletrons.innerHTML = htmlEletrons();
     if (novos && [...novos].some((id) => MELHORIAS_CLIQUE.includes(id))) {
@@ -580,7 +614,7 @@ const faiscas = (e) => {
 const soltarBau = () => {
     const { item, energia, repetido } = abrirBau(c());
     const r = RARIDADES_ITEM[item.raridade];
-    const nivel = { comum: 2, raro: 3, epico: 5, lendario: 6 }[item.raridade];
+    const nivel = { comum: 2, raro: 3, epico: 5, lendario: 6, temporal: 6 }[item.raridade];
     sons.raro(nivel);
     novidadesColecao++;
     const palco = $("#clicker-palco");
@@ -598,7 +632,15 @@ const soltarBau = () => {
         setTimeout(() => el.remove(), 3000);
     }
     if (item.raridade === "epico" || item.raridade === "lendario") aviso(`🎁 Item ${r.nome.toLowerCase()}: <b>${item.nome}</b>!`, "sucesso");
-    falarPikachu(item.raridade === "lendario" ? "PIKA!!! ✨" : "Pika pika!");
+    if (item.raridade === "temporal") {
+        aviso(`⏳ <b>ITEM TEMPORAL!</b> ${item.nome}: o tempo avançou e você ganhou <b>${fmt(energia)}</b> de energia!`, "sucesso");
+        const palco = $("#clicker-palco");
+        palco?.classList.remove("distorcao");
+        void palco?.offsetWidth;
+        palco?.classList.add("distorcao");
+        setTimeout(() => sons.raro(6), 300);
+    }
+    falarPikachu(item.raridade === "temporal" ? "Pika?! ⏳" : item.raridade === "lendario" ? "PIKA!!! ✨" : "Pika pika!");
     salvarClicker();
 };
 
@@ -759,7 +801,7 @@ const telaColecao = () => {
 
         <section class="painel cl-painel">
             <h2>Conquistas ${c().conquistas.length}/${CONQUISTAS.length}</h2>
-            <p class="sutil">Cada conquista dá <b>+${Math.round(porConquista * 100)}%</b> de produção. Bônus atual: <b>+${Math.round(bonus * 100)}%</b>. As melhorias de amizade da loja aumentam esse bônus.</p>
+            <p class="sutil">Cada conquista dá <b>+${Math.round(porConquista * 100)}%</b> de produção e <b>1 pacote</b> para o jogo de cartas. Bônus atual: <b>+${Math.round(bonus * 100)}%</b>. As melhorias de amizade da loja aumentam esse bônus.</p>
             <div class="cl-conquistas">
                 ${CONQUISTAS.map((q) => {
                     const feita = c().conquistas.includes(q.id);
@@ -806,7 +848,7 @@ const telaEvolucao = () => {
     app.innerHTML = `
     <section class="clicker">
         <h1>Árvore de evolução</h1>
-        <p class="sutil">Ao <b>evoluir</b>, a partida recomeça do zero e você ganha Pedras de Evolução. A meta da próxima evolução é <b>${fmt(metaEvolucao(c()))}</b> de energia (fica 8× maior a cada evolução). Na meta você ganha 10 pedras, e esperar mais rende mais. As melhorias da árvore, os itens e as conquistas ficam para sempre.</p>
+        <p class="sutil">Ao <b>evoluir</b>, a partida recomeça do zero e você ganha Pedras de Evolução. A meta da próxima evolução é <b>${fmt(metaEvolucao(c()))}</b> de energia (fica ${CRESCIMENTO_META}× maior a cada evolução). Na meta você ganha 10 pedras, e esperar mais rende mais. As melhorias da árvore, os itens e as conquistas ficam para sempre.</p>
         <p class="destaque-texto"><i class="ic-pedra"></i> ${fmt(c().pedras)} pedras • ${c().reinicios} evoluç${c().reinicios === 1 ? "ão" : "ões"} • ${c().arvore.length}/${ARVORE.length + 1} melhorias</p>
 
         <div class="arvore">
@@ -876,12 +918,22 @@ const ACOES = {
     comprar: (el) => {
         const a = AJUDANTES.find((x) => x.id === el.dataset.id);
         const n = qtdDoAjudante(a);
+        const primeiro = quantos(c(), a.id) === 0;
         if (!n || !comprarAjudante(c(), a.id, n)) return sons.erro();
         sons.moeda();
         salvarClicker();
         desenharLoja();
         desenharCampo();
         atualizarFundo();
+        if (primeiro && AJUDANTES_BOLA.includes(a.id)) {
+            const botao = $("#botao-pikachu", app);
+            botao?.classList.remove("evoluiu");
+            void botao?.offsetWidth;
+            botao?.classList.add("evoluiu");
+            sons.raro(5);
+            falarPikachu(`Pika?! ${a.nome}! ✨`);
+            aviso(`✨ A bola do Pikachu ganhou o poder de <b>${a.nome}</b>!`, "sucesso");
+        }
     },
     quantidade: (el) => {
         qtdCompra = el.dataset.q === "max" ? "max" : Number(el.dataset.q);

@@ -148,3 +148,27 @@ test("números grandes ficam legíveis", () => {
     assert.equal(C.formatarGrande(2.5e6), "2,5 mi");
     assert.equal(C.formatarGrande(1e9), "1 bi");
 });
+
+test("baú temporal (0,01%) dá a energia inteira da meta de evolução", () => {
+    const c = novo();
+    // rnd perto de 1 cai na última faixa do sorteio: a raridade temporal
+    let chamada = 0;
+    const rnd = () => (chamada++ === 0 ? 0.99999999 : 0);
+    const r = C.abrirBau(c, Date.now(), rnd);
+    assert.equal(r.item.raridade, "temporal");
+    assert.ok(r.energia >= C.metaEvolucao(c));
+    assert.equal(C.podeEvoluir(c), true);
+    assert.equal(c.temporais, 1);
+    const pesos = Object.values(C.RARIDADES_ITEM).map((x) => x.peso);
+    assert.ok(Math.abs(C.RARIDADES_ITEM.temporal.peso / pesos.reduce((a, b) => a + b) - 0.0001) < 1e-6, "chance de 0,01%");
+});
+
+test("13 ajudantes e conquistas novas", () => {
+    const c = novo();
+    assert.equal(C.AJUDANTES.length, 13);
+    C.AJUDANTES.forEach((a) => { c.ajudantes[a.id] = 1; });
+    const novas = C.verificarConquistas(c).map((q) => q.id);
+    assert.ok(novas.includes("tiposAjudantes-13"));
+    assert.ok(novas.includes("tem-mew-1"));
+    assert.ok(C.CONQUISTAS.length >= 90);
+});
