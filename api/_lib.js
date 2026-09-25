@@ -335,12 +335,16 @@ export const idCartaValido = (id) => Object.hasOwn(CARTA_POR_ID, id);
 
 // Mini game Pokéclicker: só números finitos, listas curtas de textos curtos
 const numeroLivre = (v, max = 1e300) => (typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), max) : 0);
-const listaTextos = (v, max = 50) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.length <= 30).slice(0, max) : []);
+const listaTextos = (v, max = 150) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.length <= 30).slice(0, max) : []);
 const limparClicker = (c) => {
     if (!c || typeof c !== "object" || Array.isArray(c)) return undefined;
     const ajudantes = {};
     for (const [id, q] of Object.entries(c.ajudantes && typeof c.ajudantes === "object" ? c.ajudantes : {}).slice(0, 20)) {
         if (id.length <= 30) ajudantes[id] = Math.floor(numeroLivre(q, 1e6));
+    }
+    const itens = {};
+    for (const [id, q] of Object.entries(c.itens && typeof c.itens === "object" ? c.itens : {}).slice(0, 30)) {
+        if (id.length <= 30) itens[id] = Math.floor(numeroLivre(q, 1000));
     }
     const hoje = c.pacotesHoje && typeof c.pacotesHoje === "object" ? c.pacotesHoje : {};
     return {
@@ -354,6 +358,14 @@ const limparClicker = (c) => {
         reinicios: numeroLivre(c.reinicios, 1e9),
         ultimoTick: numeroLivre(c.ultimoTick, 8.64e15),
         douradaAte: numeroLivre(c.douradaAte, 8.64e15),
+        cadeiaAte: numeroLivre(c.cadeiaAte, 8.64e15),
+        pokebolas: numeroLivre(c.pokebolas, 1e9),
+        tempoJogado: numeroLivre(c.tempoJogado, 1e10),
+        bauProgresso: numeroLivre(c.bauProgresso, 1e4),
+        baus: numeroLivre(c.baus, 1e12),
+        lendarios: numeroLivre(c.lendarios, 1e9),
+        itens,
+        conquistas: listaTextos(c.conquistas),
         ajudantes,
         melhorias: listaTextos(c.melhorias),
         arvore: listaTextos(c.arvore),

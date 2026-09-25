@@ -23,8 +23,10 @@ const cliente = () => {
     };
 };
 
-const codigoDe = (segredo, deslocamento = 0) =>
-    new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(segredo) }).generate({ timestamp: Date.now() + deslocamento * 30000 });
+// "momento" fixo deixa o teste estável quando a janela de 30s do código vira no meio dele
+const codigoDe = (segredo, deslocamento = 0, momento = Date.now()) =>
+    new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(segredo) }).generate({ timestamp: momento + deslocamento * 30000 });
+let momentoAtivacao = 0;
 
 const usuario = `teste_${Date.now().toString(36)}`;
 const senha = "senha-bem-forte-123";
@@ -48,7 +50,8 @@ test("cadastro + ativação do 2FA abre a sessão e salva na nuvem", async () =>
     assert.equal((await api("/api/auth/eu")).status, 401, "sem 2FA ainda não está logado");
     assert.equal((await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: "000000" } })).status, 400);
 
-    const ok = await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo) } });
+    momentoAtivacao = Date.now();
+    const ok = await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo, 0, momentoAtivacao) } });
     assert.equal(ok.status, 200);
     assert.equal(ok.dados.codigosRecuperacao.length, 8);
     recuperacao = ok.dados.codigosRecuperacao;
@@ -84,8 +87,8 @@ test("login pede senha certa e depois o código do app", async () => {
     assert.equal((await api("/api/auth/eu")).status, 401, "só a senha não basta");
 
     // O código usado na ativação não pode ser reaproveitado; o do próximo intervalo vale
-    assert.equal((await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo) } })).status, 400);
-    const ok = await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo, 1) } });
+    assert.equal((await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo, 0, momentoAtivacao) } })).status, 400);
+    const ok = await api("/api/auth/verificar", { metodo: "POST", corpo: { codigo: codigoDe(segredo, 1, momentoAtivacao) } });
     assert.equal(ok.status, 200);
     assert.equal((await api("/api/save")).dados.dados.moedas, 42);
 });
