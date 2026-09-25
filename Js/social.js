@@ -852,12 +852,74 @@ const ROTULOS_STATUS = {
     processando: "Processando",
 };
 
-const htmlTroca = (t) => {
-    // Do meu ponto de vista: o que eu dou e o que eu recebo
+// Do meu ponto de vista: o que eu dou e o que eu recebo
+const ladosDaTroca = (t) => {
     const dou = t.enviada ? t.da : t.quer;
     const recebo = t.enviada ? t.quer : t.da;
-    const podeAceitar = !t.enviada && t.status === "pendente";
     const tenhoTudo = Object.entries(dou.reduce((m, id) => ({ ...m, [id]: (m[id] || 0) + 1 }), {})).every(([id, q]) => quantidade(id) >= q);
+    return { dou, recebo, tenhoTudo, podeAceitar: !t.enviada && t.status === "pendente" };
+};
+const porRaridade = (ids) => [...ids].sort((a, b) => CARTA_POR_ID[b].raridade - CARTA_POR_ID[a].raridade || CARTA_POR_ID[a].numero - CARTA_POR_ID[b].numero);
+
+// Lado da troca no cartão: até 4 cartas em leque + resumo (o resto aparece em "Ver troca")
+const MAX_NA_PILHA = 4;
+const htmlLadoCompacto = (ids) => {
+    if (!ids.length) return `<p class="vazio pequeno">Nada</p>`;
+    const ordem = porRaridade(ids);
+    const maisRara = RARIDADES[CARTA_POR_ID[ordem[0]].raridade];
+    return `
+        <div class="pilha-troca">
+            ${ordem.slice(0, MAX_NA_PILHA).map((id, i) => `<div class="pilha-carta" style="--i:${i}">${htmlCarta(CARTA_POR_ID[id])}</div>`).join("")}
+            ${ids.length > MAX_NA_PILHA ? `<span class="pilha-mais">+${ids.length - MAX_NA_PILHA}</span>` : ""}
+        </div>
+        <small class="resumo-lado">${ids.length} carta${ids.length > 1 ? "s" : ""} • melhor ${maisRara.simbolo} • <i class="ic-moeda"></i> ${valorCartas(ids)}</small>`;
+};
+
+// Grade com as cartas agrupadas (uma carta com ×3 em vez de três iguais)
+const htmlGradeAgrupada = (ids) => {
+    if (!ids.length) return `<p class="vazio">Nada</p>`;
+    const qtd = ids.reduce((m, id) => ({ ...m, [id]: (m[id] || 0) + 1 }), {});
+    return `<div class="grade-cartas pequenas">${porRaridade(Object.keys(qtd)).map((id) =>
+        `<button type="button" class="slot-carta" data-acao="ver-previa" data-id="${id}">${htmlCarta(CARTA_POR_ID[id], { qtd: qtd[id] })}</button>`).join("")}</div>`;
+};
+
+const botoesTroca = (t, { dentroModal = false } = {}) => {
+    const { podeAceitar, tenhoTudo } = ladosDaTroca(t);
+    const ver = dentroModal ? "" : `<button class="btn secundario" data-social="ver-troca" data-id="${t.id}">Ver troca</button>`;
+    if (podeAceitar) {
+        return `<div class="modal-botoes">${ver}
+            <button class="btn secundario" data-social="recusar-troca" data-id="${t.id}">Recusar</button>
+            <button class="btn" data-social="aceitar-troca" data-id="${t.id}" ${tenhoTudo ? "" : "disabled"}>
+                ${tenhoTudo ? "Aceitar troca" : "Você não tem as cartas pedidas"}
+            </button>
+        </div>`;
+    }
+    if (t.enviada && t.status === "pendente") {
+        return `<div class="modal-botoes">${ver}<button class="btn secundario" data-social="cancelar-troca" data-id="${t.id}">Cancelar proposta</button></div>`;
+    }
+    return ver ? `<div class="modal-botoes">${ver}</div>` : "";
+};
+
+const modalVerTroca = (t) => {
+    const { dou, recebo } = ladosDaTroca(t);
+    abrirModal(`
+        <div class="ver-troca-topo">
+            ${avatar(t.com.avatar, "avatar")}
+            <div>
+                <h3>Troca com ${escapar(t.com.apelido)}</h3>
+                <small class="sutil">@${escapar(t.com.usuario)} • ${t.enviada ? "você propôs" : "propôs para você"} • ${ROTULOS_STATUS[t.status] || t.status}</small>
+            </div>
+        </div>
+        ${t.mensagem ? `<p class="mensagem-troca">“${escapar(t.mensagem)}”</p>` : ""}
+        <h4 class="titulo-lado">Você dá (${dou.length}) <small><i class="ic-moeda"></i> ${valorCartas(dou)}</small></h4>
+        ${htmlGradeAgrupada(dou)}
+        <h4 class="titulo-lado">Você recebe (${recebo.length}) <small><i class="ic-moeda"></i> ${valorCartas(recebo)}</small></h4>
+        ${htmlGradeAgrupada(recebo)}
+        ${botoesTroca(t, { dentroModal: true })}`, "largo");
+};
+
+const htmlTroca = (t) => {
+    const { dou, recebo } = ladosDaTroca(t);
     return `
     <article class="oferta troca-amigo status-${t.status}">
         <header>
@@ -870,21 +932,11 @@ const htmlTroca = (t) => {
         </header>
         ${t.mensagem ? `<p class="mensagem-troca">“${escapar(t.mensagem)}”</p>` : ""}
         <div class="lados">
-            <div class="lado-oferta"><h4>Você dá${t.enviada && t.status === "pendente" ? " (reservadas)" : ""}</h4><div class="cartas-oferta">${miniCartas(dou)}</div></div>
+            <div class="lado-oferta"><h4>Você dá${t.enviada && t.status === "pendente" ? " (reservadas)" : ""}</h4>${htmlLadoCompacto(dou)}</div>
             <div class="seta">⇄</div>
-            <div class="lado-oferta"><h4>Você recebe</h4><div class="cartas-oferta">${miniCartas(recebo)}</div></div>
+            <div class="lado-oferta"><h4>Você recebe</h4>${htmlLadoCompacto(recebo)}</div>
         </div>
-        ${podeAceitar ? `
-        <div class="modal-botoes">
-            <button class="btn secundario" data-social="recusar-troca" data-id="${t.id}">Recusar</button>
-            <button class="btn" data-social="aceitar-troca" data-id="${t.id}" ${tenhoTudo ? "" : "disabled"}>
-                ${tenhoTudo ? "Aceitar troca" : "Você não tem as cartas pedidas"}
-            </button>
-        </div>` : ""}
-        ${t.enviada && t.status === "pendente" ? `
-        <div class="modal-botoes">
-            <button class="btn secundario" data-social="cancelar-troca" data-id="${t.id}">Cancelar proposta</button>
-        </div>` : ""}
+        ${botoesTroca(t)}
     </article>`;
 };
 
@@ -962,6 +1014,10 @@ const ACOES = {
     },
     "escolher-amigo": escolherAmigoParaTroca,
     "nova-troca": (el) => modalNovaTroca(el.dataset.usuario),
+    "ver-troca": (el) => {
+        const t = resumo?.trocas.find((x) => x.id === Number(el.dataset.id));
+        if (t) modalVerTroca(t);
+    },
     "cancelar-troca": async (el) => {
         if (!(await confirmar("Cancelar proposta?", "As cartas reservadas voltam para o seu álbum.", "Cancelar proposta"))) return;
         await executar(() => acao("cancelar-troca", { id: el.dataset.id }), "Proposta cancelada.");

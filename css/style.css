@@ -1780,3 +1780,22 @@ body.modo-clicker main { max-width: 1440px; }
 
 /* Os raios do Frenesi giram em volta do centro da bola (--cx/--cy vêm do JS) */
 .clicker-palco::before { inset: auto; left: var(--cx, 50%); top: var(--cy, 52%); width: 1800px; height: 1800px; translate: -50% -50%; }
+
+/* ---------- Cartão de troca compacto (as cartas completas ficam em "Ver troca") ---------- */
+.troca-amigo .lados { align-items: flex-start; }
+.troca-amigo .lado-oferta { min-width: 0; }
+.pilha-troca { position: relative; display: flex; justify-content: center; height: 100px; margin: 4px 0 6px; }
+.pilha-carta { width: 56px; margin-left: -38px; transform: rotate(calc((var(--i) - 1.5) * 6deg)) translateY(calc(var(--i) * 2px)); transform-origin: 50% 110%; }
+.pilha-carta:first-child { margin-left: 0; }
+.pilha-carta .carta { box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35); }
+.pilha-mais {
+    position: absolute; right: calc(50% - 50px); bottom: 2px; z-index: 6; padding: 1px 8px; border-radius: 99px;
+    background: var(--tinta); color: var(--amarelo); font-weight: 800; font-size: 0.8rem; border: 2px solid var(--papel2);
+}
+.resumo-lado { display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 0.75rem; color: var(--tinta2); }
+.ver-troca-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.ver-troca-topo h3 { margin: 0; }
+.titulo-lado { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; font-size: 1.05rem; }
+.titulo-lado small { display: flex; align-items: center; gap: 4px; font-weight: 600; color: var(--tinta2); }
+.troca-amigo .modal-botoes { flex-wrap: wrap; }
+.troca-amigo .modal-botoes [data-social=ver-troca] { flex-basis: 100%; }
