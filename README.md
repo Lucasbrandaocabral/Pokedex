@@ -42,7 +42,7 @@ Cada jogador tem um perfil com apelido, avatar, bio e uma vitrine com 3 cartas. 
   <img src="docs/imagens/celular-login.jpg" width="26%" alt="Versão de celular">
 </p>
 
-Na tela inicial também tem o **Pokéclicker**, um mini game de clicar. Você clica no Pikachu para juntar energia, contrata ajudantes elétricos (Magnemite, Voltorb, Electabuzz... até Zapdos) que produzem sozinhos, inclusive com o jogo fechado, e compra melhorias. Com 100 milhões de energia numa partida dá para **evoluir**: tudo volta do zero, mas você ganha Pedras de Evolução para uma árvore de melhorias permanentes. Quando a árvore inteira está completa, abre o Mercado de Pacotes, onde as pedras viram pacotes do jogo de cartas (até 5 por dia).
+Na tela inicial também tem o **Pokéclicker**, um mini game de clicar inspirado no Cookie Clicker e no Click the Button. Você clica no Pikachu para juntar energia e contrata ajudantes elétricos (Magnemite, Voltorb, Electabuzz... até Zapdos) que produzem sozinhos, inclusive com o jogo fechado. A loja vai liberando dezenas de melhorias, cada 100 cliques soltam um baú com itens colecionáveis de várias raridades, pokébolas especiais aparecem na tela com efeitos surpresa e tem mais de 60 conquistas. Chegando na meta de energia dá para **evoluir**: a partida recomeça, mas você ganha Pedras de Evolução para uma árvore de melhorias permanentes. Com a árvore completa, abre o Mercado de Pacotes, onde as pedras viram pacotes do jogo de cartas (até 5 por dia).
 
 ## Conta e segurança
 

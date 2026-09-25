@@ -26,26 +26,82 @@ test("comprar o máximo nunca passa da energia", () => {
     assert.equal(c.ajudantes.magnemite, n);
 });
 
-test("produção dobra nos marcos e o clique soma as melhorias", () => {
+test("melhorias da loja: aparecem na hora certa e dobram a produção", () => {
     const c = novo();
-    c.ajudantes.voltorb = 25;
-    assert.equal(C.energiaPorSegundo(c), 50);
+    c.ajudantes.voltorb = 4;
+    assert.equal(C.energiaPorSegundo(c), 4);
+    const loja = () => C.melhoriasNaLoja(c).map((m) => m.id);
+    assert.ok(loja().includes("voltorb-1"));
+    assert.ok(!loja().includes("voltorb-2"), "o nível II só aparece com 5 Voltorbs");
+    c.energia = 1e9;
+    assert.equal(C.comprarMelhoria(c, "voltorb-2"), false, "não compra o que não aparece");
+    assert.equal(C.comprarMelhoria(c, "voltorb-1"), true);
+    assert.equal(C.energiaPorSegundo(c), 8);
     c.melhorias.push("choque", "trovoada");
     c.arvore.push("clique1");
     assert.equal(C.energiaPorClique(c), 12);
 });
 
-test("evoluir só com 100 mi na partida e dá 10 pedras", () => {
+test("conquistas dão +1% de produção cada (mais com amizade)", () => {
     const c = novo();
-    c.totalPartida = C.ENERGIA_PARA_EVOLUIR - 1;
+    c.ajudantes.voltorb = 100;
+    c.totalGeral = 1e5;
+    const novas = C.verificarConquistas(c);
+    assert.ok(novas.some((q) => q.id === "total-1000"));
+    assert.ok(novas.some((q) => q.id === "tem-voltorb-100"));
+    const n = c.conquistas.length;
+    assert.equal(C.verificarConquistas(c).length, 0, "não repete");
+    assert.ok(Math.abs(C.energiaPorSegundo(c) - 100 * (1 + n * 0.01)) < 1e-9);
+    c.melhorias.push("amizade1");
+    assert.ok(Math.abs(C.energiaPorSegundo(c) - 100 * (1 + n * 0.02)) < 1e-9);
+});
+
+test("baú a cada 100 cliques, item vai para a mochila e para no máximo", () => {
+    const c = novo();
+    let bau = false;
+    for (let i = 0; i < 100; i++) bau = C.clicar(c).bau;
+    assert.equal(bau, true);
+    const r = C.abrirBau(c, Date.now(), () => 0); // rnd 0 = comum, primeiro item
+    assert.equal(r.item.raridade, "comum");
+    assert.equal(c.itens[r.item.id], 1);
+    assert.equal(c.bauProgresso, 0);
+    c.itens[r.item.id] = C.MAX_COPIAS;
+    assert.equal(C.abrirBau(c, Date.now(), () => 0).repetido, true);
+    assert.equal(c.itens[r.item.id], C.MAX_COPIAS);
+});
+
+test("pokébolas: frenesi multiplica a produção e cadeia o clique", () => {
+    const c = novo();
+    c.ajudantes.voltorb = 10;
+    const agora = 1e12;
+    C.pegarPokebola(c, "frenesi", agora);
+    assert.equal(C.energiaPorSegundo(c, agora), 70);
+    assert.equal(C.energiaPorSegundo(c, agora + 78e3), 10);
+    C.pegarPokebola(c, "cadeia", agora);
+    assert.equal(C.energiaPorClique(c, agora), 777);
+    const antes = c.energia;
+    C.pegarPokebola(c, "sorte", agora);
+    assert.ok(c.energia > antes);
+    assert.equal(c.pokebolas, 3);
+});
+
+test("evoluir só na meta, dá 10 pedras e a meta dobra", () => {
+    const c = novo();
+    const meta = C.metaEvolucao(c);
+    c.totalPartida = meta - 1;
     assert.equal(C.podeEvoluir(c), false);
     assert.equal(C.evoluir(c), 0);
-    c.totalPartida = C.ENERGIA_PARA_EVOLUIR;
+    c.totalPartida = meta;
     c.ajudantes.zapdos = 3;
     c.melhorias.push("choque");
+    c.itens.pilha = 2;
     assert.equal(C.evoluir(c), 10);
     assert.deepEqual([c.pedras, c.totalPartida, c.energia, c.melhorias.length, c.reinicios], [10, 0, 0, 0, 1]);
     assert.deepEqual(c.ajudantes, {});
+    assert.equal(c.itens.pilha, 2, "itens ficam");
+    assert.equal(C.metaEvolucao(c), meta * C.CRESCIMENTO_META);
+    c.totalPartida = C.metaEvolucao(c) * 8;
+    assert.equal(C.pedrasDoReinicio(c), 20, "8× a meta = 20 pedras");
 });
 
 test("árvore respeita pré-requisitos e o mercado só abre com tudo", () => {
