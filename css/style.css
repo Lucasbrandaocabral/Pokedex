@@ -1157,3 +1157,139 @@ body:not(.bloqueado) > .tela-login { display: none; }
 .contador-pacotes b { color: var(--amarelo); font-weight: 400; }
 .abertura-botoes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .abertura .abertura-palco { min-height: calc(100% - 60px); }
+
+/* ====================================================
+   Pokéclicker (mini game de clicar)
+   ==================================================== */
+.nav-clicker, .hud-clicker { display: none !important; }
+body.modo-clicker .nav:not(.nav-clicker) { display: none; }
+body.modo-clicker .nav-clicker { display: flex !important; }
+body.modo-clicker .hud-clicker { display: flex !important; }
+body.modo-clicker .hud-cartas { display: none; }
+.nav-clicker { background: #1d2a4a; }
+.nav-clicker .nav-item.ativo { background: var(--amarelo); }
+.ic-energia { font-style: normal; }
+.ic-pedra {
+    display: inline-block; width: 13px; height: 15px; vertical-align: -2px; flex-shrink: 0;
+    background: linear-gradient(135deg, #b8fff0, #2ec4b6 45%, #127a70);
+    clip-path: polygon(50% 0, 100% 35%, 80% 100%, 20% 100%, 0 35%);
+}
+
+/* Cartão na tela Início */
+.cartao-clicker {
+    display: flex; align-items: center; gap: 20px; margin-top: 30px; padding: 18px 22px;
+    border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra);
+    background: linear-gradient(120deg, #1d2a4a, #2f3f73 60%, #f2c230 140%); color: #fff;
+}
+.cartao-clicker img { width: 96px; height: 96px; image-rendering: pixelated; flex-shrink: 0; filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.4)); }
+.cartao-clicker > div { flex: 1; }
+.cartao-clicker h2 { margin: 4px 0; font-size: 2rem; }
+.cartao-clicker p { margin: 4px 0; color: #dfe6ff; }
+.cartao-clicker .sutil { color: #fff3b0; }
+@media (max-width: 600px) {
+    .cartao-clicker { flex-direction: column; text-align: center; }
+    .cartao-clicker .btn { width: 100%; }
+}
+
+.clicker-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+/* Palco com o Pikachu */
+.clicker-palco {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 22px 16px 18px; border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra);
+    background:
+        radial-gradient(circle at 50% 55%, rgba(255, 230, 90, 0.55), transparent 45%),
+        repeating-conic-gradient(from 0deg at 50% 55%, rgba(255, 255, 255, 0.06) 0 8deg, transparent 8deg 20deg),
+        linear-gradient(180deg, #1d2a4a, #2f3f73);
+    color: #fff; user-select: none;
+}
+.clicker-placar { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.clicker-placar > b { font-family: "Jersey 20", monospace; font-size: clamp(2.6rem, 8vw, 3.8rem); line-height: 1; color: var(--amarelo); text-shadow: 3px 3px 0 var(--tinta); }
+.clicker-placar span { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: #cfd8ff; }
+.clicker-placar small { font-size: 1rem; color: #fff; }
+.clicker-dourada-ativa { font-style: normal; margin-top: 4px; padding: 2px 10px; border-radius: 99px; background: var(--amarelo); color: var(--tinta); font-weight: 800; animation: pulsar 0.8s ease-in-out infinite; }
+.clicker-pikachu {
+    position: relative; width: min(240px, 60vw); aspect-ratio: 1; border-radius: 50%; cursor: pointer; touch-action: manipulation;
+    border: 4px solid var(--tinta); background: radial-gradient(circle at 40% 35%, #fff8c9, #ffd84a 55%, #e0a800);
+    box-shadow: 0 8px 0 var(--tinta), 0 0 40px rgba(255, 220, 80, 0.5); transition: transform 0.08s;
+    display: grid; place-items: center; -webkit-tap-highlight-color: transparent;
+}
+.clicker-pikachu img { width: 78%; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3)); }
+.clicker-pikachu:hover { transform: scale(1.03); }
+.clicker-pikachu.apertado { animation: apertarPikachu 0.15s ease-out; }
+@keyframes apertarPikachu { 50% { transform: scale(0.93); box-shadow: 0 3px 0 var(--tinta), 0 0 60px rgba(255, 230, 90, 0.9); } }
+.clicker-aura { position: absolute; inset: -14px; border-radius: 50%; border: 3px dashed rgba(255, 230, 90, 0.5); animation: girar 18s linear infinite; pointer-events: none; }
+.clicker-por-clique { margin: 12px 0 0; color: #cfd8ff; }
+.clicker-por-clique b { color: #fff; }
+.numero-flutuante {
+    position: absolute; z-index: 3; pointer-events: none; transform: translate(-50%, 0);
+    font-family: "Jersey 20", monospace; font-size: 1.7rem; color: #fff; text-shadow: 2px 2px 0 var(--tinta);
+    animation: subirNumero 0.9s ease-out forwards;
+}
+.numero-flutuante.critico { color: var(--amarelo); font-size: 2.2rem; }
+@keyframes subirNumero { to { transform: translate(-50%, -80px); opacity: 0; } }
+.pokebola-dourada {
+    position: absolute; z-index: 4; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; border: 3px solid var(--tinta);
+    background: linear-gradient(#ffd84a 0 45%, var(--tinta) 45% 55%, #fff6c9 55%);
+    box-shadow: 0 0 22px 6px rgba(255, 215, 0, 0.8); animation: flutuar 1.6s ease-in-out infinite;
+}
+.pokebola-dourada::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; background: #fff; border: 3px solid var(--tinta); }
+
+.lista-melhorias { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; }
+.lista-melhorias li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; background: var(--papel); border: 2px solid var(--papel3); }
+.lista-melhorias li > div { flex: 1; display: flex; flex-direction: column; }
+.lista-melhorias small { color: var(--tinta2); }
+.lista-melhorias li.feita { opacity: 0.55; }
+.btn.sem-energia { opacity: 0.45; }
+
+/* Ajudantes */
+.lista-ajudantes { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 16px 0 0; }
+.ajudante {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--raio);
+    background: var(--papel2); border: var(--linha); box-shadow: 3px 3px 0 var(--tinta);
+}
+.ajudante img { width: 64px; height: 64px; image-rendering: pixelated; flex-shrink: 0; background: var(--papel); border-radius: 50%; border: 2px solid var(--papel3); }
+.ajudante > div:not(.ajudante-botoes) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ajudante b { font-size: 1.05rem; }
+.ajudante-qtd { font-family: "Jersey 20", monospace; font-size: 1.4rem; color: var(--vermelho); margin-left: 4px; }
+.ajudante small { color: var(--tinta2); }
+.ajudante-botoes { display: flex; gap: 6px; }
+.ajudante-botoes .btn { display: flex; flex-direction: column; align-items: center; line-height: 1.15; min-width: 76px; }
+.ajudante-botoes .btn small { font-size: 0.7rem; font-weight: 600; color: inherit; opacity: 0.85; }
+.ajudante.escondido { opacity: 0.6; box-shadow: none; border-style: dashed; }
+.ajudante.escondido img { filter: brightness(0) opacity(0.5); }
+@media (max-width: 600px) {
+    .ajudante { flex-wrap: wrap; }
+    .ajudante-botoes { width: 100%; }
+    .ajudante-botoes .btn { flex: 1; min-width: 0; }
+}
+
+/* Árvore de evolução */
+.arvore { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.ramo-arvore { display: flex; flex-direction: column; align-items: stretch; padding: 12px; border-radius: var(--raio); background: var(--papel2); border: 2px dashed var(--papel3); }
+.ramo-arvore h3, .arvore-topo h3 { margin: 0 0 10px; text-align: center; }
+.no-arvore {
+    display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 10px 12px; font: inherit; color: var(--tinta);
+    border: var(--linha); border-radius: 8px; background: #fff; cursor: pointer; box-shadow: 3px 3px 0 var(--tinta); transition: transform 0.1s;
+}
+.no-arvore small { color: var(--tinta2); font-size: 0.8rem; }
+.no-custo { display: flex; align-items: center; gap: 5px; font-weight: 800; margin-top: 4px; }
+.no-arvore.disponivel { background: #fff8d9; border-color: var(--tinta); animation: brilharNo 1.6s ease-in-out infinite; }
+.no-arvore.disponivel:hover { transform: translateY(-2px); }
+@keyframes brilharNo { 50% { box-shadow: 3px 3px 0 var(--tinta), 0 0 16px rgba(46, 196, 182, 0.8); } }
+.no-arvore.caro { cursor: default; }
+.no-arvore.caro .no-custo { color: var(--vermelho); }
+.no-arvore.comprado { background: #dff5e7; border-color: var(--verde); box-shadow: 3px 3px 0 var(--verde); cursor: default; }
+.no-arvore.comprado .no-custo { color: var(--verde); }
+.no-arvore.bloqueado { opacity: 0.45; box-shadow: none; cursor: not-allowed; border-style: dashed; }
+.liga-arvore { display: block; width: 4px; height: 18px; margin: 0 auto; background: var(--tinta); }
+.arvore-topo { position: relative; margin: 26px auto 0; max-width: 640px; padding: 12px; border-radius: var(--raio); background: #eef6ff; border: 2px dashed #b8cff0; }
+.liga-topo { position: absolute; top: -26px; left: 50%; width: 4px; height: 26px; background: var(--tinta); }
+.topo-nos { display: flex; gap: 12px; justify-content: center; align-items: stretch; flex-wrap: wrap; }
+.topo-nos .no-arvore { flex: 1; min-width: 200px; }
+.mercado { margin-top: 26px; }
+.mercado.aberto { background: #fff8d9; }
+@media (max-width: 700px) {
+    .arvore { grid-template-columns: 1fr; }
+    .topo-nos { flex-direction: column; }
+}
+.clicker-offline { font-family: "Jersey 20", monospace; font-size: 2.6rem; text-align: center; color: var(--vermelho); margin: 8px 0; }

@@ -19,6 +19,7 @@ import {
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
 } from "./ui.js";
 import { iniciarConta, abrirConta } from "./conta.js";
+import { iniciarClicker, telaClicker, definirModoClicker, atualizarHud as atualizarHudClicker, htmlCartaoClicker } from "./clicker.js";
 import {
     iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas, processarConvite,
 } from "./social.js";
@@ -28,6 +29,7 @@ if (location.hostname.endsWith("github.io")) location.replace(`https://pokepalwo
 
 const app = $("#app");
 let telaAtual = "inicio";
+let argAtual; // sub-tela (ex.: #clicker/ajudantes), para redesenhar no mesmo lugar
 let pacoteSelecionado = "charizard";
 const filtrosAlbum = { busca: "", colecao: "A1", pacote: "", raridade: "", mostrar: "todas" };
 const colecaoSelecionada = () => COLECAO_POR_CODIGO[PACOTES[pacoteSelecionado].colecao];
@@ -53,6 +55,7 @@ const atualizarCabecalho = () => {
     $("#hud-gratis").textContent =
         estado.gratis.qtd >= PACOTES_GRATIS_MAX ? "cheio" : `+1 em ${formatarTempo(tempo)}`;
     $("#btn-som").innerHTML = icone(estado.som ? "som" : "mudo");
+    atualizarHudClicker();
     const novas = Object.keys(estado.novas).length;
     const badge = $("#badge-album");
     badge.textContent = novas;
@@ -100,12 +103,16 @@ const TELAS = {
     },
     loja: () => telaLoja(),
     pokedex: (arg) => telaPokedex(arg),
+    clicker: (arg) => telaClicker(app, arg),
 };
 
 const navegar = () => {
     const [tela, arg] = location.hash.replace("#", "").split("/");
     const anterior = telaAtual;
     telaAtual = TELAS[tela] ? tela : "inicio";
+    argAtual = arg && decodeURIComponent(arg);
+    // O Pokéclicker tem barra de baixo e HUD próprios
+    definirModoClicker(telaAtual === "clicker");
     if (anterior === "album" && telaAtual !== "album") novasVisita = {};
     limparNotificacoes(telaAtual);
     atualizarCabecalho();
@@ -117,7 +124,7 @@ const navegar = () => {
 
 const renderizar = () => {
     limparNotificacoes(telaAtual);
-    TELAS[telaAtual]();
+    TELAS[telaAtual](telaAtual === "clicker" ? argAtual : undefined);
     ativarTilt(app);
 };
 
@@ -143,6 +150,8 @@ const telaInicio = () => {
             ${["mew", "charizard", "gyarados"].map((p) => htmlPacote(p, "mini")).join("")}
         </div>
     </section>
+
+    ${htmlCartaoClicker()}
 
     <div class="grade-painel">
         <section class="painel">
@@ -1176,6 +1185,7 @@ sincronizarGratis();
 sincronizarDiario();
 sincronizarTrocas();
 slotVisto = estado.trocas.slot;
+iniciarClicker();
 limparNotificacoes("album");
 limparNotificacoes("inicio");
 atualizarCabecalho();

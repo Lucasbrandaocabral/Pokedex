@@ -1,0 +1,94 @@
+// Testes das regras do Pokéclicker (não precisam do servidor)
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import * as C from "../Js/clicker-dados.js";
+
+const novo = () => C.clickerInicial();
+const magnemite = C.AJUDANTE_POR_ID.magnemite;
+
+test("custo dos ajudantes cresce 15% por compra e a Liga dá 10% de desconto", () => {
+    const c = novo();
+    assert.equal(C.custoAjudante(c, magnemite), 15);
+    c.ajudantes.magnemite = 10;
+    assert.equal(C.custoAjudante(c, magnemite), Math.ceil(15 * 1.15 ** 10));
+    assert.equal(C.custoAjudante(c, magnemite, 3), Math.ceil(15 * 1.15 ** 10 * (1 + 1.15 + 1.15 ** 2)));
+    c.arvore.push("ajud1", "ajud2");
+    assert.equal(C.custoAjudante(c, magnemite), Math.ceil(15 * 1.15 ** 10 * 0.9));
+});
+
+test("comprar o máximo nunca passa da energia", () => {
+    const c = novo();
+    c.energia = 12345;
+    const n = C.maximoCompravel(c, magnemite);
+    assert.ok(C.custoAjudante(c, magnemite, n) <= c.energia);
+    assert.ok(C.custoAjudante(c, magnemite, n + 1) > c.energia);
+    assert.ok(C.comprarAjudante(c, "magnemite", n));
+    assert.equal(c.ajudantes.magnemite, n);
+});
+
+test("produção dobra nos marcos e o clique soma as melhorias", () => {
+    const c = novo();
+    c.ajudantes.voltorb = 25;
+    assert.equal(C.energiaPorSegundo(c), 50);
+    c.melhorias.push("choque", "trovoada");
+    c.arvore.push("clique1");
+    assert.equal(C.energiaPorClique(c), 12);
+});
+
+test("evoluir só com 100 mi na partida e dá 10 pedras", () => {
+    const c = novo();
+    c.totalPartida = C.ENERGIA_PARA_EVOLUIR - 1;
+    assert.equal(C.podeEvoluir(c), false);
+    assert.equal(C.evoluir(c), 0);
+    c.totalPartida = C.ENERGIA_PARA_EVOLUIR;
+    c.ajudantes.zapdos = 3;
+    c.melhorias.push("choque");
+    assert.equal(C.evoluir(c), 10);
+    assert.deepEqual([c.pedras, c.totalPartida, c.energia, c.melhorias.length, c.reinicios], [10, 0, 0, 0, 1]);
+    assert.deepEqual(c.ajudantes, {});
+});
+
+test("árvore respeita pré-requisitos e o mercado só abre com tudo", () => {
+    const c = novo();
+    c.pedras = 1000;
+    assert.equal(C.comprarNo(c, "clique2"), false, "precisa do Dedo Treinado antes");
+    assert.equal(C.comprarNo(c, "clique1"), true);
+    assert.equal(C.comprarNo(c, "clique1"), false, "não compra duas vezes");
+    for (const n of C.ARVORE) C.comprarNo(c, n.id);
+    // compra em ordem (alguns só liberam depois de outros)
+    for (const n of C.ARVORE) C.comprarNo(c, n.id);
+    assert.equal(C.arvoreCompleta(c), true);
+    assert.equal(C.comprarNo(c, "mercado"), true);
+    assert.equal(c.pedras, 1000 - 150);
+});
+
+test("mercado: 10 pedras por pacote e no máximo 5 por dia", () => {
+    const c = novo();
+    c.pedras = 1000;
+    assert.equal(C.trocarPorPacote(c, "2026-9-25"), false, "sem o mercado não troca");
+    c.arvore.push("mercado");
+    for (let i = 0; i < 5; i++) assert.equal(C.trocarPorPacote(c, "2026-9-25"), true);
+    assert.equal(C.trocarPorPacote(c, "2026-9-25"), false, "6º pacote do dia");
+    assert.equal(c.pedras, 950);
+    assert.equal(C.trocarPorPacote(c, "2026-9-26"), true, "no dia seguinte volta");
+});
+
+test("offline: no máximo 8h e 50% sem a Soneca", () => {
+    const c = novo();
+    c.ajudantes.voltorb = 1; // 1 ⚡/s
+    const agora = 1e12;
+    c.ultimoTick = agora - 10 * 3600 * 1000;
+    const r = C.aplicarOffline(c, agora);
+    assert.equal(r.segundos, 8 * 3600);
+    assert.equal(r.ganho, 8 * 3600 * 0.5);
+    c.arvore.push("tempo1");
+    c.ultimoTick = agora - 3600 * 1000;
+    assert.equal(C.aplicarOffline(c, agora + 0).ganho, 3600);
+});
+
+test("números grandes ficam legíveis", () => {
+    assert.equal(C.formatarGrande(950), "950");
+    assert.equal(C.formatarGrande(1500), "1,5 mil");
+    assert.equal(C.formatarGrande(2.5e6), "2,5 mi");
+    assert.equal(C.formatarGrande(1e9), "1 bi");
+});
