@@ -2,6 +2,7 @@
 // Estado do jogador: salvo no localStorage do navegador
 // ====================================================
 import { CARTA_POR_ID, RARIDADES, TOTAL_CARTAS } from "./cards.js";
+import { clickerInicial } from "./clicker-dados.js";
 
 const CHAVE = "pokepocket_save_v1";
 
@@ -62,6 +63,7 @@ const estadoInicial = () => {
         salvoEm: 0,
         nuvemBase: 0, // salvoEm da última versão sincronizada com a nuvem
         entregasAplicadas: [], // entregas de trocas já colocadas no álbum
+        clicker: clickerInicial(), // mini game Pokéclicker
     };
 };
 

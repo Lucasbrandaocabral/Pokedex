@@ -42,6 +42,8 @@ Cada jogador tem um perfil com apelido, avatar, bio e uma vitrine com 3 cartas. 
   <img src="docs/imagens/celular-login.jpg" width="26%" alt="Versão de celular">
 </p>
 
+Na tela inicial também tem o **Pokéclicker**, um mini game de clicar. Você clica no Pikachu para juntar energia, contrata ajudantes elétricos (Magnemite, Voltorb, Electabuzz... até Zapdos) que produzem sozinhos, inclusive com o jogo fechado, e compra melhorias. Com 100 milhões de energia numa partida dá para **evoluir**: tudo volta do zero, mas você ganha Pedras de Evolução para uma árvore de melhorias permanentes. Quando a árvore inteira está completa, abre o Mercado de Pacotes, onde as pedras viram pacotes do jogo de cartas (até 5 por dia).
+
 ## Conta e segurança
 
 Só dá para jogar com conta. O progresso fica salvo na nuvem, então dá para continuar no celular ou em outro computador.
@@ -73,6 +75,8 @@ Js/state.js           progresso, moedas, pacotes grátis e missões
 Js/trades.js          ofertas dos bots
 Js/conta.js           login, 2FA e sincronização com a nuvem
 Js/social.js          perfil, amigos e trocas entre jogadores
+Js/clicker-dados.js   regras e números do Pokéclicker
+Js/clicker.js         telas do Pokéclicker
 Js/main.js            telas e navegação
 api/                  servidor (cadastro, login, save, social)
 scripts/              servidor local e testes

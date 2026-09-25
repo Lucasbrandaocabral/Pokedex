@@ -333,6 +333,34 @@ const inteiro = (valor, min, max, padrao = 0) =>
 // Só aceita cartas que existem no jogo (Origem Genética usa "001", as outras expansões "A1a-001")
 export const idCartaValido = (id) => Object.hasOwn(CARTA_POR_ID, id);
 
+// Mini game Pokéclicker: só números finitos, listas curtas de textos curtos
+const numeroLivre = (v, max = 1e300) => (typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), max) : 0);
+const listaTextos = (v, max = 50) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.length <= 30).slice(0, max) : []);
+const limparClicker = (c) => {
+    if (!c || typeof c !== "object" || Array.isArray(c)) return undefined;
+    const ajudantes = {};
+    for (const [id, q] of Object.entries(c.ajudantes && typeof c.ajudantes === "object" ? c.ajudantes : {}).slice(0, 20)) {
+        if (id.length <= 30) ajudantes[id] = Math.floor(numeroLivre(q, 1e6));
+    }
+    const hoje = c.pacotesHoje && typeof c.pacotesHoje === "object" ? c.pacotesHoje : {};
+    return {
+        energia: numeroLivre(c.energia),
+        totalPartida: numeroLivre(c.totalPartida),
+        totalGeral: numeroLivre(c.totalGeral),
+        recorde: numeroLivre(c.recorde),
+        cliques: numeroLivre(c.cliques, 1e15),
+        pedras: numeroLivre(c.pedras, 1e12),
+        pedrasTotal: numeroLivre(c.pedrasTotal, 1e12),
+        reinicios: numeroLivre(c.reinicios, 1e9),
+        ultimoTick: numeroLivre(c.ultimoTick, 8.64e15),
+        douradaAte: numeroLivre(c.douradaAte, 8.64e15),
+        ajudantes,
+        melhorias: listaTextos(c.melhorias),
+        arvore: listaTextos(c.arvore),
+        pacotesHoje: { dia: typeof hoje.dia === "string" ? hoje.dia.slice(0, 12) : "", qtd: Math.floor(numeroLivre(hoje.qtd, 100)) },
+    };
+};
+
 // Remove cartas inexistentes, quantidades absurdas e números inválidos.
 // Assim um save adulterado não quebra a tela de ninguém.
 export const limparSave = (dados) => {
@@ -355,6 +383,7 @@ export const limparSave = (dados) => {
         comprados: inteiro(dados.comprados, 0, 1e6),
         salvoEm: inteiro(dados.salvoEm, 0, 8.64e15),
         nuvemBase: inteiro(dados.nuvemBase, 0, 8.64e15),
+        clicker: limparClicker(dados.clicker),
         stats: {
             pacotes: inteiro(stats.pacotes, 0, 1e9),
             trocas: inteiro(stats.trocas, 0, 1e9),

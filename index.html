@@ -41,10 +41,12 @@
         <div class="hud">
             <button class="hud-item btn-sino" id="btn-sino" title="Notificações" aria-label="Notificações" hidden><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i class="badge" id="badge-sino" hidden></i></button>
             <button class="hud-item btn-conta" id="btn-conta" data-acao="conta" hidden></button>
-            <a class="hud-item" href="#loja" title="Moedas"><i class="ic-moeda"></i><span id="hud-moedas">0</span></a>
-            <span class="hud-item" title="Pontos de pacote"><i class="ic-ponto"></i><span id="hud-pontos">0</span></span>
-            <a class="hud-item" href="#pacotes" title="Pacotes disponíveis"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l1.5 2L9 3l1.5 2L12 3l1.5 2L15 3l1.5 2L18 3v18H6z"/><path d="M6 8h12"/></svg><span id="hud-pacotes">0</span>
+            <a class="hud-item hud-cartas" href="#loja" title="Moedas"><i class="ic-moeda"></i><span id="hud-moedas">0</span></a>
+            <span class="hud-item hud-cartas" title="Pontos de pacote"><i class="ic-ponto"></i><span id="hud-pontos">0</span></span>
+            <a class="hud-item hud-cartas" href="#pacotes" title="Pacotes disponíveis"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l1.5 2L9 3l1.5 2L12 3l1.5 2L15 3l1.5 2L18 3v18H6z"/><path d="M6 8h12"/></svg><span id="hud-pacotes">0</span>
                 <small id="hud-gratis"></small></a>
+            <a class="hud-item hud-clicker" href="#clicker" title="Energia"><i class="ic-energia">⚡</i><span id="hud-energia">0</span></a>
+            <a class="hud-item hud-clicker" href="#clicker/evolucao" title="Pedras de Evolução"><i class="ic-pedra"></i><span id="hud-pedras">0</span></a>
             <button class="hud-item" id="btn-som" data-acao="som" title="Som"></button>
         </div>
     </header>
@@ -58,6 +60,14 @@
         <a class="nav-item" data-tela="trocas" href="#trocas"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg><span>Trocas</span><i class="badge" id="badge-trocas" hidden></i></a>
         <a class="nav-item" data-tela="loja" href="#loja"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Loja</span></a>
         <a class="nav-item" data-tela="pokedex" href="#pokedex"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>Pokédex</span></a>
+    </nav>
+
+    <!-- Barra de baixo do Pokéclicker (aparece no lugar da normal) -->
+    <nav class="nav nav-clicker" id="nav-clicker">
+        <a class="nav-item" data-tela-clicker="clicar" href="#clicker"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Clicar</span></a>
+        <a class="nav-item" data-tela-clicker="ajudantes" href="#clicker/ajudantes"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span>Ajudantes</span><i class="badge" id="badge-ajudantes" hidden></i></a>
+        <a class="nav-item" data-tela-clicker="evolucao" href="#clicker/evolucao"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-7M12 14l-5-5M12 14l5-5M7 9V5M17 9V5M12 14V3"/><circle cx="7" cy="4" r="1.5"/><circle cx="17" cy="4" r="1.5"/><circle cx="12" cy="3" r="1.5"/></svg><span>Evolução</span><i class="badge" id="badge-evolucao" hidden></i></a>
+        <a class="nav-item" href="#inicio"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></svg><span>Cartas</span></a>
     </nav>
 
     <div id="abertura" class="abertura"></div>
