@@ -4,6 +4,7 @@
 // ====================================================
 import { estado, salvar, quantidade } from "./state.js";
 import { spriteTreinador } from "./treinadores.js";
+import { IMAGEM_PRODUTO, ARTE_MOVEL, ITENS_NA_ESTANTE } from "./moveis-arte.js";
 import { imagemPixel, CARTAS, CARTA_POR_ID, RARIDADES } from "./cards.js";
 import { $, $$, aviso, abrirModal, fecharModal, confirmar, sons, htmlCarta, numero } from "./ui.js";
 import {
@@ -213,16 +214,25 @@ export const telaTycoon = (elemento, arg) => {
 const redesenhar = () => telaTycoon(app, aba);
 
 // ---------- Loja (o mapa) ----------
+// Imagens pequenas dos produtos e móveis (painéis e paleta)
+const icoProduto = (id) => `<img class="ty-ico" src="${IMAGEM_PRODUTO[id]}" alt="" draggable="false">`;
+const icoMovel = (tipo) => `<img class="ty-ico" src="${ARTE_MOVEL[tipo]}" alt="" draggable="false">`;
+const itensVisiveis = (m) => Math.ceil((m.estoque / estoqueMax(t())) * ITENS_NA_ESTANTE);
+
 const htmlMovel = (m) => {
     const info = MOVEIS[m.tipo];
     const sel = selecionado === `${m.x},${m.y}` ? " selecionado" : "";
-    let dentro = `<span class="ty-icone">${info.icone}</span>`;
+    let dentro = `<img class="ty-arte" src="${ARTE_MOVEL[m.tipo]}" alt="" draggable="false">`;
     if (m.tipo === "prateleira") {
-        const p = PRODUTOS[m.produto];
+        // Estante de madeira com o produto nas tábuas; os itens somem conforme o estoque acaba
         const pct = (m.estoque / estoqueMax(t())) * 100;
-        dentro = `<span class="ty-produto">${p.icone}</span><i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
-    } else if (m.tipo === "vitrine" && m.carta && CARTA_POR_ID[m.carta]) {
-        dentro = `<img class="ty-vitrine-img" src="${CARTA_POR_ID[m.carta].imagem}" alt="" draggable="false"><i class="ty-raridade">${RARIDADES[CARTA_POR_ID[m.carta].raridade].simbolo}</i>`;
+        const vis = itensVisiveis(m);
+        const itens = Array.from({ length: ITENS_NA_ESTANTE }, (_, i) =>
+            `<img src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="visibility:${i < vis ? "visible" : "hidden"}">`).join("");
+        dentro = `<span class="ty-estante">${itens}</span><i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
+    } else if (m.tipo === "vitrine") {
+        const c = m.carta && CARTA_POR_ID[m.carta];
+        dentro = `<span class="ty-vidro">${c ? `<img src="${c.imagem}" alt="" draggable="false"><i class="ty-raridade">${RARIDADES[c.raridade].simbolo}</i>` : "<em>vazia</em>"}</span>`;
     } else if (m.tipo === "caixa" && nivelEquipe(t(), "chansey")) {
         dentro += `<img class="ty-funcionario" src="${imagemPixel(113)}" alt="Chansey" draggable="false">`;
     }
@@ -345,6 +355,8 @@ const desenharMundo = (forcar = false) => {
         if (m.tipo !== "prateleira") continue;
         const barra = $(`.ty-movel[data-x="${m.x}"][data-y="${m.y}"] .ty-estoque`, app);
         if (!barra) continue;
+        const vis = itensVisiveis(m);
+        barra.parentElement.querySelectorAll(".ty-estante img").forEach((img, i) => { img.style.visibility = i < vis ? "visible" : "hidden"; });
         const pct = (m.estoque / estoqueMax(t())) * 100;
         barra.firstElementChild.style.width = `${pct}%`;
         barra.classList.toggle("baixo", pct < 30);
@@ -367,7 +379,7 @@ const htmlGerenciar = () => {
             <h3>Preços</h3>
             ${Object.entries(PRODUTOS).filter(([id]) => produtoLiberado(t(), id)).map(([id, p]) => `
                 <div class="ty-preco">
-                    <span>${p.icone} ${p.nome} <small>₽ ${precoVenda(t(), id)}</small></span>
+                    <span>${icoProduto(id)} ${p.nome} <small>₽ ${precoVenda(t(), id)}</small></span>
                     <div class="ty-preco-opcoes">${Object.entries(PRECOS).map(([nivel, info]) => `
                         <button class="${(t().precos[id] || "normal") === nivel ? "ativo" : ""}" data-tycoon="preco" data-produto="${id}" data-nivel="${nivel}">${info.nome}</button>`).join("")}
                     </div>
@@ -387,20 +399,20 @@ const htmlSelecionado = (m) => {
     if (m.tipo === "prateleira") {
         const p = PRODUTOS[m.produto];
         return `
-            <h3>${info.icone} Prateleira de ${p.nome}</h3>
+            <h3>${icoProduto(m.produto)} Prateleira de ${p.nome}</h3>
             <div class="barra grossa"><div style="width:${(m.estoque / estoqueMax(t())) * 100}%"></div></div>
             <p class="destaque-texto">Estoque: ${m.estoque}/${estoqueMax(t())} • custo ₽ ${p.custo} • vende por ₽ ${precoVenda(t(), m.produto)}</p>
             <button class="btn pequeno" data-tycoon="repor" ${custoRepor(t(), m) ? "" : "disabled"}>Repor (₽ ${fmt(custoRepor(t(), m))})</button>
             <h4>Produto</h4>
             <div class="ty-produtos">${Object.entries(PRODUTOS).map(([id, prod]) => `
                 <button class="${m.produto === id ? "ativo" : ""}" data-tycoon="produto" data-produto="${id}" ${produtoLiberado(t(), id) ? "" : `disabled title="Libera em ${CIDADES[prod.cidade].nome}"`}>
-                    ${prod.icone}<small>${produtoLiberado(t(), id) ? prod.nome : "🔒"}</small>
+                    ${icoProduto(id)}<small>${produtoLiberado(t(), id) ? prod.nome : "🔒"}</small>
                 </button>`).join("")}</div>`;
     }
     if (m.tipo === "vitrine") {
         const c = m.carta && CARTA_POR_ID[m.carta];
         return `
-            <h3>${info.icone} Vitrine</h3>
+            <h3>${icoMovel("vitrine")} Vitrine</h3>
             ${c ? `<div class="ty-vitrine-carta">${htmlCarta(c)}</div>
                 <p class="sutil">${quantidade(c.id) ? `Atrai <b>+${Math.round(ATRACAO_RARIDADE[c.raridade] * 100)}%</b> de clientes.` : "Você não tem mais essa carta: a vitrine não atrai ninguém."}</p>`
                 : `<p class="sutil">Vazia. Escolha uma carta do seu álbum para expor. Cartas mais raras atraem mais clientes.</p>`}
@@ -408,10 +420,10 @@ const htmlSelecionado = (m) => {
     }
     if (m.tipo === "caixa") {
         const fila = mundo.clientes.filter((c) => c.caixa === `${m.x},${m.y}` && c.estado === "fila").length;
-        return `<h3>${info.icone} Caixa</h3><p>Na fila agora: <b>${fila}</b>${nivelEquipe(t(), "chansey") ? " • Chansey atendendo" : ""}</p>
+        return `<h3>${icoMovel("caixa")} Caixa</h3><p>Na fila agora: <b>${fila}</b>${nivelEquipe(t(), "chansey") ? " • Chansey atendendo" : ""}</p>
             <p class="sutil">Fila grande faz clientes desistirem. Construa mais caixas ou contrate a Chansey.</p>`;
     }
-    return `<h3>${info.icone} ${info.nome}</h3><p class="sutil">${info.desc}</p>`;
+    return `<h3>${icoMovel(m.tipo)} ${info.nome}</h3><p class="sutil">${info.desc}</p>`;
 };
 
 const atualizarPainelSelecionado = () => {
@@ -433,7 +445,7 @@ const htmlPaleta = () => `
         <p class="sutil pequeno">Escolha um móvel e clique num espaço livre (verde). Clique num móvel para vender (volta metade do preço). Sempre deixe caminho até a porta 🚪.</p>
         <div class="ty-paleta">${Object.entries(MOVEIS).map(([id, m]) => `
             <button class="${paleta === id ? "ativo" : ""}" data-tycoon="paleta" data-tipo="${id}" ${t().dinheiro < m.custo ? "disabled" : ""}>
-                <span>${m.icone}</span><b>${m.nome}</b><small>₽ ${fmt(m.custo)}</small><em>${m.desc}</em>
+                <span>${icoMovel(id)}</span><b>${m.nome}</b><small>₽ ${fmt(m.custo)}</small><em>${m.desc}</em>
             </button>`).join("")}
         </div>
     </div>`;
@@ -483,7 +495,7 @@ const telaCidades = () => {
                     ${i === t().cidade + 1 ? `<small>Precisa de ₽ ${fmt(c.lucroMin)} de lucro total e custa ₽ ${fmt(c.custo)}</small>
                         <button class="btn ${podeMudar(t()) ? "dourado" : "desativado"}" data-tycoon="mudar" ${podeMudar(t()) ? "" : "disabled"}>Mudar para ${c.nome}</button>` : ""}
                     ${i === t().cidade ? `<span class="etiqueta">Você está aqui</span>` : ""}
-                    ${Object.entries(PRODUTOS).filter(([, p]) => p.cidade === i).map(([, p]) => `<small>Libera: ${p.icone} ${p.nome}</small>`).join("")}
+                    ${Object.entries(PRODUTOS).filter(([, p]) => p.cidade === i).map(([id, p]) => `<small>Libera: ${icoProduto(id)} ${p.nome}</small>`).join("")}
                 </li>`).join("")}
         </ol>
         ${prox ? "" : `<p class="destaque-texto">Você chegou em Saffron, a maior cidade de Kanto!</p>`}
