@@ -44,7 +44,7 @@ Cada jogador tem um perfil com apelido, avatar, bio e uma vitrine com 3 cartas. 
 
 Na tela inicial também tem o **Pokéclicker**, um mini game de clicar inspirado no Cookie Clicker e no Click the Button. Você clica no Pikachu para juntar energia e contrata 13 ajudantes (de Magnemite até Mewtwo e Mew) que produzem sozinhos, inclusive com o jogo fechado. A loja vai liberando dezenas de melhorias, cada 100 cliques soltam um baú com itens colecionáveis (até a raridade Temporal, com 0,01% de chance, que enche a meta de evolução na hora), pokébolas especiais aparecem na tela com efeitos surpresa e tem mais de 90 conquistas, cada uma valendo um pacote no jogo de cartas. Chegando na meta de energia dá para **evoluir**: a partida recomeça, mas você ganha Pedras de Evolução para uma árvore de melhorias permanentes. Com a árvore completa, abre o Mercado de Pacotes, onde as pedras viram pacotes do jogo de cartas (até 5 por dia).
 
-O outro mini game é o **Pokémart Tycoon**: você monta sua própria loja num mapa em 3D (dá para trocar para a vista de cima em 2D), com prateleiras, caixas, plantas, máquinas de venda e vitrines que expõem cartas do seu álbum (quanto mais rara a carta, mais clientes ela atrai). Os clientes são Pokémon que entram, pegam produtos, fazem fila no caixa e vão embora felizes ou bravos, e a reputação da loja sobe ou desce com isso. Você escolhe o preço de cada produto, repõe o estoque, contrata funcionários (Chansey no caixa, Machamp repondo prateleiras, Meowth vendendo...) e muda a loja de Pallet Town até Saffron City, cada cidade com mais espaço e clientes. De vez em quando tem dia de torneio, visita do Professor Carvalho ou a Equipe Rocket tentando roubar uma prateleira. A cada ₽ 25.000 de lucro a Liga dá 1 pacote do jogo de cartas (até 2 por dia), e com o jogo fechado a loja continua vendendo por até 8 horas.
+O outro mini game é o **Pokémart Tycoon**: você monta sua própria loja num mapa em 3D (dá para trocar para a vista de cima em 2D), com prateleiras, caixas, plantas, máquinas de venda e vitrines que expõem cartas do seu álbum (quanto mais rara a carta, mais clientes ela atrai). Os clientes são treinadores (desenhados em pixel art, cada um diferente) que entram com o Pokémon deles do lado, pegam produtos, fazem fila no caixa e vão embora felizes ou bravos, e a reputação da loja sobe ou desce com isso. Você escolhe o preço de cada produto, repõe o estoque, contrata funcionários (Chansey no caixa, Machamp repondo prateleiras, Meowth vendendo...) e muda a loja de Pallet Town até Saffron City, cada cidade com mais espaço e clientes. De vez em quando tem dia de torneio, visita do Professor Carvalho ou a Equipe Rocket tentando roubar uma prateleira. A cada ₽ 25.000 de lucro a Liga dá 1 pacote do jogo de cartas (até 2 por dia), e com o jogo fechado a loja continua vendendo por até 8 horas.
 
 ## Conta e segurança
 
@@ -81,6 +81,7 @@ Js/clicker-dados.js   regras e números do Pokéclicker
 Js/clicker.js         telas do Pokéclicker
 Js/tycoon-dados.js    regras, números e simulação do Pokémart Tycoon
 Js/tycoon.js          telas do Pokémart Tycoon
+Js/treinadores.js     treinadores em pixel art (clientes do Tycoon)
 Js/main.js            telas e navegação
 api/                  servidor (cadastro, login, save, social)
 scripts/              servidor local e testes

@@ -2145,3 +2145,16 @@ body.modo-tycoon main { max-width: 1440px; }
 .carta-forma.forma-antigo { background: linear-gradient(90deg, #7a3b12, #c2621d); }
 .carta-forma.forma-futuro { background: linear-gradient(90deg, #1c5a8a, #37c6e0); }
 .carta-forma.forma-paldea { background: linear-gradient(90deg, #a8321e, #6b2fa8); }
+
+/* Clientes: treinadores (pixel art) com o Pokémon deles atrás */
+.ty-humano {
+    position: absolute; left: 50%; bottom: 4%; width: calc(var(--tile) * 0.62); height: calc(var(--tile) * 0.62 * 22 / 14);
+    transform: translateX(-50%); background-size: 200% 100%; background-repeat: no-repeat; background-position: 0 0;
+    image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.25));
+}
+.ty-cliente.andando .ty-humano { animation: ty-passo 0.36s steps(1) infinite; }
+@keyframes ty-passo { 0% { background-position: 0 0; } 50% { background-position: 100% 0; } }
+.ty-cliente.humano .ty-balao { top: -34%; right: 4%; }
+.ty-cliente.companheiro { width: calc(var(--tile) * 0.62); height: calc(var(--tile) * 0.62); z-index: 2; }
+.ty-cliente.companheiro .ty-balao { display: none; }
+.tres-d .ty-cliente.companheiro .ty-pe { inset: auto 0 30% 0; }
