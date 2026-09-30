@@ -5,6 +5,7 @@
 import { estado, salvar } from "./state.js";
 import { imagemPixel, imagemSprite } from "./cards.js";
 import { $, $$, aviso, abrirModal, confirmar, sons, escapar } from "./ui.js";
+import { somClique, somItem } from "./sons-clicker.js";
 import {
     AJUDANTES, ARVORE, MERCADO, NO_POR_ID, MELHORIA_POR_ID, ITENS, RARIDADES_ITEM, CONQUISTAS, POKEBOLAS,
     PACOTE_CUSTO_PEDRAS, PACOTES_POR_DIA, OFFLINE_MAX_SEGUNDOS, MAX_COPIAS,
@@ -554,7 +555,7 @@ const talvezRelampago = () => {
 const clicarNoPikachu = (e) => {
     const botao = $("#botao-pikachu");
     const { valor, critico, bau } = clicar(c());
-    sons.clique();
+    somClique({ critico, combo });
     botao.classList.remove("apertado");
     void botao.offsetWidth;
     botao.classList.add("apertado");
@@ -615,8 +616,7 @@ const faiscas = (e) => {
 const soltarBau = () => {
     const { item, energia, repetido } = abrirBau(c());
     const r = RARIDADES_ITEM[item.raridade];
-    const nivel = { comum: 2, raro: 3, epico: 5, lendario: 6, temporal: 6 }[item.raridade];
-    sons.raro(nivel);
+    somItem(item); // cada item tem o próprio som (pilha carregando, clang do capacete...)
     novidadesColecao++;
     const palco = $("#clicker-palco");
     if (palco) {
@@ -639,7 +639,6 @@ const soltarBau = () => {
         palco?.classList.remove("distorcao");
         void palco?.offsetWidth;
         palco?.classList.add("distorcao");
-        setTimeout(() => sons.raro(6), 300);
     }
     falarPikachu(item.raridade === "temporal" ? "Pika?! ⏳" : item.raridade === "lendario" ? "PIKA!!! ✨" : "Pika pika!");
     salvarClicker();
