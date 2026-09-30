@@ -31,6 +31,11 @@ let lucroMinuto = { inicio: Date.now(), valor: 0 };
 let ultimoSalvo = Date.now();
 let offlinePendente = null;
 let ultimaVendaSom = 0;
+// Vista do mapa: 3D (padrão) ou 2D, lembrada só neste navegador
+let vista3d = true;
+try {
+    vista3d = localStorage.getItem("tycoon_vista") !== "2d";
+} catch (e) { /* sem armazenamento */ }
 
 const t = () => estado.tycoon;
 const hoje = () => {
@@ -256,12 +261,15 @@ const telaLoja = () => {
         </div>
         <div class="ty-evento" id="ty-evento" hidden></div>
         <div class="ty-grade">
-            <div class="ty-mapa-caixa">
-                <div class="ty-mapa ${modoConstruir ? "construindo" : ""}" id="ty-mapa" style="--w:${w};--h:${h}">
+            <div class="ty-mapa-caixa ${vista3d ? "tres-d" : ""}" style="--w:${w};--h:${h}">
+                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">${vista3d ? "▦ Ver em 2D" : "🧊 Ver em 3D"}</button>
+                <div class="ty-mapa ${modoConstruir ? "construindo" : ""}" id="ty-mapa">
                     <div class="ty-piso"></div>
+                    <div class="ty-parede fundo"></div>
+                    <div class="ty-parede esquerda"></div>
                     ${htmlChao()}
                     ${t().moveis.map(htmlMovel).join("")}
-                    ${nivelEquipe(t(), "pikachu") ? `<img class="ty-mascote" src="${imagemPixel(25)}" alt="Pikachu" style="left:calc(${porta(t()).x + 1} * var(--tile));top:calc(${porta(t()).y} * var(--tile))">` : ""}
+                    ${nivelEquipe(t(), "pikachu") ? `<div class="ty-mascote" style="left:calc(${porta(t()).x + 1} * var(--tile));top:calc(${porta(t()).y} * var(--tile))"><img src="${imagemPixel(25)}" alt="Pikachu"></div>` : ""}
                     <div class="ty-clientes" id="ty-clientes"></div>
                 </div>
             </div>
@@ -291,7 +299,7 @@ const desenharMundo = (forcar = false) => {
             el.dataset.id = c.id;
             el.dataset.tycoon = c.rocket ? "rocket" : "cliente";
             const pid = c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[c.sprite % CLIENTES_SPRITES.length];
-            el.innerHTML = `<img src="${imagemPixel(pid)}" alt="" draggable="false"><i class="ty-balao"></i>`;
+            el.innerHTML = `<span class="ty-pe"><img src="${imagemPixel(pid)}" alt="" draggable="false"><i class="ty-balao"></i></span>`;
             camada.appendChild(el);
         }
         el.style.transform = `translate(calc(${c.x} * var(--tile)), calc(${c.y} * var(--tile)))`;
@@ -495,6 +503,14 @@ const mostrarOffline = () => {
 const movelDoBotao = (el) => movelEm(t(), Number(el.dataset.x), Number(el.dataset.y));
 
 const ACOES = {
+    vista: () => {
+        vista3d = !vista3d;
+        try {
+            localStorage.setItem("tycoon_vista", vista3d ? "3d" : "2d");
+        } catch (e) { /* sem armazenamento */ }
+        sons.clique();
+        redesenhar();
+    },
     modo: (el) => {
         modoConstruir = el.dataset.modo === "construir";
         paleta = null;
