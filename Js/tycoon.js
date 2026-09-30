@@ -3,6 +3,7 @@
 // (as regras e a simulação ficam em tycoon-dados.js)
 // ====================================================
 import { estado, salvar, quantidade } from "./state.js";
+import { spriteTreinador } from "./treinadores.js";
 import { imagemPixel, CARTAS, CARTA_POR_ID, RARIDADES } from "./cards.js";
 import { $, $$, aviso, abrirModal, fecharModal, confirmar, sons, htmlCarta, numero } from "./ui.js";
 import {
@@ -13,7 +14,8 @@ import {
 } from "./tycoon-dados.js";
 
 const TICK = 100;
-const CLIENTES_SPRITES = [16, 19, 21, 29, 32, 39, 43, 52, 54, 60, 69, 74, 79, 81, 84, 92, 100, 104, 108, 113, 116, 118, 120, 129, 132, 133, 137, 143, 147, 7, 4, 1, 25, 35, 37, 58, 63, 77, 86, 96, 102, 111, 114];
+// Pokémon que acompanham os treinadores (clientes)
+const CLIENTES_SPRITES = [152, 155, 158, 172, 175, 179, 183, 194, 196, 197, 209, 216, 228, 231, 246, 16, 19, 21, 29, 32, 39, 43, 52, 54, 60, 69, 74, 79, 81, 84, 92, 100, 104, 108, 113, 116, 118, 120, 129, 132, 133, 137, 143, 147, 7, 4, 1, 25, 35, 37, 58, 63, 77, 86, 96, 102, 111, 114];
 const ROCKET_SPRITE = 109; // Koffing, da Equipe Rocket
 const HUMOR = { feliz: "💛", triste: "😞", bravo: "💢", caro: "💸", rocket: "💨" };
 
@@ -286,29 +288,58 @@ const telaLoja = () => {
 };
 
 // Clientes andando: reaproveita os elementos para a animação ficar suave
+// Onde está o Pokémon de cada treinador (só visual: ele segue o dono "na coleira")
+const companheiros = new Map();
+const DISTANCIA_COMPANHEIRO = 0.65;
+
 const desenharMundo = (forcar = false) => {
     const camada = $("#ty-clientes", app);
     if (!camada) return;
     const vivos = new Set();
     for (const c of mundo.clientes) {
         vivos.add(String(c.id));
+        vivos.add(`p${c.id}`);
         let el = camada.querySelector(`[data-id="${c.id}"]`);
+        let pk = camada.querySelector(`[data-id="p${c.id}"]`);
         if (!el) {
+            // O treinador (humano) é quem compra; o Pokémon vem junto
             el = document.createElement("button");
-            el.className = `ty-cliente${c.rocket ? " rocket" : ""}`;
+            el.className = `ty-cliente humano${c.rocket ? " rocket" : ""}`;
             el.dataset.id = c.id;
             el.dataset.tycoon = c.rocket ? "rocket" : "cliente";
-            const pid = c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[c.sprite % CLIENTES_SPRITES.length];
-            el.innerHTML = `<span class="ty-pe"><img src="${imagemPixel(pid)}" alt="" draggable="false"><i class="ty-balao"></i></span>`;
+            el.innerHTML = `<span class="ty-pe"><span class="ty-humano" style="background-image:url('${spriteTreinador(c.sprite ?? c.id, { rocket: c.rocket })}')"></span><i class="ty-balao"></i></span>`;
             camada.appendChild(el);
+            pk = document.createElement("span");
+            pk.className = "ty-cliente companheiro";
+            pk.dataset.id = `p${c.id}`;
+            const pid = c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[(c.sprite ?? c.id) % CLIENTES_SPRITES.length];
+            pk.innerHTML = `<span class="ty-pe"><img src="${imagemPixel(pid)}" alt="" draggable="false"></span>`;
+            camada.appendChild(pk);
+            companheiros.set(c.id, { x: c.x, y: c.y + 0.4 });
         }
         el.style.transform = `translate(calc(${c.x} * var(--tile)), calc(${c.y} * var(--tile)))`;
         const balao = c.estado === "fila" ? "🛍️" : c.humor ? HUMOR[c.humor] : "";
         const b = el.querySelector(".ty-balao");
         if (b.textContent !== balao) b.textContent = balao;
-        el.classList.toggle("andando", c.rota.length > 0);
+        const andando = c.rota.length > 0;
+        el.classList.toggle("andando", andando);
+        // Pokémon: se o dono se afastou, chega perto de novo
+        const cp = companheiros.get(c.id);
+        const dx = c.x - cp.x;
+        const dy = c.y - cp.y;
+        const d = Math.hypot(dx, dy);
+        if (d > DISTANCIA_COMPANHEIRO) {
+            cp.x = c.x - (dx / d) * DISTANCIA_COMPANHEIRO;
+            cp.y = c.y - (dy / d) * DISTANCIA_COMPANHEIRO;
+        }
+        pk.style.transform = `translate(calc(${cp.x + 0.2} * var(--tile)), calc(${cp.y + 0.12} * var(--tile)))`;
+        pk.classList.toggle("andando", andando);
     }
-    camada.querySelectorAll(".ty-cliente").forEach((el) => { if (!vivos.has(el.dataset.id)) el.remove(); });
+    camada.querySelectorAll(".ty-cliente").forEach((el) => {
+        if (vivos.has(el.dataset.id)) return;
+        el.remove();
+        companheiros.delete(Number(el.dataset.id));
+    });
     // Barras de estoque das prateleiras
     for (const m of t().moveis) {
         if (m.tipo !== "prateleira") continue;
