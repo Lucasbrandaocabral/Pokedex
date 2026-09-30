@@ -9,26 +9,27 @@ const CHAVE = "pokepocket_save_v1";
 export const PACOTES_GRATIS_MAX = 5;
 // 5 pacotes grátis distribuídos ao longo de 24 horas (1 a cada 4h48)
 export const INTERVALO_GRATIS = (24 * 60 * 60 * 1000) / PACOTES_GRATIS_MAX;
-export const PONTOS_POR_PACOTE = 5;
+export const PONTOS_POR_PACOTE = 20;
 export const BONUS_DIARIO = 100;
 
 export const MISSOES = [
-    { id: "abrir3", texto: "Abra 3 pacotes", campo: "abrir", meta: 3, premio: 150 },
-    { id: "abrir10", texto: "Abra 10 pacotes", campo: "abrir", meta: 10, premio: 300 },
-    { id: "trocar1", texto: "Faça 1 troca com um bot", campo: "trocar", meta: 1, premio: 100 },
-    { id: "trocar3", texto: "Faça 3 trocas com bots", campo: "trocar", meta: 3, premio: 250 },
-    { id: "vender5", texto: "Venda 5 cartas repetidas", campo: "vender", meta: 5, premio: 50 },
+    { id: "abrir3", texto: "Abra 3 pacotes", campo: "abrir", meta: 3, premio: 100 },
+    { id: "abrir10", texto: "Abra 10 pacotes", campo: "abrir", meta: 10, premio: 200 },
+    { id: "trocar1", texto: "Faça 1 troca com um bot", campo: "trocar", meta: 1, premio: 75 },
+    { id: "trocar3", texto: "Faça 3 trocas com bots", campo: "trocar", meta: 3, premio: 150 },
+    { id: "vender5", texto: "Venda 5 cartas repetidas", campo: "vender", meta: 5, premio: 40 },
 ];
 
 export const CONQUISTAS = [
-    { id: "c25", meta: 25, premio: 200 },
-    { id: "c50", meta: 50, premio: 400 },
-    { id: "c100", meta: 100, premio: 800 },
-    { id: "c150", meta: 150, premio: 1500 },
-    { id: "c200", meta: 200, premio: 5000 },
-    { id: "c300", meta: 300, premio: 3000 },
-    { id: "c500", meta: 500, premio: 6000 },
-    { id: "todas", meta: TOTAL_CARTAS, premio: 20000 },
+    // Prêmio em pacotes (antes eram moedas demais, que viravam dezenas de pacotes na loja)
+    { id: "c25", meta: 25, pacotes: 1 },
+    { id: "c50", meta: 50, pacotes: 2 },
+    { id: "c100", meta: 100, pacotes: 3 },
+    { id: "c150", meta: 150, pacotes: 4 },
+    { id: "c200", meta: 200, pacotes: 5 },
+    { id: "c300", meta: 300, pacotes: 6 },
+    { id: "c500", meta: 500, pacotes: 8 },
+    { id: "todas", meta: TOTAL_CARTAS, pacotes: 15 },
 ];
 
 const hoje = () => {
@@ -153,9 +154,9 @@ export const resgatarConquista = (id) => {
     const c = CONQUISTAS.find((x) => x.id === id);
     if (!c || estado.conquistas.includes(id) || cartasUnicas() < c.meta) return false;
     estado.conquistas.push(id);
-    estado.moedas += c.premio;
+    estado.comprados += c.pacotes;
     salvar();
-    return c.premio;
+    return c.pacotes;
 };
 
 // ---------------- Pacotes grátis ----------------

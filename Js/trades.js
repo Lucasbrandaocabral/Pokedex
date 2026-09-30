@@ -1,12 +1,14 @@
 // ====================================================
-// Trocas com bots: novas ofertas a cada 2 minutos
+// Trocas com bots: novas ofertas a cada 30 minutos, até 10 trocas por dia
 // ====================================================
 import { CARTA_POR_ID, RARIDADES, cartasDaRaridade } from "./cards.js";
-import { estado, quantidade, cartasUnicas, adicionarCarta, removerCarta, registrarProgresso, salvar } from "./state.js";
+import { estado, quantidade, cartasUnicas, adicionarCarta, removerCarta, registrarProgresso, salvar, sincronizarDiario } from "./state.js";
 import { sortearPeso } from "./packs.js";
 
-export const INTERVALO_TROCAS = 2 * 60 * 1000;
-const OFERTAS_POR_RODADA = 6;
+export const INTERVALO_TROCAS = 30 * 60 * 1000;
+const OFERTAS_POR_RODADA = 4;
+export const LIMITE_TROCAS_DIA = 10;
+export const trocasHoje = () => estado.diario.progresso.trocar || 0;
 
 const BOTS = [
     { nome: "Treinadora Luna", avatar: 36, fala: "Troco rapidinho, bora?" },
@@ -43,7 +45,7 @@ export const tempoProximaRodada = () => INTERVALO_TROCAS - (Date.now() % INTERVA
 const cartaOferecida = (raridade, rnd, excluir = []) => {
     const pool = cartasDaRaridade(raridade).filter((c) => !excluir.includes(c.id));
     const faltando = pool.filter((c) => !quantidade(c.id));
-    return (faltando.length && rnd() < 0.65 ? escolher(faltando, rnd) : escolher(pool, rnd)).id;
+    return (faltando.length && rnd() < 0.25 ? escolher(faltando, rnd) : escolher(pool, rnd)).id;
 };
 
 // Cópias extras (repetidas) que o jogador possui, uma entrada por cópia
@@ -86,14 +88,17 @@ const gerarOferta = (rnd, indice) => {
     }
     if (tipo === 4 || tipo === 3) {
         // Bot vende uma carta por moedas
-        const raridade = sortearPeso({ 2: 35, 3: 30, 4: 15, 5: 15, 6: 5 }, rnd);
+        const raridade = sortearPeso({ 2: 40, 3: 35, 4: 15, 5: 10 }, rnd);
         const id = cartaOferecida(raridade, rnd);
-        return { ...base, tipo: "venda", da: [id], quer: [], moedas: -RARIDADES[raridade].venda * 4 };
+        return { ...base, tipo: "venda", da: [id], quer: [], moedas: -RARIDADES[raridade].venda * 10 };
     }
     // Troca 1 por 1 da mesma raridade
     const raridade = sortearPeso({ 1: 38, 2: 30, 3: 16, 4: 8, 5: 6, 6: 2 }, rnd);
     const da = cartaOferecida(raridade, rnd);
-    return { ...base, tipo: "troca", da: [da], quer: [cartaDesejada(raridade, rnd, da)], moedas: 0 };
+    const quer = [cartaDesejada(raridade, rnd, da)];
+    // Cartas ◆◆◆◆ ou mais raras custam 2 cartas da mesma raridade
+    if (raridade >= 4) quer.push(cartaDesejada(raridade, rnd, da));
+    return { ...base, tipo: "troca", da: [da], quer, moedas: 0 };
 };
 
 // Garante que as ofertas da rodada atual existem (geradas 1x por rodada)
@@ -118,6 +123,8 @@ const contar = (ids) => ids.reduce((m, id) => ({ ...m, [id]: (m[id] || 0) + 1 })
 // Verifica se o jogador pode aceitar a oferta. Retorna { ok, motivo, ultimaCopia }
 export const verificarOferta = (oferta) => {
     if (estado.trocas.feitas.includes(oferta.indice)) return { ok: false, motivo: "Troca concluída" };
+    sincronizarDiario();
+    if (trocasHoje() >= LIMITE_TROCAS_DIA) return { ok: false, motivo: `Limite de ${LIMITE_TROCAS_DIA} trocas por dia` };
     if (oferta.moedas < 0 && estado.moedas < -oferta.moedas) return { ok: false, motivo: "Moedas insuficientes" };
     let ultimaCopia = false;
     for (const [id, q] of Object.entries(contar(oferta.quer))) {

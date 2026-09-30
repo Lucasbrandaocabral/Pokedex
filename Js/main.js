@@ -13,7 +13,7 @@ import {
     venderCarta, listarRepetidas, venderRepetidas, resgatarComPontos, comprar, alternarFavorito,
 } from "./state.js";
 import { abrirPacotes, CHANCES, CHANCE_GOD_PACK } from "./packs.js";
-import { sincronizarTrocas, tempoProximaRodada, verificarOferta, aceitarOferta, INTERVALO_TROCAS } from "./trades.js";
+import { sincronizarTrocas, tempoProximaRodada, verificarOferta, aceitarOferta, INTERVALO_TROCAS, LIMITE_TROCAS_DIA, trocasHoje } from "./trades.js";
 import {
     icone, $, $$, escapar, numero, formatarTempo, htmlCarta, htmlVerso, htmlPacote,
     ativarTilt, aviso, abrirModal, fecharModal, confirmar, sons,
@@ -38,10 +38,10 @@ const tenhoDe = (cartas) => cartas.filter((c) => quantidade(c.id)).length;
 let novasVisita = {};
 
 const LOJA = [
-    { id: "p1", nome: "Pacote avulso", pacotes: 1, preco: 100, desc: "Um pacote para abrir quando quiser." },
-    { id: "p5", nome: "Kit 5 pacotes", pacotes: 5, preco: 450, desc: "10% de desconto." },
-    { id: "p10", nome: "Kit 10 pacotes", pacotes: 10, preco: 850, desc: "15% de desconto." },
-    { id: "p25", nome: "Caixa com 25 pacotes", pacotes: 25, preco: 2000, desc: "20% de desconto. A melhor oferta!", destaque: true },
+    { id: "p1", nome: "Pacote avulso", pacotes: 1, preco: 250, desc: "Um pacote para abrir quando quiser." },
+    { id: "p5", nome: "Kit 5 pacotes", pacotes: 5, preco: 1150, desc: "8% de desconto." },
+    { id: "p10", nome: "Kit 10 pacotes", pacotes: 10, preco: 2250, desc: "10% de desconto." },
+    { id: "p25", nome: "Caixa com 25 pacotes", pacotes: 25, preco: 5300, desc: "15% de desconto. A melhor oferta!", destaque: true },
 ];
 
 // ====================================================
@@ -234,7 +234,7 @@ const telaInicio = () => {
                     <li class="${feita ? "feita" : pronta ? "pronta" : ""}">
                         <b>${numero(c.meta)}</b>
                         <span>cartas diferentes</span>
-                        <small><i class="ic-moeda"></i> ${numero(c.premio)}</small>
+                        <small>🎁 ${c.pacotes} pacote${c.pacotes > 1 ? "s" : ""}</small>
                         ${feita ? `<em>Resgatado</em>`
                             : pronta ? `<button class="btn pequeno dourado" data-acao="conquista" data-id="${c.id}">Resgatar</button>`
                             : `${barra(unicas, c.meta)}<em>${numero(unicas)}/${numero(c.meta)}</em>`}
@@ -838,7 +838,8 @@ const telaTrocas = () => {
         <div class="titulo-trocas">
             <div>
                 <h1>Trocas com bots</h1>
-                <p class="sutil">Os bots trazem ofertas novas a cada <b>2 minutos</b>. Cada oferta pode ser aceita uma vez.</p>
+                <p class="sutil">Os bots trazem ofertas novas a cada <b>30 minutos</b>. Cada oferta pode ser aceita uma vez, até <b>${LIMITE_TROCAS_DIA} trocas por dia</b>.</p>
+                <p class="destaque-texto">Trocas hoje: <b>${Math.min(trocasHoje(), LIMITE_TROCAS_DIA)}/${LIMITE_TROCAS_DIA}</b></p>
             </div>
             <div class="relogio-trocas">
                 <span>Novas ofertas em</span>
@@ -1016,7 +1017,7 @@ const ACOES = {
     },
     conquista: (el) => {
         const v = resgatarConquista(el.dataset.id);
-        if (v) { sons.moeda(); aviso(`Conquista desbloqueada! +${numero(v)} moedas`, "sucesso"); }
+        if (v) { sons.moeda(); aviso(`Conquista desbloqueada! +${v} pacote${v > 1 ? "s" : ""}`, "sucesso"); }
     },
     resetar: async () => {
         if (!(await confirmar("Apagar progresso?", "Todas as cartas, moedas e pacotes serão perdidos. Essa ação não pode ser desfeita.", "Apagar tudo"))) return;
