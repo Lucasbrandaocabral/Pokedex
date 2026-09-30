@@ -38,10 +38,10 @@ const tenhoDe = (cartas) => cartas.filter((c) => quantidade(c.id)).length;
 let novasVisita = {};
 
 const LOJA = [
-    { id: "p1", nome: "Pacote avulso", pacotes: 1, preco: 250, desc: "Um pacote para abrir quando quiser." },
-    { id: "p5", nome: "Kit 5 pacotes", pacotes: 5, preco: 1150, desc: "8% de desconto." },
-    { id: "p10", nome: "Kit 10 pacotes", pacotes: 10, preco: 2250, desc: "10% de desconto." },
-    { id: "p25", nome: "Caixa com 25 pacotes", pacotes: 25, preco: 5300, desc: "15% de desconto. A melhor oferta!", destaque: true },
+    { id: "p1", nome: "Pacote avulso", pacotes: 1, preco: 300, desc: "Um pacote para abrir quando quiser." },
+    { id: "p5", nome: "Kit 5 pacotes", pacotes: 5, preco: 1400, desc: "7% de desconto." },
+    { id: "p10", nome: "Kit 10 pacotes", pacotes: 10, preco: 2700, desc: "10% de desconto." },
+    { id: "p25", nome: "Caixa com 25 pacotes", pacotes: 25, preco: 6400, desc: "15% de desconto. A melhor oferta!", destaque: true },
 ];
 
 // ====================================================
