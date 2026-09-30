@@ -1,5 +1,5 @@
 // ====================================================
-// Cartas do jogo: Origem Genética e as outras expansões da Série A,
+// Cartas do jogo: Origem Genética, as outras expansões da Série A e a Série B,
 // a partir dos dados base dos Pokémon
 // ====================================================
 import { POKEMON } from "./pokemon-data.js";
@@ -64,6 +64,7 @@ const NOMES_ESPECIAIS = {
     "nidoran-m": "Nidoran♂",
     "mr-mime": "Mr. Mime",
     farfetchd: "Farfetch'd",
+    "ho-oh": "Ho-Oh",
 };
 
 export const nomeBonito = (id) =>
@@ -144,6 +145,7 @@ const criarCarta = (numero, p, variante, raridade, extra = {}, ajuste = 0) => {
         peso: p.peso / 10, // quilos
         evoluiDe: p.evoluiDe ? nomeBonito(POKEMON_POR_ID[p.evoluiDe].nome) : null,
         recuo: limitar(p.estagio + (p.total >= 500 ? 1 : 0) + (p.defesa >= 100 ? 1 : 0), 0, 4),
+        ...(p.dex ? { dex: p.dex } : {}),
         ...extra,
     };
 };
@@ -194,12 +196,70 @@ const FORMAS_ALOLA = {
     105: [10115, ["fire", "ghost"]],
 };
 
+// Série B: Megaevoluções ("M6X" = Mega Charizard X), formas de Paldea ("P194") e Pokémon Paradoxo ("X984").
+// [imagem, tipos, espécie base, nome na carta, selo, [PS, ataque, defesa, total, altura, peso], nº na Pokédex]
+const FORMAS = {
+    M3: [10033, ["grass","poison"], 3, null, "Mega", [80, 100, 123, 625, 24, 1555]],
+    M6X: [10034, ["fire","dragon"], 6, null, "Mega", [78, 130, 111, 634, 17, 1105]],
+    M6Y: [10035, ["fire","flying"], 6, null, "Mega", [78, 104, 78, 634, 17, 1005]],
+    M9: [10036, ["water"], 9, null, "Mega", [79, 103, 120, 630, 16, 1011]],
+    M15: [10090, ["bug","poison"], 15, null, "Mega", [65, 150, 40, 495, 14, 405]],
+    M18: [10073, ["normal","flying"], 18, null, "Mega", [83, 80, 80, 579, 22, 505]],
+    M26X: [10304, ["electric"], 26, null, "Mega", [60, 135, 95, 585, 12, 380]],
+    M26Y: [10305, ["electric"], 26, null, "Mega", [60, 100, 55, 585, 10, 260]],
+    M36: [10278, ["fairy","flying"], 36, null, "Mega", [95, 80, 93, 583, 17, 423]],
+    M65: [10037, ["psychic"], 65, null, "Mega", [55, 50, 65, 600, 12, 480]],
+    M71: [10279, ["grass","poison"], 71, null, "Mega", [80, 125, 85, 590, 45, 1255]],
+    M80: [10071, ["water","psychic"], 80, null, "Mega", [95, 75, 180, 590, 20, 1200]],
+    M94: [10038, ["ghost","poison"], 94, null, "Mega", [60, 65, 80, 600, 14, 405]],
+    M115: [10039, ["normal"], 115, null, "Mega", [105, 125, 100, 590, 22, 1000]],
+    M121: [10280, ["water","psychic"], 121, null, "Mega", [60, 100, 105, 620, 23, 800]],
+    M127: [10040, ["bug","flying"], 127, null, "Mega", [65, 155, 120, 600, 17, 590]],
+    M130: [10041, ["water","dark"], 130, null, "Mega", [95, 155, 109, 640, 65, 3050]],
+    M142: [10042, ["rock","flying"], 142, null, "Mega", [80, 135, 85, 615, 21, 790]],
+    M149: [10281, ["dragon","flying"], 149, null, "Mega", [91, 124, 115, 700, 22, 2900]],
+    M150X: [10043, ["psychic","fighting"], 150, null, "Mega", [106, 190, 100, 780, 23, 1270]],
+    M150Y: [10044, ["psychic"], 150, null, "Mega", [106, 150, 70, 780, 15, 330]],
+    M154: [10282, ["grass","fairy"], 154, null, "Mega", [80, 92, 115, 625, 24, 2010]],
+    M160: [10283, ["water","dragon"], 160, null, "Mega", [85, 160, 125, 630, 23, 1088]],
+    M181: [10045, ["electric","dragon"], 181, null, "Mega", [90, 95, 105, 610, 14, 615]],
+    M208: [10072, ["steel","ground"], 208, null, "Mega", [75, 125, 230, 610, 105, 7400]],
+    M212: [10046, ["bug","steel"], 212, null, "Mega", [70, 150, 140, 600, 20, 1250]],
+    M214: [10047, ["bug","fighting"], 214, null, "Mega", [80, 185, 115, 600, 17, 625]],
+    M227: [10284, ["steel","flying"], 227, null, "Mega", [65, 140, 110, 565, 17, 404]],
+    M229: [10048, ["dark","fire"], 229, null, "Mega", [75, 90, 90, 600, 19, 495]],
+    M248: [10049, ["rock","dark"], 248, null, "Mega", [100, 164, 150, 700, 25, 2550]],
+    P194: [10253, ["poison","ground"], 194, "Wooper de Paldea", "Paldea", [55, 45, 45, 210, 4, 110]],
+    P128C: [10250, ["fighting"], 128, "Tauros de Paldea", "Paldea Combate", [75, 110, 105, 490, 14, 1150]],
+    P128F: [10251, ["fighting","fire"], 128, "Tauros de Paldea", "Paldea Chamas", [75, 110, 105, 490, 14, 850]],
+    P128A: [10252, ["fighting","water"], 128, "Tauros de Paldea", "Paldea Aquática", [75, 110, 105, 490, 14, 1100]],
+    X984: [984, ["ground","fighting"], 232, "Great Tusk", "Antigo", [115, 131, 131, 570, 22, 3200], 984],
+    X985: [985, ["fairy","psychic"], 39, "Scream Tail", "Antigo", [115, 65, 99, 570, 12, 80], 985],
+    X987: [987, ["ghost","fairy"], 200, "Flutter Mane", "Antigo", [55, 55, 55, 570, 14, 40], 987],
+    X989: [989, ["electric","ground"], 82, "Sandy Shocks", "Antigo", [85, 81, 97, 570, 23, 600], 989],
+    X990: [990, ["ground","steel"], 232, "Iron Treads", "Futuro", [90, 112, 120, 570, 9, 2400], 990],
+    X991: [991, ["ice","water"], 225, "Iron Bundle", "Futuro", [56, 80, 114, 570, 6, 110], 991],
+    X995: [995, ["rock","electric"], 248, "Iron Thorns", "Futuro", [100, 134, 110, 570, 16, 3030], 995],
+    X1009: [1009, ["water","dragon"], 245, "Walking Wake", "Antigo", [99, 83, 91, 590, 35, 2800], 1009],
+    X1020: [1020, ["fire","dragon"], 244, "Gouging Fire", "Antigo", [105, 115, 121, 590, 35, 5900], 1020],
+    X1021: [1021, ["electric","dragon"], 243, "Raging Bolt", "Antigo", [125, 73, 91, 590, 52, 4800], 1021],
+};
+
 const pokemonDaLista = (ref) => {
     if (typeof ref === "number") return { ...POKEMON_POR_ID[ref], imagemId: ref };
+    if (FORMAS[ref]) {
+        const [imagemId, tipos, base, nome, forma, [hp, ataque, defesa, total, altura, peso], dex] = FORMAS[ref];
+        const b = POKEMON_POR_ID[base];
+        const p = { ...b, tipos, hp, ataque, defesa, total, altura, peso, imagemId, forma };
+        if (ref[0] === "M") return { ...p, mega: true, nomeCarta: `Mega ${nomeBonito(b.nome)}${/[XY]$/.test(ref) ? ` ${ref.slice(-1)}` : ""}` };
+        if (ref[0] === "P") return { ...p, nomeCarta: nome, regional: true };
+        // Paradoxo: espécie própria, só parente do Pokémon base
+        return { ...p, nomeCarta: nome, dex, estagio: 0, evolui: false, evoluiDe: 0, lendario: false };
+    }
     const pid = Number(ref.slice(1));
     const [imagemId, tipos] = FORMAS_ALOLA[pid];
     const p = POKEMON_POR_ID[pid];
-    return { ...p, tipos, imagemId, nomeCarta: `${nomeBonito(p.nome)} de Alola`, forma: "Alola" };
+    return { ...p, tipos, imagemId, nomeCarta: `${nomeBonito(p.nome)} de Alola`, forma: "Alola", regional: true };
 };
 
 // Cada estilo usa uma fonte de imagem diferente para a mesma variante
@@ -310,6 +370,123 @@ const EXPANSOES = [
                 [145, 150, 151, 149], [145, 25], [145, 151]],
         }],
     },
+    // ---------------- Série B: 2ª geração e Megaevoluções ----------------
+    {
+        codigo: "B1", nome: "Ascensão Mega", estilo: "arte", serie: "B",
+        pacotes: [{
+            id: "mega-charizard", nome: "Mega Charizard", mascote: 6, cores: ["#ffb36b", "#d9420b", "#2a0a02"],
+            base: [4, 5, 6, 155, 156, 157, 37, 38, 58, 59, 77, 78, 126, 240, 218, 219, 228, 229, 1, 2, 3, 152, 153, 154, 13, 14, 15, 127],
+            especiais: [["M6X", "M6Y", "M3", "M15", 157], [4, 155, 152, 240, 37], ["M6X", "M6Y"], ["M6X"], ["M6Y"]],
+        }, {
+            id: "mega-gyarados", nome: "Mega Gyarados", mascote: 130, cores: ["#9fd4ff", "#1f5fb8", "#051a3a"],
+            base: [129, 130, 7, 8, 9, 158, 159, 160, 54, 55, 183, 184, 170, 171, 223, 224, 222, 226, 116, 117, 230, 120, 121, 90, 91, 211, 86, 87],
+            especiais: [["M130", "M9", "M160", 230, "M121"], [129, 158, 183, 170, 226], ["M130", "M9"], ["M130"], ["M130"]],
+        }, {
+            id: "mega-ampharos", nome: "Mega Ampharos", mascote: 181, cores: ["#fff08a", "#e9a800", "#3a2700"],
+            base: [179, 180, 181, 172, 25, 26, 100, 101, 81, 82, 239, 125, 241, 63, 64, 65, 177, 178, 203, 79, 80, 199, 96, 97, 122],
+            especiais: [["M181", "M65", "M80", "M26X", "M26Y"], [179, 172, 239, 177, 203], ["M181", "M65"], ["M181"], ["M181"]],
+        }],
+    },
+    {
+        codigo: "B1a", nome: "Chama Carmesim", estilo: "home", serie: "B",
+        pacotes: [{
+            id: "entei", nome: "Entei", mascote: 244, cores: ["#ffb0a0", "#c21e1e", "#330404"],
+            base: [228, 229, 218, 219, 240, 126, 58, 59, 37, 38, 77, 78, 133, 136, 155, 156, 157, 4, 5, 6, 74, 75, 76, 207, 244, 146],
+            especiais: [["M229", 244, 157, 146], [228, 218, 240, 133, 37], ["M229", 244], ["M229"], [244]],
+        }],
+    },
+    {
+        codigo: "B2", nome: "Desfile Fantástico", estilo: "sonho", serie: "B",
+        pacotes: [{
+            id: "mega-clefable", nome: "Mega Clefable", mascote: 36, cores: ["#ffd6ec", "#e0609f", "#40102a"],
+            base: [173, 35, 36, 174, 39, 40, 175, 176, 209, 210, 183, 184, 113, 242, 122, 238, 124, 187, 188, 189, 182, 43, 44, 45, 191, 192],
+            especiais: [["M36", 176, 242, 210], [173, 174, 175, 238, 187], ["M36", 176], ["M36"], ["M36"]],
+        }, {
+            id: "espeon", nome: "Espeon", mascote: 196, cores: ["#f1d6ff", "#a24fd6", "#2a0b40"],
+            base: [133, 196, 197, 134, 135, 136, 177, 178, 203, 63, 64, 65, 96, 97, 79, 80, 199, 102, 103, 201, 202, 251, 151],
+            especiais: [[196, 197, "M65", 251], [133, 201, 202, 177, 79], [196, 197, 251], [196], [196]],
+        }, {
+            id: "mega-gengar", nome: "Mega Gengar", mascote: 94, cores: ["#d6c2ff", "#5a2e9e", "#12061f"],
+            base: [92, 93, 94, 200, 198, 215, 216, 217, 41, 42, 169, 167, 168, 204, 205, 88, 89, 109, 110, 211, 236, 237, 106, 107],
+            especiais: [["M94", 169, 200, 237], [92, 200, 198, 215, 216], ["M94", 169], ["M94"], ["M94"]],
+        }],
+    },
+    {
+        codigo: "B2a", nome: "Maravilhas de Paldea", estilo: "arte", serie: "B",
+        pacotes: [{
+            id: "wooper-paldea", nome: "Wooper", mascote: 194, cores: ["#d9c2a8", "#7a4f36", "#241308"],
+            base: ["P194", 195, "P128C", "P128F", "P128A", 128, 194, 203, 206, 198, 200, 204, 205, 211, 215, 225, 231, 232, 246, 247, 248,
+                147, 148, 149, 133, 58, 59, 54, 55],
+            especiais: [["P128F", "P128A", 248, 149], ["P194", 194, 206, 225, 231], ["P194", "P128C"], ["P194"], ["P194"]],
+        }],
+    },
+    {
+        codigo: "B2b", nome: "Brilho Mega", estilo: "brilho", serie: "B",
+        pacotes: [{
+            id: "mega-scizor", nome: "Mega Scizor", mascote: 212, cores: ["#ffd0d0", "#b3122a", "#26040a"],
+            base: [212, 123, 213, 214, 127, 208, 95, 227, 205, 204, 201, 235, 222, 241, 234, 206, 190, 3, 6, 9, 130, 94, 65, 248, 181],
+            especiais: [["M212", "M214", "M208", "M227", "M127"], [123, 213, 235, 201, 190], ["M212", "M208", "M6X", "M150Y"], ["M212"], ["M212"]],
+        }],
+    },
+    {
+        codigo: "B3", nome: "Aura Pulsante", estilo: "home", serie: "B",
+        pacotes: [{
+            id: "suicune", nome: "Suicune", mascote: 245, cores: ["#c2f0ff", "#2f8fc9", "#062a3f"],
+            base: [245, 158, 159, 160, 183, 184, 186, 60, 61, 62, 194, 195, 220, 221, 86, 87, 131, 138, 139, 140, 141, 147, 148, 230, 226],
+            especiais: [[245, 160, 186, 131], [158, 60, 220, 226, 138], [245, 160], [245], [245]],
+        }, {
+            id: "raikou", nome: "Raikou", mascote: 243, cores: ["#fff2a0", "#e0a800", "#2e2200"],
+            base: [243, 172, 25, 26, 179, 180, 181, 239, 125, 100, 101, 81, 82, 170, 171, 135, 145, 137, 233, 202, 234, 241],
+            especiais: [[243, "M26Y", 233, 145], [172, 239, 137, 234, 135], [243, 233], [243], [243]],
+        }, {
+            id: "mega-tyranitar", nome: "Mega Tyranitar", mascote: 248, cores: ["#cfe8b8", "#4d7a2a", "#12200a"],
+            base: [246, 247, 248, 95, 208, 214, 127, 236, 106, 107, 237, 66, 67, 68, 56, 57, 207, 74, 75, 76, 111, 112, 185, 213],
+            especiais: [["M248", "M208", "M214", 68], [246, 236, 185, 207, 56], ["M248", "M214"], ["M248"], ["M248"]],
+        }],
+    },
+    {
+        codigo: "B3a", nome: "Impulso Paradoxo", estilo: "arte", serie: "B",
+        pacotes: [{
+            id: "walking-wake", nome: "Walking Wake", mascote: 245, cores: ["#b8ffe6", "#1b7f7a", "#04201e"],
+            base: ["X984", "X990", 231, 232, "X985", 39, 40, "X987", 200, "X989", 81, 82, "X991", 225, "X995", 246, 247, 248,
+                "X1009", "X1020", "X1021", 245, 244, 243, 138, 139, 140, 141, 142, 251],
+            especiais: [["X1009", "X1020", "X1021", "X984", "X990", "X995"], ["X985", "X987", "X989", "X991", 251],
+                ["X1009", "X1021", "X984"], ["X1009"], ["X1009"]],
+        }],
+    },
+    {
+        codigo: "B3b", nome: "Encantos Cotidianos", estilo: "sonho", serie: "B",
+        pacotes: [{
+            id: "togepi", nome: "Togepi", mascote: 175, cores: ["#fff6de", "#e8b04a", "#3a2608"],
+            base: [161, 162, 163, 164, 165, 166, 167, 168, 187, 188, 189, 190, 191, 192, 193, 206, 209, 210, 216, 217, 234, 235, 241, 242,
+                113, 52, 53, 19, 20, 16, 17, 18, 175, 176, 183],
+            especiais: [[176, 242, 241, 217], [175, 161, 163, 235, 190, 206], [176, 242], [175], [175]],
+        }],
+    },
+    {
+        codigo: "B4", nome: "Mestre dos Céus", estilo: "arte", serie: "B",
+        pacotes: [{
+            id: "lugia", nome: "Lugia", mascote: 249, cores: ["#e8f2ff", "#5b7fb8", "#0b1a33"],
+            base: [249, 16, 17, 18, 163, 164, 177, 178, 226, 223, 224, 72, 73, 116, 117, 230, 144, 131, 187, 188, 189, 90, 91],
+            especiais: [[249, "M18", 230, 144], [16, 163, 226, 177, 131], [249, "M18"], [249], [249]],
+        }, {
+            id: "ho-oh", nome: "Ho-Oh", mascote: 250, cores: ["#ffe08a", "#d6331e", "#360a02"],
+            base: [250, 21, 22, 83, 84, 85, 198, 227, 207, 41, 42, 169, 193, 165, 166, 12, 123, 146, 145, 142, 176, 58, 59],
+            especiais: [[250, "M227", "M142", 146], [21, 198, 193, 165, 176], [250, "M142"], [250], [250]],
+        }, {
+            id: "mega-dragonite", nome: "Mega Dragonite", mascote: 149, cores: ["#ffd9a0", "#e07a1e", "#3a1c00"],
+            base: [147, 148, 149, 129, 130, 116, 117, 4, 5, 6, 115, 128, 203, 206, 234, 211, 222, 190, 235, 143],
+            especiais: [["M149", "M6Y", "M130", 143], [147, 129, 115, 206, 143], ["M149", "M6Y"], ["M149"], ["M149"]],
+        }],
+    },
+    {
+        codigo: "B4a", nome: "Ambição da Equipe Rocket", estilo: "home", serie: "B",
+        pacotes: [{
+            id: "mewtwo-rocket", nome: "Mewtwo", mascote: 150, cores: ["#ffc2c2", "#8a0f1e", "#12020a"],
+            base: [23, 24, 109, 110, 52, 53, 41, 42, 169, 96, 97, 88, 89, 228, 229, 198, 215, 202, 246, 247, 248, 129, 130, 100, 101, 81, 82, 150],
+            especiais: [["M150X", "M150Y", 130, 24, 110], [52, 23, 109, 202, 198], ["M150X", "M150Y", "M229"], ["M150Y"], ["M150X"]],
+        }],
+    },
 ];
 
 const montarExpansao = (exp, indice) => {
@@ -327,8 +504,11 @@ const montarExpansao = (exp, indice) => {
         const p = pokemonDaLista(ref);
         const numero = i + 1;
         const extra = { pacote, colecao: exp.codigo };
-        // Na carta, a forma regional aparece num selo e o nome fica curto
-        if (p.forma) Object.assign(extra, { forma: p.forma, nomeFace: nomeBonito(p.nome) + (variante === "base" ? "" : " ex") });
+        // Na carta, a forma aparece num selo; nas formas regionais o nome fica curto
+        if (p.forma) Object.assign(extra, { forma: p.forma });
+        if (p.regional) extra.nomeFace = nomeBonito(p.nome) + (variante === "base" ? "" : " ex");
+        // Mega: o selo já diz "Mega", então o nome na carta fica curto ("Charizard X ex")
+        if (p.mega) extra.nomeFace = p.nomeCarta.replace(/^Mega /, "") + " ex";
         return {
             ...criarCarta(numero, p, variante, raridade ?? raridadeBase(p), extra, (indice % 3) + 1),
             id: `${exp.codigo}-${String(numero).padStart(3, "0")}`,
@@ -338,7 +518,8 @@ const montarExpansao = (exp, indice) => {
 };
 
 const CARTAS_A1 = [
-    ...BASE.map((p) => criarCarta(p.id, p, "base", raridadeBase(p))),
+    // Origem Genética é só da 1ª geração
+    ...BASE.filter((p) => p.id <= 151).map((p) => criarCarta(p.id, p, "base", raridadeBase(p))),
     ...ESPECIAIS.map(([variante, raridade, pid], i) => criarCarta(152 + i, POKEMON_POR_ID[pid], variante, raridade)),
 ].map((c) => ({ ...c, imagem: IMAGEM_VARIANTE[c.variante](c.pid) }));
 
@@ -373,7 +554,7 @@ export const COLECOES = [
     return {
         codigo: c.codigo,
         nome: c.nome,
-        serie: "A",
+        serie: c.serie || "A",
         logo: logo(c.nome),
         total: cartas.length,
         cartas,

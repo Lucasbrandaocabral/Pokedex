@@ -14,14 +14,14 @@ Depois resolvi transformar a Pokédex num jogo de verdade. A busca original cont
 
 ## Como é o jogo
 
-Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). Tem as 11 expansões da Série A (Origem Genética, Ilha Mítica, Embate Espaço-Tempo, Bosque de Eevee e as outras), com 17 pacotes diferentes. Por enquanto só entram Pokémon da 1ª geração, inclusive as formas de Alola em Guardiões Celestiais. Você corta o pacote arrastando o dedo, as cartas saem de dentro dele e você vai passando para o lado, uma de cada vez. Quando vem carta rara, ela aparece virada e o fundo acende na cor da raridade.
+Cada conta ganha 5 pacotes grátis por dia (um a cada 4h48). Tem as 11 expansões da Série A (Origem Genética, Ilha Mítica, Embate Espaço-Tempo, Bosque de Eevee e as outras), com 17 pacotes diferentes, só com Pokémon da 1ª geração (inclusive as formas de Alola em Guardiões Celestiais). A Série B traz mais 10 expansões e 18 pacotes com a 2ª geração e as Megaevoluções: Ascensão Mega, Chama Carmesim, Desfile Fantástico, Maravilhas de Paldea, Brilho Mega, Aura Pulsante, Impulso Paradoxo, Encantos Cotidianos, Mestre dos Céus e Ambição da Equipe Rocket. Lá aparecem Megas (inclusive as novas, como Mega Dragonite e Mega Clefable), Wooper e Tauros de Paldea e os Pokémon Paradoxo que vêm de Pokémon antigos, como Great Tusk, Walking Wake e Iron Thorns. Você corta o pacote arrastando o dedo, as cartas saem de dentro dele e você vai passando para o lado, uma de cada vez. Quando vem carta rara, ela aparece virada e o fundo acende na cor da raridade.
 
 <p>
   <img src="docs/imagens/abrindo.jpg" width="49%" alt="Abrindo um pacote">
   <img src="docs/imagens/carta.jpg" width="49%" alt="Revelando as cartas">
 </p>
 
-O álbum tem 725 cartas, separadas por expansão, do ◆ comum até a ♛ coroa, com silhueta nas que faltam. As mais raras têm arte completa e brilho holográfico quando você passa o mouse.
+O álbum tem 1.436 cartas (725 da Série A e 711 da Série B), separadas por expansão, do ◆ comum até a ♛ coroa, com silhueta nas que faltam. As mais raras têm arte completa e brilho holográfico quando você passa o mouse.
 
 <p>
   <img src="docs/imagens/album.jpg" width="49%" alt="Álbum">

@@ -99,9 +99,9 @@ export const htmlCarta = (c, { qtd = 0, nova = false, classe = "" } = {}) => `
             <div class="carta-arte">
                 <img src="${c.imagem}" alt="${c.nome}" loading="lazy" draggable="false">
                 ${c.evoluiDe ? `<span class="carta-evolui">Evolui de <b>${c.evoluiDe}</b></span>` : ""}
-                ${c.forma ? `<span class="carta-forma">${c.forma}</span>` : ""}
+                ${c.forma ? `<span class="carta-forma forma-${c.forma.split(" ")[0].toLowerCase()}">${c.forma}</span>` : ""}
             </div>
-            <div class="carta-dex">Nº ${String(c.pid).padStart(3, "0")} · ${TIPOS[c.tipo].nome} · Alt. ${decimal(c.altura)} m · ${decimal(c.peso)} kg</div>
+            <div class="carta-dex">Nº ${String(c.dex || c.pid).padStart(3, "0")} · ${TIPOS[c.tipo].nome} · Alt. ${decimal(c.altura)} m · ${decimal(c.peso)} kg</div>
             <div class="carta-corpo">
                 <div class="carta-ataques">
                     ${c.ataques.map((a, i) => `
