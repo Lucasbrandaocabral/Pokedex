@@ -100,27 +100,28 @@ const tick = () => {
     if (agora - ultimoSalvo > (ativo ? SALVAR_JOGANDO : SALVAR_FORA)) salvarClicker();
 };
 
-// Cada conquista dá 1 pacote no jogo de cartas (inclusive as que já foram desbloqueadas antes)
-const pagarConquistas = (recentes = 0) => {
-    const devidas = c().conquistas.length - c().conquistasPagas;
-    if (devidas <= 0) return;
-    c().conquistasPagas = c().conquistas.length;
-    estado.comprados += devidas;
-    // Conquistas antigas (de antes dessa recompensa existir) ganham um aviso próprio
-    if (devidas > recentes) aviso(`🎁 <b>+${devidas} pacote${devidas > 1 ? "s" : ""}</b> pelas conquistas! Já ${devidas > 1 ? "estão" : "está"} na tela de Pacotes.`, "sucesso");
+// A cada 3 conquistas, 1 pacote no jogo de cartas. "conquistasPagas" conta as conquistas já usadas.
+const CONQUISTAS_POR_PACOTE = 3;
+const pagarConquistas = () => {
+    const pacotes = Math.floor((c().conquistas.length - c().conquistasPagas) / CONQUISTAS_POR_PACOTE);
+    if (pacotes <= 0) return 0;
+    c().conquistasPagas += pacotes * CONQUISTAS_POR_PACOTE;
+    estado.comprados += pacotes;
+    aviso(`🎁 <b>+${pacotes} pacote${pacotes > 1 ? "s" : ""}</b> pelas conquistas! Já ${pacotes > 1 ? "estão" : "está"} na tela de Pacotes.`, "sucesso");
     salvarClicker();
+    return pacotes;
 };
 
 const checarConquistas = () => {
     const novas = verificarConquistas(c());
-    pagarConquistas(novas.length);
+    pagarConquistas();
     if (!novas.length) return;
     novidadesColecao += novas.length;
     sons.raro(3);
     // Um aviso só, mesmo quando várias conquistas chegam juntas
     aviso(novas.length === 1
-        ? `🏆 Conquista: <b>${novas[0].nome}</b> <small>(+produção e +1 pacote)</small>`
-        : `🏆 <b>${novas.length} conquistas</b>: ${novas.slice(0, 3).map((q) => q.nome).join(", ")}${novas.length > 3 ? "…" : ""} <small>(+${novas.length} pacotes)</small>`, "sucesso");
+        ? `🏆 Conquista: <b>${novas[0].nome}</b> <small>(+produção)</small>`
+        : `🏆 <b>${novas.length} conquistas</b>: ${novas.slice(0, 3).map((q) => q.nome).join(", ")}${novas.length > 3 ? "…" : ""} <small>(+produção)</small>`, "sucesso");
     salvarClicker();
     if (ativo && aba === "colecao") redesenhar();
     if (ativo && aba === "jogar") atualizarFundo(); // o "leite" sobe com as conquistas
@@ -801,7 +802,7 @@ const telaColecao = () => {
 
         <section class="painel cl-painel">
             <h2>Conquistas ${c().conquistas.length}/${CONQUISTAS.length}</h2>
-            <p class="sutil">Cada conquista dá <b>+${Math.round(porConquista * 100)}%</b> de produção e <b>1 pacote</b> para o jogo de cartas. Bônus atual: <b>+${Math.round(bonus * 100)}%</b>. As melhorias de amizade da loja aumentam esse bônus.</p>
+            <p class="sutil">Cada conquista dá <b>+${Math.round(porConquista * 100)}%</b> de produção e a cada <b>3 conquistas</b> você ganha <b>1 pacote</b> para o jogo de cartas. Bônus atual: <b>+${Math.round(bonus * 100)}%</b>. As melhorias de amizade da loja aumentam esse bônus.</p>
             <div class="cl-conquistas">
                 ${CONQUISTAS.map((q) => {
                     const feita = c().conquistas.includes(q.id);

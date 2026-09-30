@@ -10,7 +10,7 @@ export const CHANCES = {
     4: { 2: 89, 3: 5, 4: 1.7, 5: 3.4, 6: 0.6, 7: 0.25, 8: 0.05 },
     5: { 2: 56, 3: 19, 4: 7, 5: 13, 6: 3.4, 7: 1.2, 8: 0.4 },
 };
-export const CHANCE_GOD_PACK = 0.25; // % de vir um pacote só com cartas ☆ ou melhores
+export const CHANCE_GOD_PACK = 0.05; // % de vir um pacote só com cartas ☆ ou melhores
 const CHANCES_GOD = { 5: 70, 6: 22, 7: 6, 8: 2 };
 
 export const sortearPeso = (tabela, rnd = Math.random) => {

@@ -7,14 +7,14 @@ import { POKEMON } from "./pokemon-data.js";
 const SPRITES = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
 
 export const RARIDADES = {
-    1: { simbolo: "◆", nome: "Comum", venda: 5, pontos: 35 },
-    2: { simbolo: "◆◆", nome: "Incomum", venda: 15, pontos: 70 },
-    3: { simbolo: "◆◆◆", nome: "Rara", venda: 40, pontos: 150 },
-    4: { simbolo: "◆◆◆◆", nome: "Dupla Rara (ex)", venda: 100, pontos: 500 },
-    5: { simbolo: "☆", nome: "Arte Rara", venda: 150, pontos: 400 },
-    6: { simbolo: "☆☆", nome: "Super Rara", venda: 400, pontos: 1250 },
-    7: { simbolo: "☆☆☆", nome: "Arte Imersiva", venda: 800, pontos: 1500 },
-    8: { simbolo: "♛", nome: "Coroa", venda: 2000, pontos: 2500 },
+    1: { simbolo: "◆", nome: "Comum", venda: 5, pontos: 80 },
+    2: { simbolo: "◆◆", nome: "Incomum", venda: 15, pontos: 150 },
+    3: { simbolo: "◆◆◆", nome: "Rara", venda: 40, pontos: 300 },
+    4: { simbolo: "◆◆◆◆", nome: "Dupla Rara (ex)", venda: 100, pontos: 600 },
+    5: { simbolo: "☆", nome: "Arte Rara", venda: 150, pontos: 800 },
+    6: { simbolo: "☆☆", nome: "Super Rara", venda: 400, pontos: 1000 },
+    7: { simbolo: "☆☆☆", nome: "Arte Imersiva", venda: 800, pontos: 1400 },
+    8: { simbolo: "♛", nome: "Coroa", venda: 2000, pontos: 1800 },
 };
 
 export const TIPOS = {

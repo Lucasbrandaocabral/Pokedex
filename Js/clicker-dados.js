@@ -176,8 +176,8 @@ export const NO_POR_ID = Object.fromEntries(NOS.map((n) => [n.id, n]));
 export const META_INICIAL = 5e10;
 export const CRESCIMENTO_META = 4;
 export const metaEvolucao = (c) => META_INICIAL * CRESCIMENTO_META ** c.reinicios;
-export const PACOTE_CUSTO_PEDRAS = 10;
-export const PACOTES_POR_DIA = 5;
+export const PACOTE_CUSTO_PEDRAS = 25;
+export const PACOTES_POR_DIA = 2;
 export const OFFLINE_MAX_SEGUNDOS = 8 * 60 * 60;
 
 // ---------------- Pokébolas especiais (como o "biscoito dourado") ----------------

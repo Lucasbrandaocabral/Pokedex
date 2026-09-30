@@ -28,7 +28,7 @@ O álbum tem 725 cartas, separadas por expansão, do ◆ comum até a ♛ coroa,
   <img src="docs/imagens/carta-coroa.jpg" width="49%" alt="Carta rara no álbum">
 </p>
 
-Carta repetida dá para vender por moedas e usar na loja (tem até uma caixa com 25 pacotes), ou guardar para trocar. Os bots trazem ofertas novas a cada 2 minutos. Também dá para trocar com amigos: você escolhe cartas do seu álbum e do álbum da outra pessoa, manda uma mensagem e espera ela aceitar.
+Carta repetida dá para vender por moedas e usar na loja (tem até uma caixa com 25 pacotes), ou guardar para trocar. Os bots trazem ofertas novas a cada 30 minutos (até 10 trocas por dia). Também dá para trocar com amigos: você escolhe cartas do seu álbum e do álbum da outra pessoa, manda uma mensagem e espera ela aceitar.
 
 <p>
   <img src="docs/imagens/inicio.jpg" width="49%" alt="Tela inicial com missões e pacotes grátis">

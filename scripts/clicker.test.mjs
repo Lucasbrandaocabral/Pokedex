@@ -118,13 +118,13 @@ test("árvore respeita pré-requisitos e o mercado só abre com tudo", () => {
     assert.equal(c.pedras, 1000 - 150);
 });
 
-test("mercado: 10 pedras por pacote e no máximo 5 por dia", () => {
+test("mercado: 25 pedras por pacote e no máximo 2 por dia", () => {
     const c = novo();
     c.pedras = 1000;
     assert.equal(C.trocarPorPacote(c, "2026-9-25"), false, "sem o mercado não troca");
     c.arvore.push("mercado");
-    for (let i = 0; i < 5; i++) assert.equal(C.trocarPorPacote(c, "2026-9-25"), true);
-    assert.equal(C.trocarPorPacote(c, "2026-9-25"), false, "6º pacote do dia");
+    for (let i = 0; i < 2; i++) assert.equal(C.trocarPorPacote(c, "2026-9-25"), true);
+    assert.equal(C.trocarPorPacote(c, "2026-9-25"), false, "3º pacote do dia");
     assert.equal(c.pedras, 950);
     assert.equal(C.trocarPorPacote(c, "2026-9-26"), true, "no dia seguinte volta");
 });
