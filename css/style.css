@@ -330,7 +330,7 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .tela-pacotes { text-align: center; }
 /* Faixa de expansões (rola para o lado no celular) */
 .seletor-colecoes {
-    display: flex; gap: 10px; overflow-x: auto; padding: 6px 4px 14px; margin: 16px -4px 0;
+    display: flex; gap: 10px; overflow-x: auto; padding: 14px 10px 14px 4px; margin: 8px -4px 0;
     scroll-snap-type: x proximity; scrollbar-width: thin; position: relative;
 }
 .opcao-colecao {
@@ -2081,3 +2081,27 @@ body.modo-tycoon main { max-width: 1440px; }
 .tres-d .construindo .ty-movel { --alt: 6px !important; }
 .tres-d .construindo .ty-produto, .tres-d .construindo .ty-icone, .tres-d .construindo .ty-vitrine-img,
 .tres-d .construindo .ty-funcionario, .tres-d .construindo .ty-mascote, .tres-d .construindo .ty-clientes { opacity: 0.35; }
+
+/* ====================================================
+   Série B: grupos por série, selo "Nova!" e selos de forma nas cartas
+   ==================================================== */
+.titulo-serie { margin: 18px 0 0; font-size: 1.25rem; }
+.titulo-serie + .grade-expansoes { margin-top: 8px; }
+.expansao { position: relative; }
+.opcao-colecao { position: relative; }
+.rotulo-serie {
+    flex: 0 0 auto; align-self: stretch; display: flex; align-items: center; writing-mode: vertical-rl; transform: rotate(180deg);
+    padding: 6px 4px; border-radius: 6px; background: var(--tinta); color: var(--amarelo);
+    font-family: "Jersey 20", monospace; font-size: 0.95rem; letter-spacing: 1px; white-space: nowrap;
+}
+.selo-nova {
+    position: absolute; top: -8px; right: -6px; padding: 1px 7px; border: 2px solid var(--tinta); border-radius: 99px;
+    background: var(--vermelho); color: #fff; font-style: normal; font-size: 0.68rem; font-weight: 800;
+    transform: rotate(6deg); box-shadow: 2px 2px 0 var(--tinta); pointer-events: none;
+}
+.carta-forma.forma-mega {
+    background: linear-gradient(90deg, #ff4f8b, #ffb02e, #3ad29f, #3a8dff, #b04dff); text-shadow: 0 0 2px #000, 0 0 2px #000;
+}
+.carta-forma.forma-antigo { background: linear-gradient(90deg, #7a3b12, #c2621d); }
+.carta-forma.forma-futuro { background: linear-gradient(90deg, #1c5a8a, #37c6e0); }
+.carta-forma.forma-paldea { background: linear-gradient(90deg, #a8321e, #6b2fa8); }

@@ -691,7 +691,8 @@ const modalNovaTroca = async (usuario) => {
             <div class="acoes-rapidas" id="acoes-rapidas"></div>
             <select id="colecao-troca">
                 <option value="">Todas as expansões</option>
-                ${COLECOES.map((c) => `<option value="${c.codigo}">${c.nome}</option>`).join("")}
+                ${["A", "B"].map((serie) => `<optgroup label="Série ${serie}">${COLECOES.filter((c) => c.serie === serie)
+                    .map((c) => `<option value="${c.codigo}">${c.nome}</option>`).join("")}</optgroup>`).join("")}
             </select>
         </div>
         <div class="grade-escolha alta" id="grade-troca"></div>

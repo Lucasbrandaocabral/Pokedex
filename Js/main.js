@@ -31,8 +31,9 @@ if (location.hostname.endsWith("github.io")) location.replace(`https://pokepalwo
 const app = $("#app");
 let telaAtual = "inicio";
 let argAtual; // sub-tela (ex.: #clicker/ajudantes), para redesenhar no mesmo lugar
-let pacoteSelecionado = "charizard";
-const filtrosAlbum = { busca: "", colecao: "A1", pacote: "", raridade: "", mostrar: "todas" };
+// Começa na coleção mais nova (Série B)
+let pacoteSelecionado = "mega-charizard";
+const filtrosAlbum = { busca: "", colecao: "B1", pacote: "", raridade: "", mostrar: "todas" };
 const colecaoSelecionada = () => COLECAO_POR_CODIGO[PACOTES[pacoteSelecionado].colecao];
 const tenhoDe = (cartas) => cartas.filter((c) => quantidade(c.id)).length;
 // Cartas novas mostradas com o selo "NOVA" enquanto o jogador está no álbum
@@ -135,6 +136,11 @@ const renderizar = () => {
 // ====================================================
 // Tela: Início
 // ====================================================
+// Coleções agrupadas por série (A = 1ª geração, B = 2ª geração e Megas)
+const SERIES = { A: "Série A • Geração 1", B: "Série B • Geração 2 e Megas" };
+const porSerie = (fn) => Object.keys(SERIES).map((s) => fn(s, COLECOES.filter((c) => c.serie === s))).join("");
+const seloNova = (c) => (c.serie === "B" ? `<i class="selo-nova">Nova!</i>` : "");
+
 const barra = (valor, max, classe = "") =>
     `<div class="barra ${classe}"><div style="width:${Math.min(100, (valor / max) * 100)}%"></div></div>`;
 
@@ -145,13 +151,13 @@ const telaInicio = () => {
     app.innerHTML = `
     <section class="hero">
         <div>
-            <span class="etiqueta">Série A • ${COLECOES.length} expansões</span>
+            <span class="etiqueta">Séries A e B • ${COLECOES.length} expansões</span>
             <h1>Complete o álbum</h1>
             <p>${unicas} de ${TOTAL_CARTAS} cartas encontradas. Abra pacotes, troque com outros treinadores e complete todas as expansões.</p>
             <a class="btn grande" href="#pacotes">Abrir pacote (${pacotesDisponiveis()})</a>
         </div>
         <div class="hero-pacotes">
-            ${["mew", "charizard", "gyarados"].map((p) => htmlPacote(p, "mini")).join("")}
+            ${["lugia", "mega-charizard", "ho-oh"].map((p) => htmlPacote(p, "mini")).join("")}
         </div>
     </section>
 
@@ -212,8 +218,10 @@ const telaInicio = () => {
             <h2>Coleção</h2>
             <p class="destaque-texto total-colecao">${unicas}/${TOTAL_CARTAS} cartas</p>
             ${barra(unicas, TOTAL_CARTAS, "grossa")}
+            ${porSerie((serie, lista) => `
+            <h3 class="titulo-serie">${SERIES[serie]}</h3>
             <div class="grade-expansoes">
-                ${COLECOES.map((c) => {
+                ${lista.map((c) => {
                     const tenho = tenhoDe(c.cartas);
                     return `
                     <a class="expansao ${tenho === c.total ? "completa" : ""}" href="#album" data-acao="selecionar-colecao" data-id="${c.codigo}"
@@ -224,9 +232,10 @@ const telaInicio = () => {
                             ${barra(tenho, c.total)}
                             <small>${c.codigo} • ${tenho}/${c.total}</small>
                         </div>
+                        ${seloNova(c)}
                     </a>`;
                 }).join("")}
-            </div>
+            </div>`)}
         </section>
 
         <section class="painel largo">
@@ -263,13 +272,14 @@ const telaPacotes = () => {
     <section class="tela-pacotes">
         <h1>Escolha um pacote</h1>
         <div class="seletor-colecoes">
-            ${COLECOES.map((c) => `
+            ${porSerie((serie, lista) => `<span class="rotulo-serie">${SERIES[serie]}</span>` + lista.map((c) => `
                 <button class="opcao-colecao ${c.codigo === colecao.codigo ? "selecionada" : ""}" data-acao="selecionar-colecao" data-id="${c.codigo}"
                         style="--c1:${c.pacotes[0].cores[0]};--c2:${c.pacotes[0].cores[1]}">
                     <img src="${imagemSprite(c.pacotes[0].mascote)}" alt="" loading="lazy" draggable="false">
                     <b>${c.nome}</b>
                     <small>${c.codigo} • ${tenhoDe(c.cartas)}/${c.total}</small>
-                </button>`).join("")}
+                    ${seloNova(c)}
+                </button>`).join(""))}
         </div>
         <div class="seletor-pacotes">
             ${colecao.pacotes.map(({ id: p }) =>
@@ -649,7 +659,7 @@ const telaAlbum = () => {
             <input type="search" id="busca-album" placeholder="Buscar por nome ou número" value="${escapar(filtrosAlbum.busca)}">
             <select id="filtro-colecao">
                 <option value="">Todas as expansões</option>
-                ${COLECOES.map((c) => `<option value="${c.codigo}" ${filtrosAlbum.colecao === c.codigo ? "selected" : ""}>${c.nome} (${c.codigo})</option>`).join("")}
+                ${porSerie((serie, lista) => `<optgroup label="${SERIES[serie]}">${lista.map((c) => `<option value="${c.codigo}" ${filtrosAlbum.colecao === c.codigo ? "selected" : ""}>${c.nome} (${c.codigo})</option>`).join("")}</optgroup>`)}
             </select>
             <select id="filtro-pacote">
                 <option value="">Todos os pacotes</option>
@@ -1108,7 +1118,7 @@ const ACOES = {
             aviso("Moedas insuficientes!", "erro");
         }
     },
-    "pokedex-aleatorio": () => { location.hash = `pokedex/${1 + Math.floor(Math.random() * 151)}`; },
+    "pokedex-aleatorio": () => { location.hash = `pokedex/${1 + Math.floor(Math.random() * 251)}`; },
     favoritar: (el) => {
         const ativo = alternarFavorito(el.dataset.nome);
         el.classList.toggle("ativa", ativo);

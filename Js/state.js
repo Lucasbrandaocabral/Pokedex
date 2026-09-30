@@ -30,6 +30,8 @@ export const CONQUISTAS = [
     { id: "c200", meta: 200, pacotes: 5 },
     { id: "c300", meta: 300, pacotes: 6 },
     { id: "c500", meta: 500, pacotes: 8 },
+    { id: "c750", meta: 750, pacotes: 10 },
+    { id: "c1000", meta: 1000, pacotes: 12 },
     { id: "todas", meta: TOTAL_CARTAS, pacotes: 15 },
 ];
 
