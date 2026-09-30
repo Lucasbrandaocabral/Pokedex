@@ -82,6 +82,7 @@ Js/clicker.js         telas do Pokéclicker
 Js/tycoon-dados.js    regras, números e simulação do Pokémart Tycoon
 Js/tycoon.js          telas do Pokémart Tycoon
 Js/treinadores.js     treinadores em pixel art (clientes do Tycoon)
+Js/moveis-arte.js     arte dos móveis e produtos do Tycoon
 Js/main.js            telas e navegação
 api/                  servidor (cadastro, login, save, social)
 scripts/              servidor local e testes

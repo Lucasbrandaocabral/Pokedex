@@ -2158,3 +2158,46 @@ body.modo-tycoon main { max-width: 1440px; }
 .ty-cliente.companheiro { width: calc(var(--tile) * 0.62); height: calc(var(--tile) * 0.62); z-index: 2; }
 .ty-cliente.companheiro .ty-balao { display: none; }
 .tres-d .ty-cliente.companheiro .ty-pe { inset: auto 0 30% 0; }
+
+/* ---------- Arte dos móveis (no lugar dos emojis) ---------- */
+.ty-ico { width: 1.5em; height: 1.5em; object-fit: contain; image-rendering: pixelated; vertical-align: -0.4em; }
+.ty-paleta button span .ty-ico { width: 34px; height: 34px; }
+.ty-produtos .ty-ico { width: 30px; height: 30px; }
+.ty-arte { width: 80%; height: 80%; object-fit: contain; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.3)); }
+.ty-planta, .ty-maquina { background: rgba(0, 0, 0, 0.06); border-radius: 6px; }
+.ty-estante {
+    position: absolute; inset: 7% 9% 18%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
+    padding: 2px 3px; border: 2px solid var(--tinta); border-radius: 2px; pointer-events: none;
+    background: linear-gradient(#7a4f2e 0 calc(50% - 2px), #c98b55 calc(50% - 2px) 50%, #7a4f2e 50% calc(100% - 3px), #c98b55 calc(100% - 3px));
+    box-shadow: inset 0 0 0 2px #c98b55;
+}
+.ty-estante img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; padding: 1px; }
+.ty-vidro {
+    position: absolute; inset: 8%; display: grid; place-items: center; border: 2px solid var(--tinta); border-radius: 4px; pointer-events: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(170, 220, 255, 0.55) 55%, rgba(255, 255, 255, 0.8));
+    box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.9);
+}
+.ty-vidro img { width: 86%; height: 86%; object-fit: contain; filter: drop-shadow(0 0 4px rgba(255, 215, 90, 0.95)); }
+.ty-vidro em { font-style: normal; font-size: 0.6rem; color: var(--tinta2); }
+.ty-vidro .ty-raridade { display: block; top: 2px; right: 3px; }
+
+/* 3D: móveis em pé em cima de bases */
+.tres-d .ty-arte, .tres-d .ty-estante, .tres-d .ty-vidro {
+    position: absolute; left: 50%; bottom: 48%; margin: 0; transform-origin: 50% 100%; pointer-events: none;
+    transform: translateX(-50%) rotateZ(calc(var(--rz) * -1)) rotateX(calc(var(--rx) * -1));
+}
+.tres-d .ty-estante { inset: auto auto 40% 50%; width: 96%; height: calc(var(--tile) * 1.05); padding: 3px 4px; border-width: 3px; }
+.tres-d .ty-prateleira { --alt: calc(var(--tile) * 0.1) !important; background: #7a4f2e; }
+.tres-d .ty-caixa .ty-arte { width: 74%; height: auto; bottom: 42%; }
+.tres-d .ty-caixa .ty-funcionario { bottom: 30%; left: -6%; width: 62%; }
+.tres-d .ty-planta { --alt: 2px !important; background: transparent; border-color: transparent; }
+.tres-d .ty-planta::before, .tres-d .ty-planta::after { display: none; }
+.tres-d .ty-planta .ty-arte { width: 86%; height: auto; bottom: 35%; }
+.tres-d .ty-maquina { --alt: calc(var(--tile) * 0.08) !important; background: #3c4a66; }
+.tres-d .ty-maquina .ty-arte { width: 86%; height: auto; bottom: 40%; }
+.tres-d .ty-vitrine { --alt: calc(var(--tile) * 0.32) !important; }
+.tres-d .ty-vidro { inset: auto auto 42% 50%; width: 78%; height: calc(var(--tile) * 0.95); }
+.tres-d .ty-movel.selecionado .ty-arte, .tres-d .ty-movel.selecionado .ty-estante, .tres-d .ty-movel.selecionado .ty-vidro {
+    filter: drop-shadow(0 0 3px var(--azul)) drop-shadow(0 0 3px var(--azul));
+}
+.tres-d .construindo .ty-arte, .tres-d .construindo .ty-estante, .tres-d .construindo .ty-vidro { opacity: 0.35; }
