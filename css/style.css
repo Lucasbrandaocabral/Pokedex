@@ -328,24 +328,70 @@ main { max-width: 1150px; margin: 0 auto; padding: 24px 16px; }
 .pacote.mini .pacote-fundo::after { display: none; }
 
 .tela-pacotes { text-align: center; }
-/* Faixa de expansões (rola para o lado no celular) */
-.seletor-colecoes {
-    display: flex; gap: 10px; overflow-x: auto; padding: 14px 10px 14px 4px; margin: 8px -4px 0;
-    scroll-snap-type: x proximity; scrollbar-width: thin; position: relative;
+/* Seletor de expansões: abas por série + grade de cartões */
+.abas-serie { display: inline-flex; margin: 14px auto 0; border: var(--linha); border-radius: 10px; overflow: visible; box-shadow: var(--sombra); background: var(--papel2); }
+.aba-serie {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 26px;
+    border: 0; background: none; font: inherit; color: var(--tinta); cursor: pointer; transition: background 0.15s;
+}
+.aba-serie:first-child { border-radius: 7px 0 0 7px; }
+.aba-serie:last-child { border-radius: 0 7px 7px 0; border-left: var(--linha); }
+.aba-serie b { font-family: "Jersey 20", monospace; font-weight: 400; font-size: 1.35rem; line-height: 1; }
+.aba-serie small { font-size: 0.72rem; color: var(--tinta2); }
+.aba-serie:hover { background: var(--papel3); }
+.aba-serie.ativa { background: var(--amarelo); }
+.aba-serie.ativa small { color: var(--tinta); }
+.aba-serie .selo-nova { top: -11px; right: -10px; }
+
+.grade-colecoes {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px;
+    margin: 18px 0 0; text-align: left;
 }
 .opcao-colecao {
-    flex: 0 0 132px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 8px 8px 10px; border: var(--linha); border-radius: var(--raio); background: var(--papel2); color: var(--tinta);
-    cursor: pointer; font: inherit; text-align: center; transition: transform 0.15s;
+    position: relative; display: flex; flex-direction: column; padding: 0; overflow: hidden;
+    border: var(--linha); border-radius: var(--raio); background: var(--papel2); color: var(--tinta);
+    cursor: pointer; font: inherit; box-shadow: 3px 3px 0 var(--tinta); transition: transform 0.15s, box-shadow 0.15s;
 }
-.opcao-colecao img { width: 56px; height: 56px; image-rendering: pixelated; margin: -6px 0 -4px; }
-.opcao-colecao b { font-size: 0.82rem; line-height: 1.1; min-height: 2.2em; display: flex; align-items: center; }
-.opcao-colecao small { font-size: 0.72rem; color: var(--tinta2); }
-.opcao-colecao:hover { transform: translateY(-2px); }
-.opcao-colecao.selecionada {
-    background: linear-gradient(180deg, var(--c1), var(--c2)); box-shadow: var(--sombra); transform: translateY(-3px);
+.opcao-capa {
+    position: relative; display: grid; place-items: center; height: 74px;
+    background: radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.55), transparent 60%), linear-gradient(160deg, var(--c1), var(--c2));
+    border-bottom: 2.5px solid var(--tinta);
 }
-.opcao-colecao.selecionada b, .opcao-colecao.selecionada small { color: #fff; text-shadow: 1px 1px 0 var(--tinta); }
+.opcao-capa img { width: 72px; height: 72px; image-rendering: pixelated; filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.35)); transition: transform 0.2s; }
+.opcao-capa em {
+    position: absolute; top: 5px; left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--c3); color: #fff;
+    font-style: normal; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px;
+}
+.opcao-qtd {
+    position: absolute; bottom: 5px; right: 6px; padding: 1px 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.85);
+    font-style: normal; font-size: 0.64rem; font-weight: 700;
+}
+.opcao-info { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px; }
+.opcao-info b { font-size: 0.86rem; line-height: 1.15; min-height: 2.3em; display: flex; align-items: center; justify-content: center; text-align: center; }
+.opcao-info small { text-align: center; }
+.opcao-info .barra { height: 8px; }
+.opcao-info small { font-size: 0.72rem; color: var(--tinta2); }
+.opcao-colecao:hover { transform: translateY(-3px); box-shadow: 5px 6px 0 var(--tinta); }
+.opcao-colecao:hover .opcao-capa img { transform: scale(1.1) rotate(-4deg); }
+.opcao-colecao.selecionada { transform: translateY(-4px); box-shadow: 0 0 0 3px var(--amarelo), 6px 7px 0 var(--tinta); }
+.opcao-colecao.selecionada .opcao-info { background: #fff7d1; }
+.opcao-colecao.selecionada::after {
+    content: "✓"; position: absolute; top: 5px; right: 6px; width: 22px; height: 22px; display: grid; place-items: center;
+    border: 2px solid var(--tinta); border-radius: 50%; background: var(--amarelo); font-weight: 900; font-size: 0.8rem;
+}
+.opcao-colecao.completa .opcao-info small::after { content: " ★ completa"; color: #b8860b; font-weight: 700; }
+@media (max-width: 600px) {
+    .grade-colecoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .opcao-colecao { flex-direction: row; }
+    .opcao-capa { width: 56px; height: auto; flex-shrink: 0; border-bottom: 0; border-right: 2.5px solid var(--tinta); }
+    .opcao-capa img { width: 52px; height: 52px; }
+    .opcao-capa em { top: 3px; left: 3px; font-size: 0.6rem; padding: 0 4px; }
+    .opcao-qtd, .opcao-colecao.selecionada::after { display: none; }
+    .opcao-info { flex: 1; min-width: 0; padding: 6px 8px; gap: 3px; }
+    .opcao-info b { font-size: 0.76rem; min-height: 2.3em; justify-content: flex-start; text-align: left; }
+    .opcao-info small { text-align: left; font-size: 0.66rem; }
+    .aba-serie { padding: 7px 16px; }
+}
 .seletor-pacotes { display: flex; justify-content: center; gap: 18px; margin: 22px 0; flex-wrap: wrap; }
 .opcao-pacote { background: none; border: none; cursor: pointer; transition: transform 0.2s, filter 0.2s, opacity 0.2s; filter: grayscale(0.7); opacity: 0.65; padding: 8px; }
 .opcao-pacote .pacote { --w: 140px; }
@@ -2088,12 +2134,6 @@ body.modo-tycoon main { max-width: 1440px; }
 .titulo-serie { margin: 18px 0 0; font-size: 1.25rem; }
 .titulo-serie + .grade-expansoes { margin-top: 8px; }
 .expansao { position: relative; }
-.opcao-colecao { position: relative; }
-.rotulo-serie {
-    flex: 0 0 auto; align-self: stretch; display: flex; align-items: center; writing-mode: vertical-rl; transform: rotate(180deg);
-    padding: 6px 4px; border-radius: 6px; background: var(--tinta); color: var(--amarelo);
-    font-family: "Jersey 20", monospace; font-size: 0.95rem; letter-spacing: 1px; white-space: nowrap;
-}
 .selo-nova {
     position: absolute; top: -8px; right: -6px; padding: 1px 7px; border: 2px solid var(--tinta); border-radius: 99px;
     background: var(--vermelho); color: #fff; font-style: normal; font-size: 0.68rem; font-weight: 800;
