@@ -20,6 +20,7 @@ import {
 } from "./ui.js";
 import { iniciarConta, abrirConta } from "./conta.js";
 import { iniciarClicker, telaClicker, definirModoClicker, atualizarHud as atualizarHudClicker, htmlCartaoClicker } from "./clicker.js";
+import { iniciarTycoon, telaTycoon, definirModoTycoon, atualizarHud as atualizarHudTycoon, htmlCartaoTycoon } from "./tycoon.js";
 import {
     iniciarSocial, aoAtualizarSocial, atualizarSocial, telaPerfil, htmlTrocasAmigos, quantidadeTrocasRecebidas, processarConvite,
 } from "./social.js";
@@ -56,6 +57,7 @@ const atualizarCabecalho = () => {
         estado.gratis.qtd >= PACOTES_GRATIS_MAX ? "cheio" : `+1 em ${formatarTempo(tempo)}`;
     $("#btn-som").innerHTML = icone(estado.som ? "som" : "mudo");
     atualizarHudClicker();
+    atualizarHudTycoon();
     const novas = Object.keys(estado.novas).length;
     const badge = $("#badge-album");
     badge.textContent = novas;
@@ -104,6 +106,7 @@ const TELAS = {
     loja: () => telaLoja(),
     pokedex: (arg) => telaPokedex(arg),
     clicker: (arg) => telaClicker(app, arg),
+    tycoon: (arg) => telaTycoon(app, arg),
 };
 
 const navegar = () => {
@@ -111,8 +114,9 @@ const navegar = () => {
     const anterior = telaAtual;
     telaAtual = TELAS[tela] ? tela : "inicio";
     argAtual = arg && decodeURIComponent(arg);
-    // O Pokéclicker tem barra de baixo e HUD próprios
+    // O Pokéclicker e o Tycoon têm barra de baixo e HUD próprios
     definirModoClicker(telaAtual === "clicker");
+    definirModoTycoon(telaAtual === "tycoon");
     if (anterior === "album" && telaAtual !== "album") novasVisita = {};
     limparNotificacoes(telaAtual);
     atualizarCabecalho();
@@ -124,7 +128,7 @@ const navegar = () => {
 
 const renderizar = () => {
     limparNotificacoes(telaAtual);
-    TELAS[telaAtual](telaAtual === "clicker" ? argAtual : undefined);
+    TELAS[telaAtual](["clicker", "tycoon"].includes(telaAtual) ? argAtual : undefined);
     ativarTilt(app);
 };
 
@@ -152,6 +156,7 @@ const telaInicio = () => {
     </section>
 
     ${htmlCartaoClicker()}
+    ${htmlCartaoTycoon()}
 
     <div class="grade-painel">
         <section class="painel">
@@ -1187,6 +1192,7 @@ sincronizarDiario();
 sincronizarTrocas();
 slotVisto = estado.trocas.slot;
 iniciarClicker();
+iniciarTycoon();
 limparNotificacoes("album");
 limparNotificacoes("inicio");
 atualizarCabecalho();

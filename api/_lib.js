@@ -375,6 +375,52 @@ const limparClicker = (c) => {
     };
 };
 
+// Mini game Pokémart Tycoon: mapa pequeno, móveis e números conhecidos
+const TIPOS_MOVEIS = ["caixa", "prateleira", "vitrine", "planta", "maquina"];
+const PRODUTOS_TYCOON = ["pocao", "pokebola", "pacote", "isca", "reviver", "ultraball"];
+const limparTycoon = (t) => {
+    if (!t || typeof t !== "object" || Array.isArray(t)) return undefined;
+    const moveis = [];
+    const ocupado = new Set();
+    for (const m of Array.isArray(t.moveis) ? t.moveis.slice(0, 120) : []) {
+        if (!m || !TIPOS_MOVEIS.includes(m.tipo) || !Number.isInteger(m.x) || !Number.isInteger(m.y)) continue;
+        if (m.x < 0 || m.y < 0 || m.x > 20 || m.y > 20 || ocupado.has(`${m.x},${m.y}`)) continue;
+        ocupado.add(`${m.x},${m.y}`);
+        const limpo = { x: m.x, y: m.y, tipo: m.tipo };
+        if (m.tipo === "prateleira") {
+            limpo.produto = PRODUTOS_TYCOON.includes(m.produto) ? m.produto : "pocao";
+            limpo.estoque = Math.floor(numeroLivre(m.estoque, 100));
+        }
+        if (m.tipo === "vitrine" && idCartaValido(m.carta)) limpo.carta = m.carta;
+        moveis.push(limpo);
+    }
+    const equipe = {};
+    for (const [id, n] of Object.entries(t.equipe && typeof t.equipe === "object" ? t.equipe : {}).slice(0, 10)) {
+        if (id.length <= 20) equipe[id] = Math.floor(numeroLivre(n, 5));
+    }
+    const precos = {};
+    for (const [id, n] of Object.entries(t.precos && typeof t.precos === "object" ? t.precos : {})) {
+        if (PRODUTOS_TYCOON.includes(id) && ["barato", "normal", "caro"].includes(n)) precos[id] = n;
+    }
+    const hoje = t.pacotesHoje && typeof t.pacotesHoje === "object" ? t.pacotesHoje : {};
+    return {
+        dinheiro: numeroLivre(t.dinheiro, 1e15),
+        lucroTotal: numeroLivre(t.lucroTotal, 1e15),
+        reputacao: numeroLivre(t.reputacao, 5),
+        cidade: Math.floor(numeroLivre(t.cidade, 6)),
+        moveis,
+        equipe,
+        precos,
+        atendidos: Math.floor(numeroLivre(t.atendidos, 1e12)),
+        perdidos: Math.floor(numeroLivre(t.perdidos, 1e12)),
+        rocketsExpulsos: Math.floor(numeroLivre(t.rocketsExpulsos, 1e9)),
+        taxaMin: numeroLivre(t.taxaMin, 1e12),
+        ultimoTick: numeroLivre(t.ultimoTick, 8.64e15),
+        pacotesResgatados: Math.floor(numeroLivre(t.pacotesResgatados, 1e7)),
+        pacotesHoje: { dia: typeof hoje.dia === "string" ? hoje.dia.slice(0, 12) : "", qtd: Math.floor(numeroLivre(hoje.qtd, 100)) },
+    };
+};
+
 // Remove cartas inexistentes, quantidades absurdas e números inválidos.
 // Assim um save adulterado não quebra a tela de ninguém.
 export const limparSave = (dados) => {
@@ -398,6 +444,7 @@ export const limparSave = (dados) => {
         salvoEm: inteiro(dados.salvoEm, 0, 8.64e15),
         nuvemBase: inteiro(dados.nuvemBase, 0, 8.64e15),
         clicker: limparClicker(dados.clicker),
+        tycoon: limparTycoon(dados.tycoon),
         stats: {
             pacotes: inteiro(stats.pacotes, 0, 1e9),
             trocas: inteiro(stats.trocas, 0, 1e9),

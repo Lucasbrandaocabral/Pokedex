@@ -1799,3 +1799,185 @@ body.modo-clicker main { max-width: 1440px; }
 .titulo-lado small { display: flex; align-items: center; gap: 4px; font-weight: 600; color: var(--tinta2); }
 .troca-amigo .modal-botoes { flex-wrap: wrap; }
 .troca-amigo .modal-botoes [data-social=ver-troca] { flex-basis: 100%; }
+
+/* ====================================================
+   Pokémart Tycoon (mini game de loja)
+   ==================================================== */
+.nav-tycoon, .hud-tycoon { display: none !important; }
+body.modo-tycoon .nav:not(.nav-tycoon) { display: none; }
+body.modo-tycoon .nav-tycoon { display: flex !important; }
+body.modo-tycoon .hud-tycoon { display: flex !important; }
+body.modo-tycoon .hud-cartas { display: none; }
+body.modo-tycoon main { max-width: 1440px; }
+.nav-tycoon { background: #1f4a7a; }
+.nav-tycoon .nav-item.ativo { background: #7fd3ff; }
+.ic-dolar, .ic-estrela { font-style: normal; font-weight: 700; color: var(--verde); }
+.ic-estrela { color: #e0a800; }
+
+.cartao-tycoon { background: linear-gradient(120deg, #1f4a7a, #2b7bb9 60%, #7fd3ff 140%); margin-top: 18px; }
+
+.ty-placar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.ty-placar > div { background: var(--papel2); border: var(--linha); border-radius: var(--raio); box-shadow: 3px 3px 0 var(--tinta); padding: 8px 12px; min-width: 0; }
+.ty-placar small { display: block; color: var(--tinta2); font-size: 0.8rem; }
+.ty-placar b { font-family: "Jersey 20", monospace; font-weight: 400; font-size: 1.7rem; white-space: nowrap; }
+.ty-estrelas { color: #e0a800; letter-spacing: 1px; }
+@media (max-width: 700px) { .ty-placar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.ty-evento {
+    margin-bottom: 12px; padding: 10px 14px; border: var(--linha); border-radius: var(--raio);
+    background: var(--amarelo); box-shadow: 3px 3px 0 var(--tinta); animation: ty-pulsar 1s ease-in-out infinite alternate;
+}
+.ty-evento.rocket { background: #e9557a; color: #fff; }
+.ty-evento.carvalho { background: #c9f2c7; }
+@keyframes ty-pulsar { to { transform: scale(1.01); } }
+
+.ty-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .ty-grade { grid-template-columns: minmax(0, 1fr); } }
+
+/* O mapa: cada espaço mede --tile */
+.ty-mapa-caixa {
+    border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); background: #6b4a2f;
+    padding: clamp(6px, 1.5vw, 14px); overflow: hidden; display: flex; justify-content: center;
+}
+.ty-mapa {
+    --tile: min(64px, calc((100vw - 72px) / var(--w)));
+    position: relative; display: grid;
+    grid-template-columns: repeat(var(--w), var(--tile)); grid-template-rows: repeat(var(--h), var(--tile));
+}
+@media (min-width: 901px) { .ty-mapa { --tile: max(48px, min(104px, calc((100vw - 500px) / var(--w)), calc((100vh - 330px) / var(--h)))); } }
+.ty-piso {
+    position: absolute; inset: 0; border-radius: 4px; pointer-events: none;
+    background-color: #f3e3c4;
+    background-image: linear-gradient(45deg, #e9d3ab 25%, transparent 25%, transparent 75%, #e9d3ab 75%),
+        linear-gradient(45deg, #e9d3ab 25%, transparent 25%, transparent 75%, #e9d3ab 75%);
+    background-size: calc(var(--tile) * 2) calc(var(--tile) * 2);
+    background-position: 0 0, var(--tile) var(--tile);
+    box-shadow: inset 0 6px 0 rgba(0, 0, 0, 0.12);
+}
+.ty-chao { position: relative; background: none; border: 0; font-size: calc(var(--tile) * 0.5); cursor: default; }
+.ty-chao.porta { background: repeating-linear-gradient(90deg, #7fd3ff 0 6px, #b8e8ff 6px 12px); border-top: 4px solid var(--tinta); }
+.ty-mapa.construindo .ty-chao { outline: 1px dashed rgba(0, 0, 0, 0.15); }
+.ty-chao.pode { background: rgba(46, 158, 91, 0.25); cursor: pointer; outline: 2px dashed var(--verde) !important; outline-offset: -3px; }
+.ty-chao.pode:hover { background: rgba(46, 158, 91, 0.5); }
+
+.ty-movel {
+    position: relative; margin: 3px; border: var(--linha); border-radius: 6px; cursor: pointer;
+    display: grid; place-items: center; font-size: calc(var(--tile) * 0.45); box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.35);
+    transition: transform 0.12s;
+}
+.ty-movel:hover { transform: translateY(-2px); }
+.ty-movel.selecionado { outline: 3px solid var(--azul); outline-offset: 2px; }
+.ty-mapa.construindo .ty-movel:hover { background: #ffb3b3; }
+.ty-prateleira { background: linear-gradient(#a8744a 0 18%, #d8a371 18% 100%); }
+.ty-caixa { background: linear-gradient(#5d6d8a, #3c4a66); }
+.ty-vitrine { background: linear-gradient(135deg, #e7f6ff, #9fd8f5); overflow: hidden; }
+.ty-planta { background: #b9e3a4; border-radius: 50%; }
+.ty-maquina { background: linear-gradient(#e94f4f, #a91f2c); }
+.ty-produto { filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.3)); }
+.ty-estoque { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 5px; background: rgba(0, 0, 0, 0.35); border-radius: 3px; overflow: hidden; }
+.ty-estoque b { display: block; height: 100%; background: #56d37f; transition: width 0.3s; }
+.ty-estoque.baixo b { background: #ff5a5a; }
+.ty-estoque.baixo { animation: ty-piscar 0.8s steps(2) infinite; }
+@keyframes ty-piscar { 50% { opacity: 0.4; } }
+.ty-vitrine-img { width: 78%; height: 90%; object-fit: cover; border-radius: 3px; box-shadow: 0 0 10px #fff; }
+.ty-raridade { position: absolute; top: 1px; right: 3px; font-size: 0.6rem; font-style: normal; color: #b8860b; text-shadow: 0 0 2px #fff; }
+.ty-funcionario { position: absolute; width: 70%; top: -30%; image-rendering: pixelated; pointer-events: none; }
+.ty-mascote { position: absolute; width: var(--tile); image-rendering: pixelated; pointer-events: none; animation: ty-pular 0.7s ease-in-out infinite alternate; z-index: 2; }
+@keyframes ty-pular { to { transform: translateY(-6px); } }
+
+/* Clientes andando */
+.ty-clientes { position: absolute; inset: 0; pointer-events: none; }
+.ty-cliente {
+    position: absolute; left: 0; top: 0; width: var(--tile); height: var(--tile);
+    background: none; border: 0; padding: 0; pointer-events: none;
+    transition: transform 0.1s linear; z-index: 3;
+}
+.ty-cliente img { width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.25)); }
+.ty-cliente.andando img { animation: ty-andar 0.3s steps(2) infinite; }
+@keyframes ty-andar { 50% { transform: translateY(-3px) rotate(-3deg); } }
+.ty-cliente.rocket { pointer-events: auto; cursor: crosshair; z-index: 4; }
+.ty-cliente.rocket::before {
+    content: ""; position: absolute; inset: 8%; border-radius: 50%; border: 3px solid #e9557a;
+    animation: ty-alvo 0.6s ease-in-out infinite alternate;
+}
+@keyframes ty-alvo { to { transform: scale(1.2); opacity: 0.4; } }
+.ty-balao { position: absolute; top: -12px; right: -2px; font-style: normal; font-size: calc(var(--tile) * 0.3); }
+.ty-flutuante {
+    position: absolute; transform: translateX(-50%); z-index: 5; pointer-events: none; white-space: nowrap;
+    font-family: "Jersey 20", monospace; font-size: 1.6rem; color: #1a8a47; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 2px -1px 0 #fff, -1px 2px 0 #fff;
+    animation: ty-subir 1.3s ease-out forwards;
+}
+.ty-flutuante.ruim { color: var(--vermelho); }
+.ty-flutuante.equipe { color: var(--azul); }
+@keyframes ty-subir { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -40px; } }
+
+/* Painel lateral */
+.ty-lado { display: flex; flex-direction: column; gap: 12px; }
+.ty-modos { display: grid; grid-template-columns: 1fr 1fr; border: var(--linha); border-radius: var(--raio); overflow: hidden; box-shadow: 3px 3px 0 var(--tinta); }
+.ty-modos button { padding: 10px; border: 0; background: var(--papel2); font: inherit; font-weight: 600; cursor: pointer; }
+.ty-modos button + button { border-left: var(--linha); }
+.ty-modos button.ativo { background: var(--amarelo); }
+#ty-painel { display: flex; flex-direction: column; gap: 12px; }
+.ty-bloco { background: var(--papel2); border: var(--linha); border-radius: var(--raio); padding: 12px 14px; box-shadow: 3px 3px 0 var(--tinta); }
+.ty-bloco h3 { margin-top: 0; }
+.ty-bloco h4 { margin: 12px 0 6px; }
+.ty-bloco > .btn { width: 100%; }
+.ty-bloco .pequeno, .sutil.pequeno { font-size: 0.85rem; margin-top: 6px; }
+.ty-preco { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-bottom: 1px dashed var(--papel3); }
+.ty-preco small { color: var(--tinta2); }
+.ty-preco-opcoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.ty-preco-opcoes button, .ty-produtos button {
+    padding: 5px; border: 2px solid var(--tinta); border-radius: 6px; background: #fff; font: inherit; font-size: 0.85rem; cursor: pointer;
+}
+.ty-preco-opcoes button.ativo, .ty-produtos button.ativo { background: var(--amarelo); font-weight: 700; }
+.ty-produtos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ty-produtos button { display: flex; flex-direction: column; align-items: center; font-size: 1.4rem; }
+.ty-produtos small { font-size: 0.7rem; }
+.ty-produtos button:disabled { opacity: 0.45; cursor: not-allowed; }
+.ty-estatisticas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 0.9rem; }
+.ty-vitrine-carta { width: 140px; margin: 0 auto 8px; }
+.ty-atracao { display: block; text-align: center; font-weight: 700; color: var(--verde); }
+
+.ty-paleta { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.ty-paleta button {
+    display: grid; grid-template-columns: 40px 1fr auto; grid-template-rows: auto auto; align-items: center; column-gap: 8px;
+    text-align: left; padding: 8px; border: 2px solid var(--tinta); border-radius: 6px; background: #fff; font: inherit; cursor: pointer;
+}
+.ty-paleta button span { grid-row: span 2; font-size: 1.8rem; text-align: center; }
+.ty-paleta button small { font-weight: 700; color: var(--verde); }
+.ty-paleta button em { grid-column: 2 / span 2; font-style: normal; font-size: 0.75rem; color: var(--tinta2); }
+.ty-paleta button.ativo { background: var(--amarelo); box-shadow: 3px 3px 0 var(--tinta); }
+.ty-paleta button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Equipe */
+.ty-equipe { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 14px; }
+.ty-funcionario-card {
+    display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; padding: 12px;
+    background: var(--papel2); border: var(--linha); border-radius: var(--raio); box-shadow: 3px 3px 0 var(--tinta);
+}
+.ty-funcionario-card img { width: 72px; image-rendering: pixelated; filter: grayscale(1) opacity(0.6); }
+.ty-funcionario-card.contratado img { filter: none; }
+.ty-funcionario-card p { margin: 4px 0; font-size: 0.85rem; }
+.ty-funcionario-card .btn { display: flex; flex-direction: column; align-items: center; }
+.ty-funcionario-card .btn small { font-size: 0.8rem; }
+.ty-niveis { display: flex; gap: 4px; }
+.ty-niveis i { width: 16px; height: 8px; border: 2px solid var(--tinta); border-radius: 2px; background: #fff; }
+.ty-niveis i.cheio { background: var(--amarelo); }
+@media (max-width: 500px) {
+    .ty-equipe { grid-template-columns: 1fr; }
+    .ty-funcionario-card { grid-template-columns: 56px 1fr; }
+    .ty-funcionario-card img { width: 56px; }
+    .ty-funcionario-card > :last-child { grid-column: span 2; }
+}
+
+/* Cidades */
+.ty-cidades { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.ty-cidades li {
+    display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border: var(--linha); border-radius: var(--raio);
+    background: var(--papel2); opacity: 0.7;
+}
+.ty-cidades li.passada { opacity: 0.5; text-decoration: line-through; }
+.ty-cidades li.atual { opacity: 1; background: #d9f2ff; box-shadow: 3px 3px 0 var(--tinta); }
+.ty-cidades li:has(.btn) { opacity: 1; }
+.ty-cidades li b { font-family: "Jersey 20", monospace; font-weight: 400; font-size: 1.5rem; }
+.ty-cidades li .btn, .ty-cidades li .etiqueta { align-self: flex-start; margin-top: 6px; }

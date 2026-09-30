@@ -47,6 +47,8 @@
                 <small id="hud-gratis"></small></a>
             <a class="hud-item hud-clicker" href="#clicker" title="Energia"><i class="ic-energia">⚡</i><span id="hud-energia">0</span></a>
             <a class="hud-item hud-clicker" href="#clicker/evolucao" title="Pedras de Evolução"><i class="ic-pedra"></i><span id="hud-pedras">0</span></a>
+            <a class="hud-item hud-tycoon" href="#tycoon" title="Pokédólares"><i class="ic-dolar">₽</i><span id="hud-pokedolares">0</span></a>
+            <a class="hud-item hud-tycoon" href="#tycoon" title="Reputação"><i class="ic-estrela">★</i><span id="hud-reputacao">0</span></a>
             <button class="hud-item" id="btn-som" data-acao="som" title="Som"></button>
         </div>
     </header>
@@ -67,6 +69,14 @@
         <a class="nav-item" data-tela-clicker="jogar" href="#clicker"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Jogar</span></a>
         <a class="nav-item" data-tela-clicker="colecao" href="#clicker/colecao"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16v11H4z"/><path d="M3 5h18v4H3zM12 5v15"/></svg><span>Coleção</span><i class="badge" id="badge-colecao" hidden></i></a>
         <a class="nav-item" data-tela-clicker="evolucao" href="#clicker/evolucao"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-7M12 14l-5-5M12 14l5-5M7 9V5M17 9V5M12 14V3"/><circle cx="7" cy="4" r="1.5"/><circle cx="17" cy="4" r="1.5"/><circle cx="12" cy="3" r="1.5"/></svg><span>Evolução</span><i class="badge" id="badge-evolucao" hidden></i></a>
+        <a class="nav-item" href="#inicio"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></svg><span>Cartas</span></a>
+    </nav>
+
+    <!-- Barra de baixo do Pokémart Tycoon -->
+    <nav class="nav nav-tycoon" id="nav-tycoon">
+        <a class="nav-item" data-tela-tycoon="loja" href="#tycoon"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2-5h14l2 5M4 9v11h16V9M3 9h18M10 20v-6h4v6"/></svg><span>Loja</span></a>
+        <a class="nav-item" data-tela-tycoon="equipe" href="#tycoon/equipe"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5"/></svg><span>Equipe</span></a>
+        <a class="nav-item" data-tela-tycoon="cidades" href="#tycoon/cidades"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V9l5-3v15M10 21V4l9 4v13M13 10h3M13 14h3M7 12h1M7 16h1"/></svg><span>Cidades</span><i class="badge" id="badge-cidades" hidden></i></a>
         <a class="nav-item" href="#inicio"><svg class="icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></svg><span>Cartas</span></a>
     </nav>
 
