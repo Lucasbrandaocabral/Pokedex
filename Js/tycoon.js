@@ -5,7 +5,7 @@
 import { estado, salvar, quantidade } from "./state.js";
 import { spriteTreinador } from "./treinadores.js";
 import { IMAGEM_PRODUTO, ARTE_MOVEL, ITENS_NA_ESTANTE } from "./moveis-arte.js";
-import { imagemPixel, CARTAS, CARTA_POR_ID, RARIDADES } from "./cards.js";
+import { imagemPixel, imagemSprite, CARTAS, CARTA_POR_ID, RARIDADES } from "./cards.js";
 import { $, $$, aviso, abrirModal, fecharModal, confirmar, sons, htmlCarta, numero } from "./ui.js";
 import {
     PRODUTOS, PRECOS, MOVEIS, EQUIPE, CIDADES, NIVEL_MAX, LUCRO_POR_PACOTE, PACOTES_POR_DIA, OFFLINE_MAX_SEGUNDOS, ATRACAO_RARIDADE,
@@ -229,7 +229,7 @@ const htmlMovel = (m) => {
         const vis = itensVisiveis(m);
         const itens = Array.from({ length: ITENS_NA_ESTANTE }, (_, i) =>
             `<img src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="visibility:${i < vis ? "visible" : "hidden"}">`).join("");
-        dentro = `<span class="ty-estante">${itens}</span><i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
+        dentro = `<span class="ty-estante">${itens}<i class="ty-etiqueta">₽ ${precoVenda(t(), m.produto)}</i></span><i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
     } else if (m.tipo === "vitrine") {
         const c = m.carta && CARTA_POR_ID[m.carta];
         dentro = `<span class="ty-vidro">${c ? `<img src="${c.imagem}" alt="" draggable="false"><i class="ty-raridade">${RARIDADES[c.raridade].simbolo}</i>` : "<em>vazia</em>"}</span>`;
@@ -277,8 +277,17 @@ const telaLoja = () => {
                 <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">${vista3d ? "▦ Ver em 2D" : "🧊 Ver em 3D"}</button>
                 <div class="ty-mapa ${modoConstruir ? "construindo" : ""}" id="ty-mapa">
                     <div class="ty-piso"></div>
-                    <div class="ty-parede fundo"></div>
-                    <div class="ty-parede esquerda"></div>
+                    <div class="ty-rejunte"></div>
+                    <div class="ty-luz"></div>
+                    <div class="ty-parede fundo">
+                        <span class="ty-poster p1"><b>PROMOÇÃO</b><img src="${imagemSprite(25)}" alt=""><small>Tudo pelo melhor preço!</small></span>
+                        <span class="ty-poster p2"><b>NOVIDADES</b><img src="${imagemSprite(133)}" alt=""><small>Pacotes de cartas</small></span>
+                        <span class="ty-relogio"><i></i><i></i></span>
+                    </div>
+                    <div class="ty-parede esquerda">
+                        <span class="ty-janela j1"></span>
+                        <span class="ty-janela j2"></span>
+                    </div>
                     ${htmlChao()}
                     ${t().moveis.map(htmlMovel).join("")}
                     ${nivelEquipe(t(), "pikachu") ? `<div class="ty-mascote" style="left:calc(${porta(t()).x + 1} * var(--tile));top:calc(${porta(t()).y} * var(--tile))"><img src="${imagemPixel(25)}" alt="Pikachu"></div>` : ""}
