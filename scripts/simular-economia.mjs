@@ -47,8 +47,8 @@ for (let dia = 1; dia <= DIAS; dia++) {
     for (const q of S.CONQUISTAS) S.resgatarConquista(q.id);
     // Vende repetidas (guarda 2 para trocar) e compra pacotes
     S.venderRepetidas(2, 8);
-    while (estado.moedas >= 5300) S.comprar(5300, 25);
-    while (estado.moedas >= 250) S.comprar(250, 1);
+    while (estado.moedas >= 6400) S.comprar(6400, 25);
+    while (estado.moedas >= 300) S.comprar(300, 1);
     // Pontos: pega a carta que falta mais barata
     const faltam = CARTAS.filter((c) => !S.quantidade(c.id)).sort((a, b) => a.raridade - b.raridade);
     for (const c of faltam) if (!S.resgatarComPontos(c.id)) break;
