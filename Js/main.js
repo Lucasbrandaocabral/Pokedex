@@ -271,15 +271,34 @@ const telaPacotes = () => {
     app.innerHTML = `
     <section class="tela-pacotes">
         <h1>Escolha um pacote</h1>
-        <div class="seletor-colecoes">
-            ${porSerie((serie, lista) => `<span class="rotulo-serie">${SERIES[serie]}</span>` + lista.map((c) => `
-                <button class="opcao-colecao ${c.codigo === colecao.codigo ? "selecionada" : ""}" data-acao="selecionar-colecao" data-id="${c.codigo}"
-                        style="--c1:${c.pacotes[0].cores[0]};--c2:${c.pacotes[0].cores[1]}">
-                    <img src="${imagemSprite(c.pacotes[0].mascote)}" alt="" loading="lazy" draggable="false">
-                    <b>${c.nome}</b>
-                    <small>${c.codigo} • ${tenhoDe(c.cartas)}/${c.total}</small>
-                    ${seloNova(c)}
-                </button>`).join(""))}
+        <div class="abas-serie" role="tablist">
+            ${Object.entries(SERIES).map(([serie, nome]) => {
+                const primeira = COLECOES.find((c) => c.serie === serie);
+                const [titulo, sub] = nome.split(" • ");
+                return `<button class="aba-serie ${serie === colecao.serie ? "ativa" : ""}" role="tab" data-acao="selecionar-colecao" data-id="${primeira.codigo}">
+                    <b>${titulo}</b><small>${sub}</small>${serie === "B" ? `<i class="selo-nova">Nova!</i>` : ""}
+                </button>`;
+            }).join("")}
+        </div>
+        <div class="grade-colecoes">
+            ${COLECOES.filter((c) => c.serie === colecao.serie).map((c) => {
+                const tenhoCol = tenhoDe(c.cartas);
+                return `
+                <button class="opcao-colecao ${c.codigo === colecao.codigo ? "selecionada" : ""} ${tenhoCol === c.total ? "completa" : ""}"
+                        data-acao="selecionar-colecao" data-id="${c.codigo}"
+                        style="--c1:${c.pacotes[0].cores[0]};--c2:${c.pacotes[0].cores[1]};--c3:${c.pacotes[0].cores[2]}">
+                    <span class="opcao-capa">
+                        <img src="${imagemSprite(c.pacotes[0].mascote)}" alt="" loading="lazy" draggable="false">
+                        <em>${c.codigo}</em>
+                        ${c.pacotes.length > 1 ? `<i class="opcao-qtd">${c.pacotes.length} pacotes</i>` : ""}
+                    </span>
+                    <span class="opcao-info">
+                        <b>${c.nome}</b>
+                        ${barra(tenhoCol, c.total)}
+                        <small>${tenhoCol}/${c.total} cartas</small>
+                    </span>
+                </button>`;
+            }).join("")}
         </div>
         <div class="seletor-pacotes">
             ${colecao.pacotes.map(({ id: p }) =>
@@ -326,9 +345,6 @@ const telaPacotes = () => {
             <p>Cada pacote aberto dá <b>${PONTOS_POR_PACOTE} pontos de pacote</b>, que podem ser trocados por qualquer carta no álbum.</p>
         </details>
     </section>`;
-    // Deixa a expansão escolhida visível na faixa (no celular ela rola para o lado)
-    const escolhida = $(".opcao-colecao.selecionada");
-    escolhida.parentElement.scrollLeft = escolhida.offsetLeft - (escolhida.parentElement.clientWidth - escolhida.offsetWidth) / 2;
 };
 
 // ---------------- Abertura de pacote (animação) ----------------
