@@ -143,3 +143,36 @@ test("normalizar conserta saves estranhos", () => {
     assert.deepEqual(t.moveis, []);
     assert.deepEqual(T.normalizarTycoon(null).moveis.length, 3);
 });
+
+test("editar móveis: mover respeita o caminho, girar dá a volta e pintar só aceita cores da lista", () => {
+    const t = novo();
+    const p = T.porta(t);
+    assert.equal(T.moverMovel(t, 1, 1, p.x, p.y), false, "não vai para a porta");
+    assert.equal(T.moverMovel(t, 1, 1, 4, 1), false, "não vai para cima de outro móvel");
+    assert.ok(T.moverMovel(t, 1, 1, 0, 0));
+    assert.ok(T.movelEm(t, 0, 0));
+    assert.equal(T.movelEm(t, 1, 1), undefined);
+    // Fecha a fileira de cima da porta menos um buraco: mover algo para o buraco é proibido
+    const { w } = T.tamanho(t);
+    t.dinheiro = 1e6;
+    for (let x = 0; x < w; x++) if (x !== 2 && !T.movelEm(t, x, p.y - 1)) T.construir(t, x, p.y - 1, "planta");
+    assert.equal(T.moverMovel(t, 0, 0, 2, p.y - 1), false);
+    const m = T.movelEm(t, 0, 0);
+    for (let i = 0; i < 4; i++) T.girarMovel(t, 0, 0);
+    assert.equal(m.rot, 0);
+    T.girarMovel(t, 0, 0);
+    assert.equal(m.rot, 1);
+    assert.ok(T.pintarMovel(t, 0, 0, "azul"));
+    assert.equal(T.pintarMovel(t, 0, 0, "dourado"), false);
+    assert.equal(m.acabamento, "azul");
+});
+
+test("clientes usam a frente do móvel quando ela está livre", () => {
+    const t = novo();
+    const m = T.movelEm(t, 1, 1);
+    assert.deepEqual(T.ladoLivre(t, m), { x: 1, y: 2 });
+    m.rot = 1;
+    assert.deepEqual(T.ladoLivre(t, m), { x: 2, y: 1 });
+    m.rot = 2;
+    assert.deepEqual(T.ladoLivre(t, m), { x: 1, y: 0 });
+});

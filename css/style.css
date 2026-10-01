@@ -2409,3 +2409,31 @@ body.modo-tycoon main { max-width: 1440px; }
 .ty-mapa3d.pronto .ty-carregando { display: none; }
 .ty-flutuante3d { position: absolute; z-index: 4; transform: translate(-50%, -100%); }
 @media (max-width: 600px) { .ty-mapa3d { height: 340px; } }
+/* As 3 fileiras da estante 2D têm altura fixa: nada sai para fora (ex.: pacotes de cartas) */
+.ty-estante { grid-template-rows: repeat(3, minmax(0, 1fr)); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ty-estante img { min-height: 0; min-width: 0; max-height: 100%; }
+
+/* ---------- Editar móveis (modo Construir) ---------- */
+.ty-editor { border-color: var(--azul); }
+.ty-editor-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ty-editor-topo h3 { margin: 0; }
+.ty-fechar { width: 28px; height: 28px; border: 2px solid var(--tinta); border-radius: 50%; background: var(--papel2); cursor: pointer; font-weight: 800; }
+.ty-editor-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ty-acabamentos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ty-acabamentos button {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px;
+    border: 2px solid var(--tinta); border-radius: 6px; background: #fff; font: inherit; cursor: pointer;
+}
+.ty-acabamentos i { width: 26px; height: 26px; border: 2px solid var(--tinta); border-radius: 6px; background: var(--cor); }
+.ty-acabamentos small { font-size: 0.68rem; line-height: 1.1; text-align: center; }
+.ty-acabamentos button.ativo { background: var(--amarelo); box-shadow: 2px 2px 0 var(--tinta); }
+/* 2D: móvel em edição, frente do móvel e cor escolhida */
+.ty-movel.editando { outline: 3px dashed var(--azul); outline-offset: 2px; }
+.ty-mapa.construindo .ty-movel::after {
+    content: ""; position: absolute; background: var(--amarelo); border: 1.5px solid var(--tinta); border-radius: 3px; pointer-events: none;
+}
+.ty-mapa.construindo .ty-movel.rot-0::after { left: 20%; right: 20%; bottom: -5px; height: 5px; }
+.ty-mapa.construindo .ty-movel.rot-1::after { top: 20%; bottom: 20%; right: -5px; width: 5px; }
+.ty-mapa.construindo .ty-movel.rot-2::after { left: 20%; right: 20%; top: -5px; height: 5px; }
+.ty-mapa.construindo .ty-movel.rot-3::after { top: 20%; bottom: 20%; left: -5px; width: 5px; }
+.ty-movel.pintado { background: var(--acab) !important; }

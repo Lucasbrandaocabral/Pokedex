@@ -377,6 +377,7 @@ const limparClicker = (c) => {
 
 // Mini game Pokémart Tycoon: mapa pequeno, móveis e números conhecidos
 const TIPOS_MOVEIS = ["caixa", "prateleira", "vitrine", "planta", "maquina"];
+const ACABAMENTOS_TYCOON = ["madeira", "nogueira", "branco", "vermelho", "azul", "verde"];
 const PRODUTOS_TYCOON = ["pocao", "pokebola", "pacote", "isca", "reviver", "ultraball"];
 const limparTycoon = (t) => {
     if (!t || typeof t !== "object" || Array.isArray(t)) return undefined;
@@ -392,6 +393,8 @@ const limparTycoon = (t) => {
             limpo.estoque = Math.floor(numeroLivre(m.estoque, 100));
         }
         if (m.tipo === "vitrine" && idCartaValido(m.carta)) limpo.carta = m.carta;
+        if (Number.isInteger(m.rot) && m.rot >= 1 && m.rot <= 3) limpo.rot = m.rot;
+        if (ACABAMENTOS_TYCOON.includes(m.acabamento)) limpo.acabamento = m.acabamento;
         moveis.push(limpo);
     }
     const equipe = {};
