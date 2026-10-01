@@ -2515,3 +2515,65 @@ body.modo-tycoon main { max-width: 1440px; }
     .ty-paleta button small { grid-column: 2; }
     .ty-paleta button em { display: none; }
 }
+
+/* ====================================================
+   Tycoon: melhorias, metas, qualidade e móveis novos
+   ==================================================== */
+.ty-nivel {
+    position: absolute; top: -7px; left: -5px; z-index: 3; padding: 0 4px; border: 1.5px solid var(--tinta); border-radius: 99px;
+    background: #fff; color: #e0a800; font-style: normal; font-size: 0.62rem; line-height: 1.3; pointer-events: none;
+}
+.ty-nivel.n3 { background: var(--amarelo); color: var(--tinta); }
+h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
+.ty-estante.fria {
+    background: repeating-linear-gradient(to bottom, transparent 0 calc(33.333% - 4px), #cdeeff calc(33.333% - 4px) calc(33.333% - 2px), #9fb8cc calc(33.333% - 2px) 33.333%),
+        linear-gradient(#1d3a66, #2f5bd3);
+    box-shadow: inset 0 0 0 2px #e9e9ef, inset 0 6px 8px rgba(0, 0, 0, 0.35);
+}
+.ty-geladeira { background: linear-gradient(#e9e9ef, #b8bcc8) !important; }
+.ty-banco, .ty-lixeira, .ty-totem, .ty-estatua, .ty-caixarapido { background: rgba(0, 0, 0, 0.05); }
+.ty-estatua .ty-arte { image-rendering: pixelated; }
+
+.ty-melhoria-movel { margin-top: 12px; padding-top: 8px; border-top: 2px dashed var(--papel3); }
+.ty-melhoria-movel h4 { margin: 0 0 6px; }
+.ty-melhoria-movel ol { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.ty-melhoria-movel li { display: flex; flex-direction: column; padding: 5px 8px; border: 2px solid var(--papel3); border-radius: 6px; opacity: 0.75; }
+.ty-melhoria-movel li.feita { opacity: 1; border-color: var(--verde); background: #e3f6ea; }
+.ty-melhoria-movel li.feita b::after { content: " ✓"; color: var(--verde); }
+.ty-melhoria-movel b { font-size: 0.85rem; color: #b8860b; }
+.ty-melhoria-movel small { font-size: 0.75rem; color: var(--tinta2); }
+
+.ty-procurados { border-color: #e0a800; background: #fff8dc; }
+.ty-procurados ul { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.ty-procurados li { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+.ty-procurados li small { margin-left: auto; color: var(--tinta2); }
+
+.ty-paleta button.trancado { filter: grayscale(1); }
+.ty-libera { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }
+.ty-libera small { display: inline-flex; align-items: center; gap: 3px; }
+
+/* Tela Melhorias */
+.ty-melhorias h2 { margin-top: 26px; }
+.ty-metas { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
+.ty-meta {
+    display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border: var(--linha); border-radius: var(--raio);
+    background: var(--papel2); box-shadow: 3px 3px 0 var(--tinta);
+}
+.ty-meta.pronta { background: #fff3b0; border-color: #e0a800; }
+.ty-meta .barra { height: 9px; }
+.ty-meta small { color: var(--tinta2); font-size: 0.78rem; }
+.ty-meta .btn { align-self: flex-start; }
+.ty-qualidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; margin-top: 10px; }
+.ty-qualidade {
+    display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px; padding: 8px 10px;
+    border: 2px solid var(--tinta); border-radius: var(--raio); background: var(--papel2); box-shadow: 2px 2px 0 var(--tinta);
+}
+.ty-qualidade > .ty-ico { width: 34px; height: 34px; }
+.ty-qualidade div { display: flex; flex-direction: column; min-width: 0; }
+.ty-qualidade b { font-size: 0.92rem; }
+.ty-qualidade small { font-size: 0.74rem; color: var(--tinta2); }
+.ty-qualidade .ty-estrelas { font-size: 0.85rem; }
+.ty-qualidade.trancado { opacity: 0.55; filter: grayscale(0.8); }
+.ty-qualidade.comprada { background: #e3f6ea; }
+.ty-ico-melhoria { font-size: 1.5rem; text-align: center; }
+@media (max-width: 600px) { .ty-qualidades { grid-template-columns: 1fr; } }

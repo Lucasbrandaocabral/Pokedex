@@ -376,9 +376,18 @@ const limparClicker = (c) => {
 };
 
 // Mini game Pokémart Tycoon: mapa pequeno, móveis e números conhecidos
-const TIPOS_MOVEIS = ["caixa", "prateleira", "vitrine", "planta", "maquina"];
+const TIPOS_MOVEIS = ["caixa", "prateleira", "vitrine", "planta", "maquina", "geladeira", "banco", "lixeira", "totem", "caixarapido", "estatua"];
 const ACABAMENTOS_TYCOON = ["madeira", "nogueira", "branco", "vermelho", "azul", "verde"];
-const PRODUTOS_TYCOON = ["pocao", "pokebola", "pacote", "isca", "reviver", "ultraball"];
+const PRODUTOS_TYCOON = ["pocao", "pokebola", "pacote", "isca", "reviver", "ultraball", "antidoto", "superpocao", "grandeball", "repelente",
+    "hiperpocao", "pedra", "docerara", "agua", "refrigerante", "limonada", "leite"];
+const MELHORIAS_TYCOON = ["musica", "cestinhas", "ar", "seguranca", "deposito", "fidelidade", "fornecedor", "radio", "vitrinerua", "torneios", "tv", "selo"];
+const mapaProdutos = (v, max) => {
+    const r = {};
+    for (const [id, n] of Object.entries(v && typeof v === "object" && !Array.isArray(v) ? v : {})) {
+        if (PRODUTOS_TYCOON.includes(id)) r[id] = Math.floor(numeroLivre(n, max));
+    }
+    return r;
+};
 const limparTycoon = (t) => {
     if (!t || typeof t !== "object" || Array.isArray(t)) return undefined;
     const moveis = [];
@@ -388,10 +397,11 @@ const limparTycoon = (t) => {
         if (m.x < 0 || m.y < 0 || m.x > 20 || m.y > 20 || ocupado.has(`${m.x},${m.y}`)) continue;
         ocupado.add(`${m.x},${m.y}`);
         const limpo = { x: m.x, y: m.y, tipo: m.tipo };
-        if (m.tipo === "prateleira") {
-            limpo.produto = PRODUTOS_TYCOON.includes(m.produto) ? m.produto : "pocao";
-            limpo.estoque = Math.floor(numeroLivre(m.estoque, 100));
+        if (m.tipo === "prateleira" || m.tipo === "geladeira") {
+            limpo.produto = PRODUTOS_TYCOON.includes(m.produto) ? m.produto : m.tipo === "geladeira" ? "agua" : "pocao";
+            limpo.estoque = Math.floor(numeroLivre(m.estoque, 200));
         }
+        if (Number.isInteger(m.nivel) && m.nivel >= 2 && m.nivel <= 3) limpo.nivel = m.nivel;
         if (m.tipo === "vitrine" && idCartaValido(m.carta)) limpo.carta = m.carta;
         if (Number.isInteger(m.rot) && m.rot >= 1 && m.rot <= 3) limpo.rot = m.rot;
         if (ACABAMENTOS_TYCOON.includes(m.acabamento)) limpo.acabamento = m.acabamento;
@@ -420,6 +430,11 @@ const limparTycoon = (t) => {
         taxaMin: numeroLivre(t.taxaMin, 1e12),
         ultimoTick: numeroLivre(t.ultimoTick, 8.64e15),
         pacotesResgatados: Math.floor(numeroLivre(t.pacotesResgatados, 1e7)),
+        qualidade: mapaProdutos(t.qualidade, 5),
+        vendidos: mapaProdutos(t.vendidos, 1e12),
+        procurados: mapaProdutos(t.procurados, 1e6),
+        melhorias: Array.isArray(t.melhorias) ? [...new Set(t.melhorias.filter((id) => MELHORIAS_TYCOON.includes(id)))] : [],
+        metas: listaTextos(t.metas, 100),
         pacotesHoje: { dia: typeof hoje.dia === "string" ? hoje.dia.slice(0, 12) : "", qtd: Math.floor(numeroLivre(hoje.qtd, 100)) },
     };
 };
