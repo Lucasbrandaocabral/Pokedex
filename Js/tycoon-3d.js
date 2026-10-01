@@ -49,27 +49,6 @@ const texturaUrl = (url) => {
     return texturasUrl.get(url);
 };
 
-// SVG dos treinadores (2 quadros lado a lado) desenhado num canvas nítido
-const canvasTreinador = new Map();
-const pegarCanvasTreinador = (url) => {
-    if (!canvasTreinador.has(url)) {
-        const c = document.createElement("canvas");
-        c.width = 280;
-        c.height = 220;
-        const lista = [];
-        const img = new Image();
-        img.onload = () => {
-            const g = c.getContext("2d");
-            g.imageSmoothingEnabled = false;
-            g.drawImage(img, 0, 0, 280, 220);
-            lista.forEach((t) => { t.needsUpdate = true; });
-        };
-        img.src = url;
-        canvasTreinador.set(url, { c, lista });
-    }
-    return canvasTreinador.get(url);
-};
-
 const caixa = (w, h, d, material) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
     m.castShadow = true;
@@ -187,6 +166,232 @@ const MODELOS_PRODUTO = {
     isca,
 };
 
+// ---------------- Personagens 3D ----------------
+// Pokémon em voxels: cada pixel do sprite vira um cubinho. O meio fica mais grosso
+// que as bordas, para o Pokémon ganhar volume ("fofinho") visto de qualquer lado.
+const voxels = new Map();
+const gerarVoxels = (img) => {
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    const W = c.width;
+    const H = c.height;
+    const px = g.getImageData(0, 0, W, H).data;
+    const opaco = (x, y) => x >= 0 && y >= 0 && x < W && y < H && px[(y * W + x) * 4 + 3] > 127;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (!opaco(x, y)) continue;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    if (x1 < 0) return null;
+    // Distância de cada pixel até a borda do desenho (busca em largura)
+    const dist = new Int16Array(W * H).fill(-1);
+    const fila = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        if (opaco(x, y) && (!opaco(x + 1, y) || !opaco(x - 1, y) || !opaco(x, y + 1) || !opaco(x, y - 1))) {
+            dist[y * W + x] = 1;
+            fila.push(x, y);
+        }
+    }
+    for (let i = 0; i < fila.length; i += 2) {
+        const x = fila[i];
+        const y = fila[i + 1];
+        const d = dist[y * W + x];
+        for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+            if (opaco(nx, ny) && dist[ny * W + nx] === -1) {
+                dist[ny * W + nx] = d + 1;
+                fila.push(nx, ny);
+            }
+        }
+    }
+    // Cada pixel vira um bloco com a cor "de dentro" do corpo. O contorno do sprite
+    // (a borda escura) vira só uma placa fina na frente e atrás, para o topo e as
+    // laterais ficarem da cor do Pokémon e não listrados de preto.
+    const cx = (x0 + x1 + 1) / 2;
+    const blocos = [];
+    const corDe = (x, y) => {
+        const k = (y * W + x) * 4;
+        return [px[k], px[k + 1], px[k + 2]];
+    };
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        if (!opaco(x, y)) continue;
+        const d = dist[y * W + x];
+        const r = Math.min(d, 6) / 6;
+        const grossura = 3 + 7 * Math.sqrt(1 - (1 - r) * (1 - r));
+        let corpo = corDe(x, y);
+        if (d === 1) {
+            const dentro = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]].find(([nx, ny]) => opaco(nx, ny) && dist[ny * W + nx] > 1);
+            if (dentro) {
+                corpo = corDe(...dentro);
+                const borda = corDe(x, y);
+                blocos.push([x, y, 1.05, grossura / 2 - 0.45, borda], [x, y, 1.05, -grossura / 2 + 0.45, borda]);
+            }
+        }
+        blocos.push([x, y, grossura, 0, corpo]);
+    }
+    const matriz = new Float32Array(blocos.length * 16);
+    const cores = new Float32Array(blocos.length * 3);
+    const m4 = new THREE.Matrix4();
+    const cor = new THREE.Color();
+    blocos.forEach(([x, y, prof, z, [rr, gg, bb]], i) => {
+        m4.makeScale(1, 1, prof).setPosition(x + 0.5 - cx, y1 - y + 0.5, z);
+        m4.toArray(matriz, i * 16);
+        cor.setRGB(rr / 255, gg / 255, bb / 255, THREE.SRGBColorSpace);
+        cores.set([cor.r, cor.g, cor.b], i * 3);
+    });
+    return {
+        n: blocos.length,
+        alt: y1 - y0 + 1,
+        matriz: new THREE.InstancedBufferAttribute(matriz, 16),
+        cores: new THREE.InstancedBufferAttribute(cores, 3),
+    };
+};
+const carregarVoxels = (url) => {
+    if (!voxels.has(url)) {
+        voxels.set(url, new Promise((ok) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                try {
+                    ok(gerarVoxels(img));
+                } catch (e) {
+                    ok(null);
+                }
+            };
+            img.onerror = () => ok(null);
+            img.src = url;
+        }));
+    }
+    return voxels.get(url);
+};
+const geoVoxel = new THREE.BoxGeometry(1, 1, 1);
+const matVoxel = new THREE.MeshStandardMaterial({ roughness: 0.6 });
+
+// Modelo do Pokémon (o grupo é preenchido quando o sprite termina de carregar).
+// Sem "altura", o tamanho acompanha o sprite: Pokémon grandes ficam maiores.
+const modeloPokemon = (url, altura = null) => {
+    const g = new THREE.Group();
+    carregarVoxels(url).then((v) => {
+        if (!v) {
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaUrl(url), alphaTest: 0.5 }));
+            s.center.set(0.5, 0.1);
+            s.scale.setScalar(altura || 0.6);
+            g.add(s);
+            return;
+        }
+        const mesh = new THREE.InstancedMesh(geoVoxel, matVoxel, v.n);
+        mesh.instanceMatrix = v.matriz;
+        mesh.instanceColor = v.cores;
+        mesh.castShadow = true;
+        const alturaFinal = altura || 0.2 + (v.alt / 96) * 0.75;
+        mesh.scale.setScalar(alturaFinal / v.alt);
+        mesh.computeBoundingSphere();
+        g.add(mesh);
+    });
+    return g;
+};
+
+// Treinador em blocos, com braços e pernas que balançam ao andar (frente = +Z)
+const texturasRosto = new Map();
+const texRosto = (pele, sombra) => {
+    if (!texturasRosto.has(pele)) {
+        texturasRosto.set(pele, texturaCanvas(16, 16, (g) => {
+            g.fillStyle = pele;
+            g.fillRect(0, 0, 16, 16);
+            g.fillStyle = "#1c1b22";
+            g.fillRect(3, 6, 2, 3);
+            g.fillRect(11, 6, 2, 3);
+            g.fillStyle = "#ffffff";
+            g.fillRect(3, 6, 1, 1);
+            g.fillRect(11, 6, 1, 1);
+            g.fillStyle = sombra;
+            g.fillRect(6, 11, 4, 1);
+            g.fillStyle = "rgba(240, 120, 120, 0.45)";
+            g.fillRect(2, 10, 2, 1);
+            g.fillRect(12, 10, 2, 1);
+        }, true));
+    }
+    return texturasRosto.get(pele);
+};
+let texRocket = null;
+const boneco = (a) => {
+    const g = new THREE.Group();
+    const pele = mat(a.pele, { rough: 0.7 });
+    const camisa = mat(a.camisa, { rough: 0.8 });
+    const calca = mat(a.calca, { rough: 0.85 });
+    const sapato = mat(a.sapato, { rough: 0.6 });
+    const cabelo = mat(a.cabelo, { rough: 0.9 });
+    const perna = (lado) => {
+        const p = new THREE.Group();
+        p.position.set(lado * 0.075, 0.34, 0);
+        p.add(em(caixa(0.11, 0.28, 0.12, a.saia ? pele : calca), 0, -0.14, 0));
+        p.add(em(caixa(0.12, 0.07, 0.16, sapato), 0, -0.305, 0.015));
+        g.add(p);
+        return p;
+    };
+    const braco = (lado) => {
+        const b = new THREE.Group();
+        b.position.set(lado * 0.195, 0.62, 0);
+        b.add(em(caixa(0.09, 0.12, 0.1, camisa), 0, -0.05, 0));
+        b.add(em(caixa(0.08, 0.17, 0.09, pele), 0, -0.19, 0));
+        g.add(b);
+        return b;
+    };
+    const pernas = [perna(-1), perna(1)];
+    const bracos = [braco(-1), braco(1)];
+    let frenteCamisa = camisa;
+    if (a.rocket) {
+        texRocket ||= texturaCanvas(32, 32, (c) => {
+            c.fillStyle = a.camisa;
+            c.fillRect(0, 0, 32, 32);
+            c.fillStyle = "#dc2a3c";
+            c.font = "bold 22px sans-serif";
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+            c.fillText("R", 16, 17);
+        });
+        frenteCamisa = new THREE.MeshStandardMaterial({ map: texRocket, roughness: 0.8 });
+    }
+    const tronco = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.18), [camisa, camisa, camisa, camisa, frenteCamisa, camisa]);
+    tronco.position.y = 0.49;
+    tronco.castShadow = true;
+    g.add(tronco);
+    if (a.saia) g.add(em(caixa(0.34, 0.13, 0.22, calca), 0, 0.33, 0));
+    if (a.mochila) {
+        g.add(em(caixa(0.24, 0.26, 0.1, mat(0x6b4a2f)), 0, 0.5, -0.14));
+        for (const lado of [-1, 1]) g.add(em(caixa(0.035, 0.28, 0.02, mat(0x6b4a2f)), lado * 0.08, 0.5, 0.095));
+    }
+    const rosto = new THREE.MeshStandardMaterial({ map: texRosto(a.pele, a.peleSombra), roughness: 0.7 });
+    const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.28, 0.28), [pele, pele, pele, pele, rosto, pele]);
+    cabeca.position.y = 0.79;
+    cabeca.castShadow = true;
+    g.add(cabeca);
+    if (a.estilo === "bone") {
+        const bone = mat(a.bone, { rough: 0.6 });
+        g.add(em(caixa(0.32, 0.1, 0.3, bone), 0, 0.96, 0));
+        g.add(em(caixa(0.3, 0.025, 0.14, bone), 0, 0.92, 0.2));
+        g.add(em(caixa(0.08, 0.06, 0.01, mat(a.detalhe)), 0, 0.97, 0.152));
+        g.add(em(caixa(0.32, 0.1, 0.04, cabelo), 0, 0.86, -0.145));
+    } else if (a.estilo === "longo") {
+        g.add(em(caixa(0.32, 0.08, 0.3, cabelo), 0, 0.96, 0));
+        g.add(em(caixa(0.32, 0.4, 0.06, cabelo), 0, 0.76, -0.15));
+        for (const lado of [-1, 1]) g.add(em(caixa(0.04, 0.3, 0.24, cabelo), lado * 0.165, 0.8, -0.02));
+        g.add(em(caixa(0.3, 0.05, 0.03, cabelo), 0, 0.91, 0.14));
+    } else {
+        g.add(em(caixa(0.32, 0.08, 0.3, cabelo), 0, 0.96, 0));
+        g.add(em(caixa(0.32, 0.16, 0.04, cabelo), 0, 0.87, -0.145));
+        for (const [x, z] of [[-0.09, 0.08], [0.02, -0.04], [0.1, 0.06], [-0.04, -0.1]]) {
+            const tufo = em(caixa(0.08, 0.07, 0.08, cabelo), x, 1.02, z);
+            tufo.rotation.z = x * 2;
+            g.add(tufo);
+        }
+        g.add(em(caixa(0.3, 0.05, 0.03, cabelo), 0, 0.91, 0.14));
+    }
+    return { g, pernas, bracos };
+};
+
 // ---------------- Móveis ----------------
 const MADEIRA = 0xc98b55;
 const MADEIRA_ESC = 0x7a4f2e;
@@ -291,14 +496,8 @@ const caixaRegistradora = (m) => {
     const cinza = mat(0x3c4a66);
     corpo.add(em(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.05), [cinza, cinza, cinza, cinza, tela, cinza]), 0, 0.3, -0.12));
     g.add(corpo);
-    // Chansey em pé atrás do balcão, atendendo
-    if (m.chansey) {
-        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaUrl(`${SPRITES}/113.png`), alphaTest: 0.5 }));
-        s.center.set(0.5, 0);
-        s.scale.set(0.95, 0.95, 1);
-        s.position.set(-0.05, 0.02, -0.5);
-        g.add(s);
-    }
+    // Chansey em pé atrás do balcão, atendendo (virada para os clientes)
+    if (m.chansey) g.add(em(modeloPokemon(`${SPRITES}/113.png`, 0.85), -0.05, 0, -0.52));
     return g;
 };
 
@@ -675,10 +874,9 @@ export const criarCena = ({ aoClicar }) => {
             }
         }
         if (novo.pikachu) {
-            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaUrl(`${SPRITES}/25.png`), alphaTest: 0.5 }));
-            s.center.set(0.5, 0);
-            s.scale.set(0.7, 0.7, 1);
+            const s = modeloPokemon(`${SPRITES}/25.png`, 0.55);
             s.position.set(novo.porta.x + 1.5, 0, novo.porta.y + 0.5);
+            s.rotation.y = 0.5;
             mobilia.add(s);
             mobilia.userData.mascote = s;
         }
@@ -703,7 +901,7 @@ export const criarCena = ({ aoClicar }) => {
         }
     };
 
-    // ---- Clientes: treinador (sprite com 2 quadros) + Pokémon que segue ----
+    // ---- Clientes: treinador em blocos + Pokémon em voxels que segue o dono ----
     const clientes = new Map();
     const emojis = new Map();
     const texEmoji = (e) => {
@@ -733,21 +931,13 @@ export const criarCena = ({ aoClicar }) => {
             vivos.add(c.id);
             let o = clientes.get(c.id);
             if (!o) {
-                const fonte = pegarCanvasTreinador(c.sprite);
-                const tex = new THREE.CanvasTexture(fonte.c);
-                tex.colorSpace = THREE.SRGBColorSpace;
-                tex.magFilter = tex.minFilter = THREE.NearestFilter;
-                tex.repeat.set(0.5, 1);
-                fonte.lista.push(tex);
-                const humano = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, alphaTest: 0.5 }));
-                humano.center.set(0.5, 0);
-                humano.scale.set(0.62, 0.97, 1);
+                const { g: corpo, pernas, bracos } = boneco(c.aparencia);
                 const grupo = new THREE.Group();
-                grupo.add(humano, novaSombra(1));
+                grupo.add(corpo, novaSombra(1));
                 grupo.userData.alvo = c.rocket ? { tipo: "rocket", id: c.id } : { tipo: "cliente", id: c.id };
                 const balao = new THREE.Sprite(new THREE.SpriteMaterial({ map: texEmoji("💛"), transparent: true, depthTest: false }));
                 balao.scale.set(0.3, 0.3, 1);
-                balao.position.y = 1.15;
+                balao.position.y = 1.28;
                 balao.visible = false;
                 grupo.add(balao);
                 if (c.rocket) {
@@ -756,15 +946,13 @@ export const criarCena = ({ aoClicar }) => {
                     anel.position.y = 0.015;
                     grupo.add(anel);
                 }
-                const pk = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaUrl(c.pokemon), alphaTest: 0.5 }));
-                pk.center.set(0.5, 0);
-                pk.scale.set(0.6, 0.6, 1);
+                const pk = modeloPokemon(c.pokemon);
                 const pkGrupo = new THREE.Group();
                 pkGrupo.add(pk, novaSombra(0.75));
-                pkGrupo.position.set(c.x + 0.5, 0, c.y + 0.9);
+                pkGrupo.position.set(c.x + 0.5, 0, c.y + 1.1);
                 grupo.position.set(c.x + 0.5, 0, c.y + 0.5);
                 pessoas.add(grupo, pkGrupo);
-                o = { grupo, humano, tex, balao, pkGrupo, pk, alvo: new THREE.Vector3(c.x + 0.5, 0, c.y + 0.5) };
+                o = { grupo, corpo, pernas, bracos, balao, pkGrupo, pk, fase: Math.random() * 6, alvo: new THREE.Vector3(c.x + 0.5, 0, c.y + 0.5) };
                 clientes.set(c.id, o);
             }
             o.alvo.set(c.x + 0.5, 0, c.y + 0.5);
@@ -777,7 +965,6 @@ export const criarCena = ({ aoClicar }) => {
         for (const [id, o] of clientes) {
             if (vivos.has(id)) continue;
             pessoas.remove(o.grupo, o.pkGrupo);
-            o.tex.dispose();
             clientes.delete(id);
         }
     };
@@ -797,7 +984,14 @@ export const criarCena = ({ aoClicar }) => {
 
     // ---- Animação ----
     const relogio = new THREE.Clock();
-    let passo = 0;
+    // Gira suavemente para o lado em que está andando
+    const virar = (obj, dx, dz, forca) => {
+        if (Math.hypot(dx, dz) < 0.0015) return;
+        const alvo = Math.atan2(dx, dz);
+        let dif = alvo - obj.rotation.y;
+        dif = Math.atan2(Math.sin(dif), Math.cos(dif));
+        obj.rotation.y += dif * forca;
+    };
     const animar = () => {
         if (!rodando) return;
         if (!container?.isConnected) {
@@ -807,22 +1001,32 @@ export const criarCena = ({ aoClicar }) => {
         requestAnimationFrame(animar);
         const dt = Math.min(relogio.getDelta(), 0.1);
         const tempo = relogio.elapsedTime;
-        passo += dt;
-        const trocaQuadro = passo > 0.18;
-        if (trocaQuadro) passo = 0;
         for (const o of clientes.values()) {
-            o.grupo.position.lerp(o.alvo, Math.min(1, dt * 10));
-            if (trocaQuadro) o.tex.offset.x = o.andando && o.tex.offset.x === 0 ? 0.5 : 0;
+            const g = o.grupo.position;
+            const ax = g.x;
+            const az = g.z;
+            g.lerp(o.alvo, Math.min(1, dt * 10));
+            virar(o.corpo, g.x - ax, g.z - az, 0.25);
+            // Braços e pernas balançando ao andar
+            const balanco = o.andando ? Math.sin(tempo * 11 + o.fase) * 0.6 : 0;
+            o.pernas[0].rotation.x = balanco;
+            o.pernas[1].rotation.x = -balanco;
+            o.bracos[0].rotation.x = -balanco * 0.8;
+            o.bracos[1].rotation.x = balanco * 0.8;
+            o.corpo.position.y = o.andando ? Math.abs(Math.cos(tempo * 11 + o.fase)) * 0.025 : 0;
             // Pokémon na "coleira": chega perto se o dono se afastar
             const p = o.pkGrupo.position;
-            const dx = o.grupo.position.x - p.x;
-            const dz = o.grupo.position.z - p.z;
+            const px = p.x;
+            const pz = p.z;
+            const dx = g.x - p.x;
+            const dz = g.z - p.z;
             const d = Math.hypot(dx, dz);
             if (d > 0.62) {
-                p.x = o.grupo.position.x - (dx / d) * 0.62;
-                p.z = o.grupo.position.z - (dz / d) * 0.62;
+                p.x = g.x - (dx / d) * 0.62;
+                p.z = g.z - (dz / d) * 0.62;
             }
-            o.pk.position.y = o.andando ? Math.abs(Math.sin(tempo * 12)) * 0.05 : 0;
+            virar(o.pk, p.x - px, p.z - pz, 0.2);
+            o.pk.position.y = o.andando ? Math.abs(Math.sin(tempo * 12 + o.fase)) * 0.06 : 0;
         }
         for (const m of mobilia.children) {
             if (m.userData.girar) m.userData.girar.rotation.y = Math.sin(tempo * 0.8) * 0.6;

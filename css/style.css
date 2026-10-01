@@ -2409,3 +2409,6 @@ body.modo-tycoon main { max-width: 1440px; }
 .ty-mapa3d.pronto .ty-carregando { display: none; }
 .ty-flutuante3d { position: absolute; z-index: 4; transform: translate(-50%, -100%); }
 @media (max-width: 600px) { .ty-mapa3d { height: 340px; } }
+/* As 3 fileiras da estante 2D têm altura fixa: nada sai para fora (ex.: pacotes de cartas) */
+.ty-estante { grid-template-rows: repeat(3, minmax(0, 1fr)); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ty-estante img { min-height: 0; min-width: 0; max-height: 100%; }

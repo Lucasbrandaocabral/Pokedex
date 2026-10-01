@@ -94,9 +94,8 @@ const montarGrade = (estilo, saia, mochila, rocket) => {
 const cache = new Map();
 
 // Devolve a URL (data:) do SVG com os 2 quadros do treinador
-export const spriteTreinador = (semente, { rocket = false } = {}) => {
-    const chave = rocket ? "rocket" : semente;
-    if (cache.has(chave)) return cache.get(chave);
+// Sorteia a aparência do treinador (a mesma no 2D e no 3D)
+export const aparenciaTreinador = (semente, { rocket = false } = {}) => {
     const r = aleatorio(semente + 7);
     const menina = r([0, 1]) === 1;
     const estilo = rocket ? "bone" : menina ? r(["longo", "longo", "bone"]) : r(["curto", "bone", "curto"]);
@@ -107,9 +106,17 @@ export const spriteTreinador = (semente, { rocket = false } = {}) => {
     const [camisa, camisaSombra] = rocket ? ["#2a2a33", "#16161c"] : r(CAMISAS);
     const calca = rocket ? "#2a2a33" : r(CALCAS);
     const [bone, detalhe] = rocket ? ["#2a2a33", "#dc2a3c"] : r(BONES);
+    const sapato = rocket ? "#dc2a3c" : "#3a2a24";
+    return { rocket, menina, estilo, saia, mochila, pele, peleSombra, cabelo, cabeloSombra, camisa, camisaSombra, calca, bone, detalhe, sapato };
+};
+
+export const spriteTreinador = (semente, { rocket = false } = {}) => {
+    const chave = rocket ? "rocket" : semente;
+    if (cache.has(chave)) return cache.get(chave);
+    const { estilo, saia, mochila, pele, peleSombra, cabelo, cabeloSombra, camisa, camisaSombra, calca, bone, detalhe, sapato } = aparenciaTreinador(semente, { rocket });
     const cores = {
         K: "#1c1b22", S: pele, s: peleSombra, E: "#1c1b22", H: cabelo, h: cabeloSombra, C: bone, c: bone, W: detalhe,
-        T: camisa, t: camisaSombra, P: calca, L: saia ? pele : calca, B: rocket ? "#dc2a3c" : "#3a2a24", a: "#6b4a2f", R: "#dc2a3c",
+        T: camisa, t: camisaSombra, P: calca, L: saia ? pele : calca, B: sapato, a: "#6b4a2f", R: "#dc2a3c",
     };
     const quadros = montarGrade(estilo, saia, mochila, rocket);
     const partes = [];

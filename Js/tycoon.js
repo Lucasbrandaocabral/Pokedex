@@ -3,7 +3,7 @@
 // (as regras e a simulação ficam em tycoon-dados.js)
 // ====================================================
 import { estado, salvar, quantidade } from "./state.js";
-import { spriteTreinador } from "./treinadores.js";
+import { spriteTreinador, aparenciaTreinador } from "./treinadores.js";
 import { IMAGEM_PRODUTO, ARTE_MOVEL, ITENS_NA_ESTANTE } from "./moveis-arte.js";
 import { imagemPixel, imagemSprite, CARTAS, CARTA_POR_ID, RARIDADES } from "./cards.js";
 import { $, $$, aviso, abrirModal, fecharModal, confirmar, sons, htmlCarta, numero } from "./ui.js";
@@ -388,7 +388,7 @@ const desenharMundo = (forcar = false) => {
                 y: c.y,
                 rocket: !!c.rocket,
                 andando: c.rota.length > 0,
-                sprite: spriteTreinador(c.sprite ?? c.id, { rocket: c.rocket }),
+                aparencia: aparenciaTreinador(c.sprite ?? c.id, { rocket: c.rocket }),
                 pokemon: imagemSprite(c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[(c.sprite ?? c.id) % CLIENTES_SPRITES.length]),
                 balao: c.estado === "fila" ? "🛍️" : c.humor ? HUMOR[c.humor] : "",
             })));
