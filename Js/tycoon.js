@@ -35,6 +35,7 @@ let selecionado = null; // "x,y" do móvel selecionado
 let editando = null; // "x,y" do móvel sendo editado no modo Construir
 let movendo = false; // escolhendo o lugar novo do móvel em edição
 let folhaAberta = false; // no celular, o painel é uma gaveta que sobe de baixo
+const celular = () => window.matchMedia("(max-width: 760px)").matches;
 let eventoAtual = null; // { tipo, ate }
 let proximoEvento = 0;
 let lucroMinuto = { inicio: Date.now(), valor: 0 };
@@ -231,7 +232,44 @@ export const telaTycoon = (elemento, arg) => {
     else telaLoja();
     atualizarHud();
 };
-const redesenhar = () => telaTycoon(app, aba);
+// Na loja em 3D, redesenhar só troca o painel e atualiza a cena (sem recriar o mapa)
+const redesenhar = () => {
+    if (aba === "loja" && vista3d && cena3d && $("#ty-mapa3d", app)) return atualizarLoja();
+    telaTycoon(app, aba);
+};
+const atualizarLoja = () => {
+    const lado = $(".ty-lado", app);
+    if (lado) lado.outerHTML = htmlLado();
+    $(".ty-dica-acao", app)?.remove();
+    $(".ty-grade", app)?.insertAdjacentHTML("beforeend", htmlDicaAcao());
+    const acoes = $(".ty-acoes", app);
+    if (acoes) acoes.outerHTML = htmlAcoes();
+    const dica = $(".ty-dica3d", app);
+    if (dica) dica.textContent = textoDica3d();
+    cena3d.montarLoja(dadosLoja3d());
+    desenharMundo(true);
+    atualizarHud();
+};
+const textoDica3d = () => (modoConstruir ? "Toque num móvel e depois num quadrado verde para mudar de lugar (ou arraste)" : "Arraste para girar e inclinar • rodinha para aproximar");
+const htmlDicaAcao = () => (modoConstruir && (paleta || movendo) ? `<div class="ty-dica-acao">
+                <span>Toque num quadrado <b>verde</b> para ${movendo ? `levar: ${MOVEIS[movelEm(t(), ...posEditando())?.tipo]?.nome || "móvel"}` : `construir: ${MOVEIS[paleta].nome}`}</span>
+                <button data-tycoon="cancelar-acao">${movendo ? "Pronto" : "Cancelar"}</button>
+            </div>` : "");
+// Botões flutuantes que abrem o painel
+const htmlAcoes = () => `<div class="ty-acoes">
+                <button class="${folhaAberta && !modoConstruir ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="jogar">🛒 Gerenciar</button>
+                <button class="${folhaAberta && modoConstruir ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="construir">🔨 Construir</button>
+                <button data-tycoon="vista" title="Trocar a vista do mapa">${vista3d ? "▦ 2D" : "🧊 3D"}</button>
+            </div>`;
+const htmlLado = () => `<aside class="ty-lado ${folhaAberta ? "aberta" : ""}">
+                <button class="ty-folha-alca" data-tycoon="folha" aria-label="${folhaAberta ? "Fechar" : "Abrir"} o painel"><i></i></button>
+                <button class="ty-fechar-painel" data-tycoon="folha" title="Fechar o painel">✕</button>
+                <div class="ty-modos">
+                    <button class="${modoConstruir ? "" : "ativo"}" data-tycoon="modo" data-modo="jogar">🛒 Gerenciar</button>
+                    <button class="${modoConstruir ? "ativo" : ""}" data-tycoon="modo" data-modo="construir">🔨 Construir</button>
+                </div>
+                <div id="ty-painel">${modoConstruir ? htmlPaleta() : htmlGerenciar()}</div>
+            </aside>`;
 
 // ---------- Loja (o mapa) ----------
 // Imagens pequenas dos produtos e móveis (painéis e paleta)
@@ -312,8 +350,7 @@ const telaLoja = () => {
         <div class="ty-evento" id="ty-evento" hidden></div>
         <div class="ty-grade">
             ${vista3d ? `<div class="ty-mapa3d" id="ty-mapa3d" style="--w:${w};--h:${h}">
-                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">▦ Ver em 2D</button>
-                <span class="ty-dica3d">${modoConstruir ? "Arraste um móvel para mudar de lugar • arraste o chão para girar" : "Arraste para girar e inclinar • rodinha para aproximar"}</span>
+                <span class="ty-dica3d">${textoDica3d()}</span>
                 <div class="ty-camera">
                     <button data-tycoon="cam" data-passo="-0.7" title="Girar para a esquerda">⟲</button>
                     <button data-tycoon="cam-centro" title="Voltar a câmera">⌂</button>
@@ -321,7 +358,6 @@ const telaLoja = () => {
                 </div>
                 <span class="ty-carregando">Carregando a loja em 3D...</span>
             </div>` : `<div class="ty-mapa-caixa" style="--w:${w};--h:${h}">
-                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">🧊 Ver em 3D</button>
                 <div class="ty-mapa ${modoConstruir ? "construindo" : ""}" id="ty-mapa">
                     <div class="ty-piso"></div>
                     <div class="ty-rejunte"></div>
@@ -341,18 +377,9 @@ const telaLoja = () => {
                     <div class="ty-clientes" id="ty-clientes"></div>
                 </div>
             </div>`}
-            ${modoConstruir && (paleta || movendo) ? `<div class="ty-dica-acao">
-                <span>Toque num quadrado <b>verde</b> para ${movendo ? "levar o móvel" : `construir: ${MOVEIS[paleta].nome}`}</span>
-                <button data-tycoon="cancelar-acao">Cancelar</button>
-            </div>` : ""}
-            <aside class="ty-lado ${folhaAberta ? "aberta" : ""}">
-                <button class="ty-folha-alca" data-tycoon="folha" aria-label="${folhaAberta ? "Fechar" : "Abrir"} o painel"><i></i></button>
-                <div class="ty-modos">
-                    <button class="${modoConstruir ? "" : "ativo"}" data-tycoon="modo" data-modo="jogar">🛒 Gerenciar</button>
-                    <button class="${modoConstruir ? "ativo" : ""}" data-tycoon="modo" data-modo="construir">🔨 Construir</button>
-                </div>
-                <div id="ty-painel">${modoConstruir ? htmlPaleta() : htmlGerenciar()}</div>
-            </aside>
+            ${htmlAcoes()}
+            ${htmlLado()}
+            ${htmlDicaAcao()}
         </div>
     </section>`;
     if (vista3d) iniciar3d();
@@ -411,7 +438,7 @@ const iniciar3d = async () => {
                 if (!moverMovel(t(), x, y, nx, ny)) return;
                 sons.clique();
                 editando = `${nx},${ny}`;
-                movendo = false;
+                movendo = true;
                 salvarTycoon();
                 redesenhar();
             },
@@ -627,7 +654,7 @@ const htmlEditor = () => {
         </div>
         <div class="ty-editor-acoes">
             <button class="btn pequeno" data-tycoon="girar">↻ Girar</button>
-            <button class="btn pequeno ${movendo ? "dourado" : ""}" data-tycoon="mover">${movendo ? "Escolha o lugar…" : "✥ Mover"}</button>
+            <button class="btn pequeno ${movendo ? "dourado" : ""}" data-tycoon="mover">${movendo ? "✥ Movendo: toque no verde" : "✥ Mover"}</button>
             <button class="btn pequeno secundario" data-tycoon="vender-movel">Vender (+₽ ${fmt(valorMovel(m) / 2)})</button>
         </div>
         ${movendo ? `<p class="sutil pequeno">Clique num espaço verde do mapa para levar o móvel. Clique em "Mover" de novo para cancelar.</p>` : ""}
@@ -841,7 +868,6 @@ const ACOES = {
             }
             sons.clique();
             editando = `${x},${y}`;
-            movendo = false;
             salvarTycoon();
             return redesenhar();
         }
@@ -860,9 +886,11 @@ const ACOES = {
         if (!m) return;
         if (modoConstruir) {
             // No modo Construir, clicar num móvel abre o editor dele
+            // ...e já deixa pronto para mover: é só tocar num quadrado verde
             editando = editando === `${m.x},${m.y}` ? null : `${m.x},${m.y}`;
-            folhaAberta = !!editando;
-            movendo = false;
+            movendo = !!editando;
+            // No celular a gaveta desce para o mapa ficar livre; no PC o painel fica aberto ao lado
+            folhaAberta = !!editando && !celular();
             paleta = null;
             sons.clique();
             redesenhar();
@@ -877,11 +905,27 @@ const ACOES = {
     folha: () => {
         folhaAberta = !folhaAberta;
         $(".ty-lado", app)?.classList.toggle("aberta", folhaAberta);
+        const acoes = $(".ty-acoes", app);
+        if (acoes) acoes.outerHTML = htmlAcoes();
     },
     "cancelar-acao": () => {
         paleta = null;
         movendo = false;
-        folhaAberta = true;
+        editando = null;
+        redesenhar();
+    },
+    "abrir-painel": (el) => {
+        const construir = el.dataset.modo === "construir";
+        if (folhaAberta && construir === modoConstruir) folhaAberta = false;
+        else {
+            folhaAberta = true;
+            if (construir !== modoConstruir) {
+                modoConstruir = construir;
+                paleta = null;
+                editando = null;
+                movendo = false;
+            }
+        }
         redesenhar();
     },
     cam: (el) => cena3d?.girarCamera(Number(el.dataset.passo)),
@@ -900,7 +944,6 @@ const ACOES = {
     mover: () => {
         if (!editando) return;
         movendo = !movendo;
-        folhaAberta = !movendo;
         sons.clique();
         redesenhar();
     },

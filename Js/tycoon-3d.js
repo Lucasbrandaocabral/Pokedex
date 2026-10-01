@@ -1081,6 +1081,13 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         posicionarCamera();
     };
     const observador = new ResizeObserver(ajustarTamanho);
+    // Se o navegador derrubar o contexto 3D, monta a loja de novo quando ele voltar
+    canvas.addEventListener("webglcontextlost", (ev) => ev.preventDefault());
+    canvas.addEventListener("webglcontextrestored", () => {
+        const d = dados;
+        dados = null;
+        if (d) montarLoja(d);
+    });
 
     // ---- Mouse/toque: arrastar gira a câmera (ou move o móvel no modo Construir) ----
     const raio = new THREE.Raycaster();
@@ -1476,11 +1483,17 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
 };
 
 // Se o navegador não tiver WebGL, o jogo usa a vista 2D
+// (testa uma vez só e libera o contexto de teste: cada contexto WebGL aberto conta no limite do navegador)
+let suporteWebGL = null;
 export const temWebGL = () => {
+    if (suporteWebGL !== null) return suporteWebGL;
     try {
         const c = document.createElement("canvas");
-        return !!(c.getContext("webgl2") || c.getContext("webgl"));
+        const gl = c.getContext("webgl2") || c.getContext("webgl");
+        suporteWebGL = !!gl;
+        gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch (e) {
-        return false;
+        suporteWebGL = false;
     }
+    return suporteWebGL;
 };

@@ -2577,3 +2577,61 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
 .ty-qualidade.comprada { background: #e3f6ea; }
 .ty-ico-melhoria { font-size: 1.5rem; text-align: center; }
 @media (max-width: 600px) { .ty-qualidades { grid-template-columns: 1fr; } }
+
+/* ====================================================
+   Loja do Tycoon em tela cheia (PC e celular)
+   ==================================================== */
+.ty-acoes { position: absolute; z-index: 7; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.ty-acoes button {
+    padding: 8px 14px; border: 2px solid var(--tinta); border-radius: 99px; background: var(--papel2);
+    font: inherit; font-weight: 700; cursor: pointer; box-shadow: 2px 3px 0 var(--tinta);
+}
+.ty-acoes button:hover { background: #fff3b0; }
+.ty-acoes button.ativo { background: var(--amarelo); }
+.ty-fechar-painel { display: none; }
+.ty-mapa3d .ty-vista, .ty-mapa-caixa .ty-vista { display: none; }
+
+@media (min-width: 761px) {
+    body.modo-tycoon:has(.ty-jogo) .topo { display: none; }
+    body.modo-tycoon:has(.ty-jogo) { padding-bottom: 0; overflow: hidden; }
+    body.modo-tycoon:has(.ty-jogo) main { max-width: none; padding: 0; margin: 0; }
+    .ty-jogo {
+        position: fixed; z-index: 5; left: 0; right: 0; top: 0; bottom: calc(66px + env(safe-area-inset-bottom));
+        display: flex; flex-direction: column; background: var(--papel);
+    }
+    .ty-jogo .clicker-cabeca { margin: 0; padding: 8px 14px; background: var(--vermelho); border-bottom: var(--linha); }
+    .ty-jogo .clicker-cabeca .etiqueta { background: var(--tinta); }
+    .ty-placar { position: absolute; z-index: 6; top: 56px; right: 14px; left: auto; display: flex; gap: 8px; margin: 0; transition: none; }
+    .ty-placar > div { padding: 4px 10px; box-shadow: 2px 2px 0 var(--tinta); }
+    .ty-placar b { font-size: 1.3rem; }
+    .ty-evento { position: absolute; z-index: 6; top: 110px; left: 50%; transform: translateX(-50%); margin: 0; }
+    .ty-grade { flex: 1; display: block; position: relative; min-height: 0; }
+    .ty-grade > .ty-mapa3d, .ty-grade > .ty-mapa-caixa {
+        position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; box-shadow: none;
+    }
+    .ty-grade > .ty-mapa-caixa { overflow: auto; align-items: center; }
+    .ty-acoes { top: 12px; left: 14px; }
+    .ty-dica-acao { top: 60px; }
+    .ty-mapa3d .ty-camera { left: 14px; right: auto; bottom: 14px; }
+    .ty-mapa3d .ty-dica3d { left: 50%; transform: translateX(-50%); bottom: 14px; }
+    /* Painel: gaveta na direita, aberta pelos botões */
+    .ty-lado {
+        position: absolute; z-index: 8; top: 10px; right: 10px; bottom: 10px; width: min(400px, 46vw);
+        display: flex; flex-direction: column; gap: 10px; padding: 12px; overflow: hidden;
+        background: var(--papel); border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra);
+        transform: translateX(calc(100% + 24px)); transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .ty-lado.aberta { transform: translateX(0); }
+    .ty-jogo:has(.ty-lado.aberta) .ty-placar { right: auto; left: 380px; }
+    .ty-fechar-painel {
+        display: grid; place-items: center; position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px;
+        border: 2px solid var(--tinta); border-radius: 50%; background: var(--papel2); font-weight: 800; cursor: pointer;
+    }
+    .ty-lado .ty-modos { margin-right: 42px; flex-shrink: 0; }
+    #ty-painel { overflow-y: auto; min-height: 0; padding-right: 4px; }
+}
+@media (max-width: 760px) {
+    /* No celular o painel já é a gaveta de baixo: fica só o botão de trocar a vista */
+    .ty-acoes { top: auto; bottom: 96px; left: 10px; }
+    .ty-acoes button[data-tycoon="abrir-painel"] { display: none; }
+}
