@@ -34,6 +34,7 @@ let paleta = null; // tipo de móvel escolhido para construir
 let selecionado = null; // "x,y" do móvel selecionado
 let editando = null; // "x,y" do móvel sendo editado no modo Construir
 let movendo = false; // escolhendo o lugar novo do móvel em edição
+let modoEditar = false; // modo só para mexer nos objetos (pegar, soltar, girar, pintar)
 let folhaAberta = false; // no celular, o painel é uma gaveta que sobe de baixo
 const celular = () => window.matchMedia("(max-width: 760px)").matches;
 let eventoAtual = null; // { tipo, ate }
@@ -238,8 +239,8 @@ const redesenhar = () => {
     telaTycoon(app, aba);
 };
 const atualizarLoja = () => {
-    const lado = $(".ty-lado", app);
-    if (lado) lado.outerHTML = htmlLado();
+    const inferior = $("#ty-inferior", app);
+    if (inferior) inferior.outerHTML = htmlInferior();
     $(".ty-dica-acao", app)?.remove();
     $(".ty-grade", app)?.insertAdjacentHTML("beforeend", htmlDicaAcao());
     const acoes = $(".ty-acoes", app);
@@ -250,25 +251,28 @@ const atualizarLoja = () => {
     desenharMundo(true);
     atualizarHud();
 };
-const textoDica3d = () => (modoConstruir ? "Toque num móvel e depois num quadrado verde para mudar de lugar (ou arraste)" : "Arraste para girar e inclinar • rodinha para aproximar");
-const htmlDicaAcao = () => (modoConstruir && (paleta || movendo) ? `<div class="ty-dica-acao">
+const textoDica3d = () => (modoConstruir ? "Arraste o chão para girar a câmera" : "Arraste para girar e inclinar • rodinha para aproximar");
+const htmlDicaAcao = () => (modoConstruir && paleta ? `<div class="ty-dica-acao">
                 <span>Toque num quadrado <b>verde</b> para ${movendo ? `levar: ${MOVEIS[movelEm(t(), ...posEditando())?.tipo]?.nome || "móvel"}` : `construir: ${MOVEIS[paleta].nome}`}</span>
                 <button data-tycoon="cancelar-acao">${movendo ? "Pronto" : "Cancelar"}</button>
             </div>` : "");
 // Botões flutuantes que abrem o painel
 const htmlAcoes = () => `<div class="ty-acoes">
                 <button class="${folhaAberta && !modoConstruir ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="jogar">🛒 Gerenciar</button>
-                <button class="${folhaAberta && modoConstruir ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="construir">🔨 Construir</button>
+                <button class="${modoConstruir && !modoEditar ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="construir">🔨 Construir</button>
+                <button class="${modoEditar ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="editar">✥ Editar</button>
                 <button data-tycoon="vista" title="Trocar a vista do mapa">${vista3d ? "▦ 2D" : "🧊 3D"}</button>
             </div>`;
+const htmlInferior = () => `<div id="ty-inferior">${modoConstruir ? htmlBarra() : htmlLado()}</div>`;
 const htmlLado = () => `<aside class="ty-lado ${folhaAberta ? "aberta" : ""}">
                 <button class="ty-folha-alca" data-tycoon="folha" aria-label="${folhaAberta ? "Fechar" : "Abrir"} o painel"><i></i></button>
                 <button class="ty-fechar-painel" data-tycoon="folha" title="Fechar o painel">✕</button>
                 <div class="ty-modos">
                     <button class="${modoConstruir ? "" : "ativo"}" data-tycoon="modo" data-modo="jogar">🛒 Gerenciar</button>
-                    <button class="${modoConstruir ? "ativo" : ""}" data-tycoon="modo" data-modo="construir">🔨 Construir</button>
+                    <button class="${modoConstruir && !modoEditar ? "ativo" : ""}" data-tycoon="modo" data-modo="construir">🔨 Construir</button>
+                    <button class="${modoEditar ? "ativo" : ""}" data-tycoon="modo" data-modo="editar">✥ Editar</button>
                 </div>
-                <div id="ty-painel">${modoConstruir ? htmlPaleta() : htmlGerenciar()}</div>
+                <div id="ty-painel">${htmlGerenciar()}</div>
             </aside>`;
 
 // ---------- Loja (o mapa) ----------
@@ -378,7 +382,7 @@ const telaLoja = () => {
                 </div>
             </div>`}
             ${htmlAcoes()}
-            ${htmlLado()}
+            ${htmlInferior()}
             ${htmlDicaAcao()}
         </div>
     </section>`;
@@ -405,6 +409,8 @@ const dadosLoja3d = () => ({
     // Espaços onde dá para construir (só com um móvel escolhido na paleta)
     livres: modoConstruir && (paleta || movendo) ? livresParaConstruir() : [],
     construir: modoConstruir,
+    // Objeto "na mão" no modo Editar: ele segue o mouse por cima do chão
+    carregando: modoEditar && movendo && editando ? editando : null,
 });
 const livresParaConstruir = () => {
     const { w, h } = tamanho(t());
@@ -438,7 +444,8 @@ const iniciar3d = async () => {
                 if (!moverMovel(t(), x, y, nx, ny)) return;
                 sons.clique();
                 editando = `${nx},${ny}`;
-                movendo = true;
+                modoEditar = true;
+                movendo = false;
                 salvarTycoon();
                 redesenhar();
             },
@@ -642,45 +649,49 @@ const atualizarPainelSelecionado = () => {
     }
 };
 
-const htmlEditor = () => {
+// ---------- Barra de construir (embaixo do mapa) ----------
+// Sem móvel escolhido: o catálogo de móveis. Com móvel escolhido: as ferramentas dele.
+const htmlBarra = () => {
     const m = editando && movelEm(t(), ...posEditando());
-    if (!m) return "";
-    const info = MOVEIS[m.tipo];
-    return `
-    <div class="ty-bloco ty-editor">
-        <div class="ty-editor-topo">
-            <h3>${icoMovel(m.tipo)} Editar ${info.nome}</h3>
-            <button class="ty-fechar" data-tycoon="fechar-edicao" title="Fechar">✕</button>
+    if (m) {
+        const info = MOVEIS[m.tipo];
+        const prox = proximoNivel(m);
+        return `<div class="ty-barra ty-barra-edicao">
+            <div class="tb-titulo">${icoMovel(m.tipo)}<div><b>${info.nome} ${selo(m)}</b><small>${movendo ? "Toque num quadrado verde para soltar" : "Toque no objeto de novo para pegar e mover"}</small></div></div>
+            <div class="tb-grupo">
+                <button class="tb-btn" data-tycoon="girar" title="Girar">↻<small>Girar</small></button>
+                <button class="tb-btn ${movendo ? "ativo" : ""}" data-tycoon="mover" title="Mover">✥<small>Mover</small></button>
+            </div>
+            <div class="tb-cores">${Object.entries(ACABAMENTOS).map(([id, a]) => `
+                <button class="${(m.acabamento || "madeira") === id ? "ativo" : ""}" data-tycoon="pintar" data-acabamento="${id}" title="${a.nome}" style="--cor:${a.cor}"></button>`).join("")}
+            </div>
+            <div class="tb-grupo">
+                ${prox ? `<button class="tb-btn tb-melhorar" data-tycoon="melhorar-movel" ${t().dinheiro >= prox.custo ? "" : "disabled"} title="${prox.desc}">⬆<small>${prox.nome}<br>₽ ${fmt(prox.custo)}</small></button>` : ""}
+                <button class="tb-btn tb-vender" data-tycoon="vender-movel">₽<small>Vender<br>+${fmt(valorMovel(m) / 2)}</small></button>
+                <button class="tb-btn tb-pronto" data-tycoon="fechar-edicao">✓<small>Pronto</small></button>
+            </div>
+        </div>`;
+    }
+    if (modoEditar) {
+        return `<div class="ty-barra ty-barra-dica">
+            <span>✥ <b>Modo Editar</b> • toque num objeto para pegar, depois num quadrado verde para soltar. Também dá para arrastar.</span>
+            <button class="tb-sair" data-tycoon="sair-construir">✕ Sair</button>
+        </div>`;
+    }
+    return `<div class="ty-barra ty-barra-catalogo">
+        <div class="tb-topo">
+            <span>🔨 <b>Construir</b> • escolha um móvel e toque num quadrado verde • para mexer nos que já existem, use ✥ Editar</span>
+            <button class="tb-sair" data-tycoon="sair-construir">✕ Sair</button>
         </div>
-        <div class="ty-editor-acoes">
-            <button class="btn pequeno" data-tycoon="girar">↻ Girar</button>
-            <button class="btn pequeno ${movendo ? "dourado" : ""}" data-tycoon="mover">${movendo ? "✥ Movendo: toque no verde" : "✥ Mover"}</button>
-            <button class="btn pequeno secundario" data-tycoon="vender-movel">Vender (+₽ ${fmt(valorMovel(m) / 2)})</button>
-        </div>
-        ${movendo ? `<p class="sutil pequeno">Clique num espaço verde do mapa para levar o móvel. Clique em "Mover" de novo para cancelar.</p>` : ""}
-        <h4>Acabamento</h4>
-        <div class="ty-acabamentos">${Object.entries(ACABAMENTOS).map(([id, a]) => `
-            <button class="${(m.acabamento || "madeira") === id ? "ativo" : ""}" data-tycoon="pintar" data-acabamento="${id}" title="${a.nome}" style="--cor:${a.cor}"><i></i><small>${a.nome}</small></button>`).join("")}
-        </div>
-        <p class="sutil pequeno">A frente do móvel é o lado em que os clientes compram.</p>
+        <div class="tb-itens">${Object.entries(MOVEIS).map(([id, mv]) => {
+            const bloqueio = bloqueioConstruir(t(), id);
+            const trancado = (mv.cidade || 0) > t().cidade;
+            return `<button class="tb-item ${paleta === id ? "ativo" : ""} ${trancado ? "trancado" : ""}" data-tycoon="paleta" data-tipo="${id}" ${bloqueio ? "disabled" : ""} title="${bloqueio || mv.desc}">
+                ${icoMovel(id)}<b>${mv.nome}</b><small>${trancado ? "🔒 " + bloqueio.replace("Libera em ", "") : `₽ ${fmt(mv.custo)}`}</small>
+            </button>`;
+        }).join("")}</div>
     </div>`;
 };
-
-const htmlPaleta = () => `
-    ${htmlEditor()}
-    <div class="ty-bloco">
-        <h3>Construir</h3>
-        <p class="sutil pequeno">Escolha um móvel e clique num espaço livre (verde). Clique num móvel da loja para <b>editar</b>: girar, mover, pintar ou vender. Sempre deixe caminho até a porta 🚪.</p>
-        <div class="ty-paleta">${Object.entries(MOVEIS).map(([id, m]) => {
-            const bloqueio = bloqueioConstruir(t(), id);
-            const trancado = (m.cidade || 0) > t().cidade;
-            return `
-            <button class="${paleta === id ? "ativo" : ""} ${trancado ? "trancado" : ""}" data-tycoon="paleta" data-tipo="${id}" ${bloqueio ? "disabled" : ""}>
-                <span>${icoMovel(id)}</span><b>${m.nome}</b><small>${trancado ? "🔒" : `₽ ${fmt(m.custo)}`}</small><em>${bloqueio && bloqueio !== "Dinheiro insuficiente" ? bloqueio : m.desc}</em>
-            </button>`;
-        }).join("")}
-        </div>
-    </div>`;
 
 // ---------- Equipe ----------
 const telaEquipe = () => {
@@ -843,7 +854,8 @@ const ACOES = {
         redesenhar();
     },
     modo: (el) => {
-        modoConstruir = el.dataset.modo === "construir";
+        modoConstruir = el.dataset.modo !== "jogar";
+        modoEditar = el.dataset.modo === "editar";
         paleta = null;
         folhaAberta = true;
         editando = null;
@@ -852,6 +864,7 @@ const ACOES = {
     },
     paleta: (el) => {
         paleta = paleta === el.dataset.tipo ? null : el.dataset.tipo;
+        modoEditar = false;
         editando = null;
         movendo = false;
         // Escolheu o móvel: a gaveta desce para mostrar o mapa
@@ -868,6 +881,7 @@ const ACOES = {
             }
             sons.clique();
             editando = `${x},${y}`;
+            movendo = false;
             salvarTycoon();
             return redesenhar();
         }
@@ -885,10 +899,16 @@ const ACOES = {
         const m = movelDoBotao(el);
         if (!m) return;
         if (modoConstruir) {
-            // No modo Construir, clicar num móvel abre o editor dele
-            // ...e já deixa pronto para mover: é só tocar num quadrado verde
-            editando = editando === `${m.x},${m.y}` ? null : `${m.x},${m.y}`;
-            movendo = !!editando;
+            // Tocar num objeto: entra no modo Editar e "pega" o objeto (ele segue o mouse até tocar num verde).
+            // Tocar de novo no mesmo objeto pega/solta de novo.
+            const pos = `${m.x},${m.y}`;
+            modoEditar = true;
+            paleta = null;
+            if (editando === pos) movendo = !movendo;
+            else {
+                editando = pos;
+                movendo = true;
+            }
             // No celular a gaveta desce para o mapa ficar livre; no PC o painel fica aberto ao lado
             folhaAberta = !!editando && !celular();
             paleta = null;
@@ -914,17 +934,30 @@ const ACOES = {
         editando = null;
         redesenhar();
     },
+    "sair-construir": () => {
+        modoConstruir = false;
+        modoEditar = false;
+        paleta = null;
+        editando = null;
+        movendo = false;
+        folhaAberta = false;
+        redesenhar();
+    },
     "abrir-painel": (el) => {
-        const construir = el.dataset.modo === "construir";
-        if (folhaAberta && construir === modoConstruir) folhaAberta = false;
-        else {
-            folhaAberta = true;
-            if (construir !== modoConstruir) {
-                modoConstruir = construir;
-                paleta = null;
-                editando = null;
-                movendo = false;
-            }
+        const modo = el.dataset.modo;
+        paleta = null;
+        editando = null;
+        movendo = false;
+        if (modo === "jogar") {
+            folhaAberta = modoConstruir ? true : !folhaAberta;
+            modoConstruir = false;
+            modoEditar = false;
+        } else {
+            // Construir e Editar ligam/desligam a barra de baixo (o mapa fica livre)
+            const jaEsta = modoConstruir && (modo === "editar") === modoEditar;
+            modoConstruir = !jaEsta;
+            modoEditar = !jaEsta && modo === "editar";
+            folhaAberta = false;
         }
         redesenhar();
     },
@@ -968,7 +1001,8 @@ const ACOES = {
         redesenhar();
     },
     "melhorar-movel": () => {
-        const m = selecionado && movelEm(t(), ...selecionado.split(",").map(Number));
+        const pos = (modoConstruir && editando) || selecionado;
+        const m = pos && movelEm(t(), ...pos.split(",").map(Number));
         if (!m || !melhorarMovel(t(), m.x, m.y)) return sons.erro();
         sons.raro(4);
         aviso(`⬆ ${MOVEIS[m.tipo].nome} agora é <b>${MOVEIS[m.tipo].niveis[nivelMovel(m) - 2].nome}</b>!`, "sucesso");
