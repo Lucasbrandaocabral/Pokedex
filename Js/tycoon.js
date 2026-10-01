@@ -298,7 +298,12 @@ const telaLoja = () => {
         <div class="ty-grade">
             ${vista3d ? `<div class="ty-mapa3d" id="ty-mapa3d" style="--w:${w};--h:${h}">
                 <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">▦ Ver em 2D</button>
-                <span class="ty-dica3d">Arraste para girar • rodinha para aproximar</span>
+                <span class="ty-dica3d">${modoConstruir ? "Arraste um móvel para mudar de lugar • arraste o chão para girar" : "Arraste para girar e inclinar • rodinha para aproximar"}</span>
+                <div class="ty-camera">
+                    <button data-tycoon="cam" data-passo="-0.7" title="Girar para a esquerda">⟲</button>
+                    <button data-tycoon="cam-centro" title="Voltar a câmera">⌂</button>
+                    <button data-tycoon="cam" data-passo="0.7" title="Girar para a direita">⟳</button>
+                </div>
                 <span class="ty-carregando">Carregando a loja em 3D...</span>
             </div>` : `<div class="ty-mapa-caixa" style="--w:${w};--h:${h}">
                 <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">🧊 Ver em 3D</button>
@@ -351,6 +356,7 @@ const dadosLoja3d = () => ({
     })),
     // Espaços onde dá para construir (só com um móvel escolhido na paleta)
     livres: modoConstruir && (paleta || movendo) ? livresParaConstruir() : [],
+    construir: modoConstruir,
 });
 const livresParaConstruir = () => {
     const { w, h } = tamanho(t());
@@ -360,6 +366,9 @@ const livresParaConstruir = () => {
 };
 
 // Clique no 3D: chama as mesmas ações dos botões do 2D
+// Usado nos testes automáticos para achar uma casa na tela
+export const pontoNaTela3d = (x, y, altura) => cena3d?.pontoNaTela(x, y, altura);
+
 const clique3d = (alvo) => {
     const el = { dataset: { x: String(alvo.x), y: String(alvo.y), id: String(alvo.id) }, disabled: false, remove() {} };
     if (alvo.tipo === "chao") ACOES.chao(el);
@@ -373,7 +382,19 @@ const iniciar3d = async () => {
         if (!modulo3d.temWebGL()) throw new Error("sem WebGL");
         const el = $("#ty-mapa3d", app);
         if (!el) return;
-        cena3d ||= modulo3d.criarCena({ aoClicar: clique3d });
+        cena3d ||= modulo3d.criarCena({
+            aoClicar: clique3d,
+            // Arrastar um móvel no modo Construir e soltar numa casa livre
+            podeMover: (x, y, nx, ny) => podeMover(t(), x, y, nx, ny),
+            aoMover: (x, y, nx, ny) => {
+                if (!moverMovel(t(), x, y, nx, ny)) return;
+                sons.clique();
+                editando = `${nx},${ny}`;
+                movendo = false;
+                salvarTycoon();
+                redesenhar();
+            },
+        });
         cena3d.anexar(el);
         cena3d.limparClientes();
         cena3d.montarLoja(dadosLoja3d());
@@ -742,6 +763,8 @@ const ACOES = {
         if (m.tipo === "vitrine" && !m.carta) return escolherCarta(m);
         redesenhar();
     },
+    cam: (el) => cena3d?.girarCamera(Number(el.dataset.passo)),
+    "cam-centro": () => cena3d?.centralizarCamera(),
     "fechar-edicao": () => {
         editando = null;
         movendo = false;

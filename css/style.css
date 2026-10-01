@@ -2437,3 +2437,10 @@ body.modo-tycoon main { max-width: 1440px; }
 .ty-mapa.construindo .ty-movel.rot-2::after { left: 20%; right: 20%; top: -5px; height: 5px; }
 .ty-mapa.construindo .ty-movel.rot-3::after { top: 20%; bottom: 20%; left: -5px; width: 5px; }
 .ty-movel.pintado { background: var(--acab) !important; }
+/* Botões da câmera 3D */
+.ty-camera { position: absolute; right: 10px; bottom: 8px; z-index: 3; display: flex; gap: 6px; }
+.ty-camera button {
+    width: 38px; height: 38px; border: 2px solid var(--tinta); border-radius: 50%; background: var(--papel2);
+    font-size: 1.2rem; font-weight: 800; cursor: pointer; box-shadow: 2px 2px 0 var(--tinta);
+}
+.ty-camera button:hover { background: var(--amarelo); }
