@@ -2388,3 +2388,24 @@ body.modo-tycoon main { max-width: 1440px; }
 }
 .tres-d .rg-visor::after { top: -2px; bottom: -2px; left: 100%; width: var(--h); transform-origin: left; transform: rotateY(90deg); background: #2b3548; }
 .tres-d .construindo .ty-registradora { display: none; }
+
+/* ---------- Loja em 3D de verdade (WebGL) ---------- */
+.ty-mapa3d {
+    position: relative; overflow: hidden; height: clamp(360px, 62vh, 680px);
+    border: var(--linha); border-radius: var(--raio); box-shadow: var(--sombra);
+    background: radial-gradient(ellipse at 50% 25%, #a9d6ff, #4f86c6 75%);
+}
+.ty-canvas3d { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.ty-canvas3d:active { cursor: grabbing; }
+.ty-mapa3d .ty-vista { z-index: 3; }
+.ty-dica3d {
+    position: absolute; left: 10px; bottom: 8px; z-index: 3; padding: 3px 8px; border-radius: 99px;
+    background: rgba(28, 27, 34, 0.55); color: #fff; font-size: 0.72rem; pointer-events: none;
+}
+.ty-carregando {
+    position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; color: #fff;
+    font-family: "Jersey 20", monospace; font-size: 1.6rem; text-shadow: 2px 2px 0 var(--tinta); pointer-events: none;
+}
+.ty-mapa3d.pronto .ty-carregando { display: none; }
+.ty-flutuante3d { position: absolute; z-index: 4; transform: translate(-50%, -100%); }
+@media (max-width: 600px) { .ty-mapa3d { height: 340px; } }
