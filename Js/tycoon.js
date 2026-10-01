@@ -13,6 +13,9 @@ import {
     custoRepor, estoqueMax, produtoLiberado, contratar, custoEquipe, nivelEquipe, podeMudar, mudarCidade, taxaClientes, precoVenda,
     atracao, expulsarRocket, entrarRocket, atualizarTaxa, aplicarOffline, pacotesDisponiveis, resgatarPacote,
     ACABAMENTOS, podeMover, moverMovel, girarMovel, pintarMovel,
+    vende, ehCaixa, nivelMovel, proximoNivel, melhorarMovel, valorMovel, bloqueioConstruir, custoUnit, procura,
+    MELHORIAS_LOJA, temMelhoria, comprarMelhoria, QUALIDADE_MAX, qualidade, custoQualidade, melhorarQualidade,
+    METAS, metaPronta, metasProntas, resgatarMeta, tempoCaixa, pacienciaFila,
 } from "./tycoon-dados.js";
 
 const TICK = 100;
@@ -132,9 +135,10 @@ const sortearEvento = (agora) => {
     if (!proximoEvento) proximoEvento = agora + 90000 + Math.random() * 120000;
     if (agora < proximoEvento || eventoAtual) return;
     proximoEvento = agora + 150000 + Math.random() * 150000;
-    const tipo = ["torneio", "torneio", "carvalho", "rocket"][Math.floor(Math.random() * 4)];
+    const sorteio = temMelhoria(t(), "torneios") ? ["torneio", "torneio", "torneio", "carvalho", "rocket"] : ["torneio", "torneio", "carvalho", "rocket"];
+    const tipo = sorteio[Math.floor(Math.random() * sorteio.length)];
     if (tipo === "rocket" && !entrarRocket(t(), mundo)) return;
-    eventoAtual = { tipo, ate: agora + EVENTOS[tipo].dur };
+    eventoAtual = { tipo, ate: agora + EVENTOS[tipo].dur * (tipo === "torneio" && temMelhoria(t(), "torneios") ? 2 : 1) };
     sons.raro(tipo === "rocket" ? 2 : 4);
     aviso(`${tipo === "rocket" ? "🚨" : "🎉"} <b>${EVENTOS[tipo].nome}</b> ${EVENTOS[tipo].desc}`, tipo === "rocket" ? "erro" : "sucesso");
 };
@@ -150,6 +154,8 @@ const reagir = (ev) => {
         }
     } else if (ev.tipo === "sem-estoque") {
         flutuar(ev.cliente, "Acabou!", "ruim");
+    } else if (ev.tipo === "nao-tem") {
+        flutuar(ev.cliente, `Não tem ${PRODUTOS[ev.produto].nome}?`, "ruim");
     } else if (ev.tipo === "desistiu") {
         flutuar(ev.cliente, "Fila demorada!", "ruim");
     } else if (ev.tipo === "caro") {
@@ -183,6 +189,12 @@ export const atualizarHud = () => {
     if (d) d.textContent = fmt(t().dinheiro);
     const r = $("#hud-reputacao");
     if (r) r.textContent = t().reputacao.toFixed(1);
+    const bm = $("#badge-melhorias");
+    if (bm) {
+        const n = metasProntas(t());
+        bm.textContent = n;
+        bm.hidden = !n || aba === "melhorias";
+    }
     const b = $("#badge-cidades");
     if (b) {
         const n = pacotesDisponiveis(t(), hoje()) + (podeMudar(t()) ? 1 : 0);
@@ -210,10 +222,11 @@ export const atualizarHud = () => {
 // ---------------- Telas ----------------
 export const telaTycoon = (elemento, arg) => {
     app = elemento;
-    aba = ["equipe", "cidades"].includes(arg) ? arg : "loja";
+    aba = ["equipe", "cidades", "melhorias"].includes(arg) ? arg : "loja";
     sincronizarObjeto();
     $$("#nav-tycoon [data-tela-tycoon]").forEach((a) => a.classList.toggle("ativo", a.dataset.telaTycoon === aba));
     if (aba === "equipe") telaEquipe();
+    else if (aba === "melhorias") telaMelhorias();
     else if (aba === "cidades") telaCidades();
     else telaLoja();
     atualizarHud();
@@ -224,15 +237,16 @@ const redesenhar = () => telaTycoon(app, aba);
 // Imagens pequenas dos produtos e móveis (painéis e paleta)
 const icoProduto = (id) => `<img class="ty-ico" src="${IMAGEM_PRODUTO[id]}" alt="" draggable="false">`;
 const icoMovel = (tipo) => `<img class="ty-ico" src="${ARTE_MOVEL[tipo]}" alt="" draggable="false">`;
-const itensVisiveis = (m) => Math.ceil((m.estoque / estoqueMax(t())) * ITENS_NA_ESTANTE);
+const itensVisiveis = (m) => Math.ceil((m.estoque / estoqueMax(t(), m)) * ITENS_NA_ESTANTE);
+const selo = (m) => (nivelMovel(m) > 1 ? `<i class="ty-nivel n${nivelMovel(m)}">${"★".repeat(nivelMovel(m) - 1)}</i>` : "");
 
 const htmlMovel = (m) => {
     const info = MOVEIS[m.tipo];
     const sel = selecionado === `${m.x},${m.y}` ? " selecionado" : "";
     let dentro = `<img class="ty-arte" src="${ARTE_MOVEL[m.tipo]}" alt="" draggable="false">`;
-    if (m.tipo === "prateleira") {
-        // Estante de madeira com o produto nas tábuas; os itens somem conforme o estoque acaba
-        const pct = (m.estoque / estoqueMax(t())) * 100;
+    if (vende(m)) {
+        // Estante (ou geladeira) com o produto nas tábuas; os itens somem conforme o estoque acaba
+        const pct = (m.estoque / estoqueMax(t(), m)) * 100;
         const vis = itensVisiveis(m);
         const itens = Array.from({ length: ITENS_NA_ESTANTE }, (_, i) =>
             `<img src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="visibility:${i < vis ? "visible" : "hidden"}">`).join("");
@@ -242,19 +256,19 @@ const htmlMovel = (m) => {
             return `<img class="ty-item" src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="--k:${k};visibility:${i < vis ? "visible" : "hidden"}">`;
         }).join("")}${n === 0 ? `<b class="g-preco">₽ ${precoVenda(t(), m.produto)}</b>` : ""}</span>`).join("");
         const gondola = `<span class="ty-gondola"><i class="g-fundo"></i><i class="g-lado e"></i><i class="g-lado d"></i>${tabuas}<i class="g-topo"></i></span>`;
-        dentro = `<span class="ty-estante">${itens}<i class="ty-etiqueta">₽ ${precoVenda(t(), m.produto)}</i></span>${gondola}<i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
+        dentro = `<span class="ty-estante ${m.tipo === "geladeira" ? "fria" : ""}">${itens}<i class="ty-etiqueta">₽ ${precoVenda(t(), m.produto)}</i></span>${gondola}<i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
     } else if (m.tipo === "vitrine") {
         const c = m.carta && CARTA_POR_ID[m.carta];
         dentro = `<span class="ty-vidro">${c ? `<img src="${c.imagem}" alt="" draggable="false"><i class="ty-raridade">${RARIDADES[c.raridade].simbolo}</i>` : "<em>vazia</em>"}</span>`;
     } else if (m.tipo === "caixa") {
-        // Caixa registradora em 3D (corpo com teclado e gaveta + torre do visor)
+        // Caixa registradora (2D antigo) (corpo com teclado e gaveta + torre do visor)
         dentro += `<span class="ty-registradora"><i class="rg-corpo"></i><i class="rg-visor"></i></span>`;
         if (nivelEquipe(t(), "chansey")) dentro += `<img class="ty-funcionario" src="${imagemPixel(113)}" alt="Chansey" draggable="false">`;
     }
     const edit = editando === `${m.x},${m.y}` ? " editando" : "";
     const acab = m.acabamento ? `--acab:${ACABAMENTOS[m.acabamento].cor};` : "";
     return `<button class="ty-movel ty-${m.tipo}${sel}${edit} rot-${m.rot || 0}${m.acabamento ? " pintado" : ""}" data-tycoon="movel" data-x="${m.x}" data-y="${m.y}"
-        style="grid-column:${m.x + 1};grid-row:${m.y + 1};${acab}" title="${info.nome}">${dentro}</button>`;
+        style="grid-column:${m.x + 1};grid-row:${m.y + 1};${acab}" title="${info.nome}">${dentro}${selo(m)}</button>`;
 };
 
 // No modo Construir: dá para pôr o móvel escolhido (ou levar o que está sendo movido) aqui?
@@ -353,8 +367,9 @@ const dadosLoja3d = () => ({
     pikachu: nivelEquipe(t(), "pikachu") > 0,
     moveis: t().moveis.map((m) => ({
         ...m,
-        visiveis: m.tipo === "prateleira" ? itensVisiveis(m) : 0,
-        preco: m.tipo === "prateleira" ? precoVenda(t(), m.produto) : 0,
+        visiveis: vende(m) ? itensVisiveis(m) : 0,
+        preco: vende(m) ? precoVenda(t(), m.produto) : 0,
+        nivel: nivelMovel(m),
         carta: m.tipo === "vitrine" && m.carta && CARTA_POR_ID[m.carta] && quantidade(m.carta) ? CARTA_POR_ID[m.carta].imagem : null,
         chansey: m.tipo === "caixa" && nivelEquipe(t(), "chansey") > 0,
         selecionado: selecionado === `${m.x},${m.y}` || editando === `${m.x},${m.y}`,
@@ -432,7 +447,7 @@ const desenharMundo = (forcar = false) => {
                 pokemon: imagemSprite(c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[(c.sprite ?? c.id) % CLIENTES_SPRITES.length]),
                 balao: c.estado === "fila" ? "🛍️" : c.humor ? HUMOR[c.humor] : "",
             })));
-            cena3d.atualizarEstoque(Object.fromEntries(t().moveis.filter((m) => m.tipo === "prateleira").map((m) => [`${m.x},${m.y}`, itensVisiveis(m)])));
+            cena3d.atualizarEstoque(Object.fromEntries(t().moveis.filter(vende).map((m) => [`${m.x},${m.y}`, itensVisiveis(m)])));
         }
         if (forcar || Math.random() < 0.1) atualizarPainelSelecionado();
         return;
@@ -486,14 +501,14 @@ const desenharMundo = (forcar = false) => {
     });
     // Barras de estoque das prateleiras
     for (const m of t().moveis) {
-        if (m.tipo !== "prateleira") continue;
+        if (!vende(m)) continue;
         const barra = $(`.ty-movel[data-x="${m.x}"][data-y="${m.y}"] .ty-estoque`, app);
         if (!barra) continue;
         const vis = itensVisiveis(m);
         for (const sel of [".ty-estante img", ".ty-gondola .ty-item"]) {
             barra.parentElement.querySelectorAll(sel).forEach((img, i) => { img.style.visibility = i < vis ? "visible" : "hidden"; });
         }
-        const pct = (m.estoque / estoqueMax(t())) * 100;
+        const pct = (m.estoque / estoqueMax(t(), m)) * 100;
         barra.firstElementChild.style.width = `${pct}%`;
         barra.classList.toggle("baixo", pct < 30);
     }
@@ -503,17 +518,24 @@ const desenharMundo = (forcar = false) => {
 // ---------- Painel lateral ----------
 const htmlGerenciar = () => {
     const m = selecionado && movelEm(t(), ...selecionado.split(",").map(Number));
-    const prateleiras = t().moveis.filter((x) => x.tipo === "prateleira");
-    const custoTudo = prateleiras.reduce((s, x) => s + custoRepor(t(), x), 0);
+    const custoTudo = t().moveis.filter(vende).reduce((s, x) => s + custoRepor(t(), x), 0);
+    const aVenda = new Set(t().moveis.filter(vende).map((x) => x.produto));
+    // Produtos que os clientes procuraram e a loja não vende (os mais pedidos primeiro)
+    const faltam = Object.entries(t().procurados).filter(([id, n]) => n > 0 && PRODUTOS[id] && !aVenda.has(id)).sort((a, b) => b[1] - a[1]).slice(0, 4);
     return `
         <div class="ty-bloco">
             <button class="btn dourado" data-tycoon="repor-tudo" ${custoTudo ? "" : "disabled"}>📦 Repor tudo (₽ ${fmt(custoTudo)})</button>
             <p class="sutil pequeno">${nivelEquipe(t(), "machamp") ? "💪 O Machamp repõe sozinho as prateleiras quase vazias." : "Contrate o Machamp na aba Equipe para repor sozinho."}</p>
         </div>
-        <div class="ty-bloco" id="ty-selecionado">${m ? htmlSelecionado(m) : `<p class="sutil">Clique numa prateleira, vitrine ou caixa do mapa para ver os detalhes.</p>`}</div>
+        <div class="ty-bloco" id="ty-selecionado">${m ? htmlSelecionado(m) : `<p class="sutil">Clique numa estante, geladeira, vitrine ou caixa do mapa para ver os detalhes e melhorar.</p>`}</div>
+        ${faltam.length ? `<div class="ty-bloco ty-procurados">
+            <h3>🔎 Clientes procuraram</h3>
+            <p class="sutil pequeno">Você não vende estes produtos. Coloque numa estante ou geladeira!</p>
+            <ul>${faltam.map(([id, n]) => `<li>${icoProduto(id)} ${PRODUTOS[id].nome} <b>${n}×</b> <small>${PRODUTOS[id].cat === "bebida" ? "geladeira" : "estante"}</small></li>`).join("")}</ul>
+        </div>` : ""}
         <div class="ty-bloco">
             <h3>Preços</h3>
-            ${Object.entries(PRODUTOS).filter(([id]) => produtoLiberado(t(), id)).map(([id, p]) => `
+            ${Object.entries(PRODUTOS).filter(([id]) => aVenda.has(id)).map(([id, p]) => `
                 <div class="ty-preco">
                     <span>${icoProduto(id)} ${p.nome} <small>₽ ${precoVenda(t(), id)}</small></span>
                     <div class="ty-preco-opcoes">${Object.entries(PRECOS).map(([nivel, info]) => `
@@ -527,20 +549,23 @@ const htmlGerenciar = () => {
             <span>Perdidos: <b>${fmt(t().perdidos)}</b></span>
             <span>Clientes/min: <b>${(taxaClientes(t(), cartasExpostas()) * 60).toFixed(1)}</b></span>
             <span>Atração: <b>+${Math.round(atracao(t(), cartasExpostas()) * 100)}%</b></span>
+            <span>Paciência na fila: <b>${Math.round(pacienciaFila(t()))}s</b></span>
+            <span>Produtos à venda: <b>${aVenda.size}</b></span>
         </div>`;
 };
 
 const htmlSelecionado = (m) => {
     const info = MOVEIS[m.tipo];
-    if (m.tipo === "prateleira") {
+    if (vende(m)) {
         const p = PRODUTOS[m.produto];
         return `
-            <h3>${icoProduto(m.produto)} Prateleira de ${p.nome}</h3>
-            <div class="barra grossa"><div style="width:${(m.estoque / estoqueMax(t())) * 100}%"></div></div>
-            <p class="destaque-texto">Estoque: ${m.estoque}/${estoqueMax(t())} • custo ₽ ${p.custo} • vende por ₽ ${precoVenda(t(), m.produto)}</p>
+            <h3>${icoProduto(m.produto)} ${info.nome} de ${p.nome} ${selo(m)}</h3>
+            <div class="barra grossa"><div style="width:${(m.estoque / estoqueMax(t(), m)) * 100}%"></div></div>
+            <p class="destaque-texto">Estoque: ${m.estoque}/${estoqueMax(t(), m)} • custo ₽ ${fmt(custoUnit(t(), m.produto))} • vende por ₽ ${precoVenda(t(), m.produto)}${qualidade(t(), m.produto) ? ` • qualidade ${"★".repeat(qualidade(t(), m.produto))}` : ""}</p>
             <button class="btn pequeno" data-tycoon="repor" ${custoRepor(t(), m) ? "" : "disabled"}>Repor (₽ ${fmt(custoRepor(t(), m))})</button>
+            ${htmlMelhoriaMovel(m)}
             <h4>Produto</h4>
-            <div class="ty-produtos">${Object.entries(PRODUTOS).map(([id, prod]) => `
+            <div class="ty-produtos">${Object.entries(PRODUTOS).filter(([, prod]) => prod.cat === info.vende).map(([id, prod]) => `
                 <button class="${m.produto === id ? "ativo" : ""}" data-tycoon="produto" data-produto="${id}" ${produtoLiberado(t(), id) ? "" : `disabled title="Libera em ${CIDADES[prod.cidade].nome}"`}>
                     ${icoProduto(id)}<small>${produtoLiberado(t(), id) ? prod.nome : "🔒"}</small>
                 </button>`).join("")}</div>`;
@@ -552,14 +577,29 @@ const htmlSelecionado = (m) => {
             ${c ? `<div class="ty-vitrine-carta">${htmlCarta(c)}</div>
                 <p class="sutil">${quantidade(c.id) ? `Atrai <b>+${Math.round(ATRACAO_RARIDADE[c.raridade] * 100)}%</b> de clientes.` : "Você não tem mais essa carta: a vitrine não atrai ninguém."}</p>`
                 : `<p class="sutil">Vazia. Escolha uma carta do seu álbum para expor. Cartas mais raras atraem mais clientes.</p>`}
-            <button class="btn pequeno" data-tycoon="escolher-carta">Escolher carta</button>`;
+            <button class="btn pequeno" data-tycoon="escolher-carta">Escolher carta</button>
+            ${htmlMelhoriaMovel(m)}`;
     }
-    if (m.tipo === "caixa") {
+    if (ehCaixa(m)) {
         const fila = mundo.clientes.filter((c) => c.caixa === `${m.x},${m.y}` && c.estado === "fila").length;
-        return `<h3>${icoMovel("caixa")} Caixa</h3><p>Na fila agora: <b>${fila}</b>${nivelEquipe(t(), "chansey") ? " • Chansey atendendo" : ""}</p>
-            <p class="sutil">Fila grande faz clientes desistirem. Construa mais caixas ou contrate a Chansey.</p>`;
+        return `<h3>${icoMovel(m.tipo)} ${info.nome} ${selo(m)}</h3><p>Na fila agora: <b>${fila}</b>${nivelEquipe(t(), "chansey") ? " • Chansey atendendo" : ""} • ${tempoCaixa(t(), m).toFixed(1)}s por cliente</p>
+            <p class="sutil">Fila grande faz clientes desistirem. Construa mais caixas, melhore este ou contrate a Chansey.</p>
+            ${htmlMelhoriaMovel(m)}`;
     }
-    return `<h3>${icoMovel(m.tipo)} ${info.nome}</h3><p class="sutil">${info.desc}</p>`;
+    return `<h3>${icoMovel(m.tipo)} ${info.nome} ${selo(m)}</h3><p class="sutil">${info.desc}</p>${htmlMelhoriaMovel(m)}`;
+};
+
+// Melhoria do móvel (nível 2 e 3)
+const htmlMelhoriaMovel = (m) => {
+    const niveis = MOVEIS[m.tipo].niveis;
+    if (!niveis) return "";
+    const prox = proximoNivel(m);
+    return `<div class="ty-melhoria-movel">
+        <h4>Melhorias deste móvel</h4>
+        <ol>${niveis.map((n, i) => `<li class="${nivelMovel(m) >= i + 2 ? "feita" : ""}"><b>${"★".repeat(i + 1)} ${n.nome}</b><small>${n.desc}</small></li>`).join("")}</ol>
+        ${prox ? `<button class="btn pequeno ${t().dinheiro >= prox.custo ? "dourado" : "desativado"}" data-tycoon="melhorar-movel" ${t().dinheiro >= prox.custo ? "" : "disabled"}>⬆ ${prox.nome} (₽ ${fmt(prox.custo)})</button>`
+            : `<p class="sutil pequeno">Nível máximo!</p>`}
+    </div>`;
 };
 
 const atualizarPainelSelecionado = () => {
@@ -569,7 +609,7 @@ const atualizarPainelSelecionado = () => {
     if (m && m.tipo !== "vitrine") area.innerHTML = htmlSelecionado(m);
     const repTudo = $("[data-tycoon=repor-tudo]", app);
     if (repTudo) {
-        const custo = t().moveis.reduce((s, x) => s + (x.tipo === "prateleira" ? custoRepor(t(), x) : 0), 0);
+        const custo = t().moveis.reduce((s, x) => s + (vende(x) ? custoRepor(t(), x) : 0), 0);
         repTudo.innerHTML = `📦 Repor tudo (₽ ${fmt(custo)})`;
         repTudo.disabled = !custo;
     }
@@ -588,7 +628,7 @@ const htmlEditor = () => {
         <div class="ty-editor-acoes">
             <button class="btn pequeno" data-tycoon="girar">↻ Girar</button>
             <button class="btn pequeno ${movendo ? "dourado" : ""}" data-tycoon="mover">${movendo ? "Escolha o lugar…" : "✥ Mover"}</button>
-            <button class="btn pequeno secundario" data-tycoon="vender-movel">Vender (+₽ ${fmt(info.custo / 2)})</button>
+            <button class="btn pequeno secundario" data-tycoon="vender-movel">Vender (+₽ ${fmt(valorMovel(m) / 2)})</button>
         </div>
         ${movendo ? `<p class="sutil pequeno">Clique num espaço verde do mapa para levar o móvel. Clique em "Mover" de novo para cancelar.</p>` : ""}
         <h4>Acabamento</h4>
@@ -604,10 +644,14 @@ const htmlPaleta = () => `
     <div class="ty-bloco">
         <h3>Construir</h3>
         <p class="sutil pequeno">Escolha um móvel e clique num espaço livre (verde). Clique num móvel da loja para <b>editar</b>: girar, mover, pintar ou vender. Sempre deixe caminho até a porta 🚪.</p>
-        <div class="ty-paleta">${Object.entries(MOVEIS).map(([id, m]) => `
-            <button class="${paleta === id ? "ativo" : ""}" data-tycoon="paleta" data-tipo="${id}" ${t().dinheiro < m.custo ? "disabled" : ""}>
-                <span>${icoMovel(id)}</span><b>${m.nome}</b><small>₽ ${fmt(m.custo)}</small><em>${m.desc}</em>
-            </button>`).join("")}
+        <div class="ty-paleta">${Object.entries(MOVEIS).map(([id, m]) => {
+            const bloqueio = bloqueioConstruir(t(), id);
+            const trancado = (m.cidade || 0) > t().cidade;
+            return `
+            <button class="${paleta === id ? "ativo" : ""} ${trancado ? "trancado" : ""}" data-tycoon="paleta" data-tipo="${id}" ${bloqueio ? "disabled" : ""}>
+                <span>${icoMovel(id)}</span><b>${m.nome}</b><small>${trancado ? "🔒" : `₽ ${fmt(m.custo)}`}</small><em>${bloqueio && bloqueio !== "Dinheiro insuficiente" ? bloqueio : m.desc}</em>
+            </button>`;
+        }).join("")}
         </div>
     </div>`;
 
@@ -638,6 +682,58 @@ const telaEquipe = () => {
     </section>`;
 };
 
+// ---------- Melhorias (qualidade dos produtos, melhorias da loja e metas) ----------
+const telaMelhorias = () => {
+    const tt = t();
+    const metasVisiveis = METAS.filter((m) => !tt.metas.includes(m.id)).slice(0, 6);
+    app.innerHTML = `
+    <section class="clicker ty-melhorias">
+        <h1>Melhorias</h1>
+        <p class="destaque-texto">Dinheiro: ₽ ${fmt(tt.dinheiro)}</p>
+
+        <h2>🏆 Metas</h2>
+        <p class="sutil">Cumpra as metas para ganhar dinheiro extra. Feitas: ${tt.metas.length}/${METAS.length}</p>
+        <div class="ty-metas">${metasVisiveis.map((m) => {
+            const valor = Math.min(m.valor(tt), m.alvo);
+            const pronta = metaPronta(tt, m);
+            return `<article class="ty-meta ${pronta ? "pronta" : ""}">
+                <b>${m.texto}</b>
+                <div class="barra"><div style="width:${(valor / m.alvo) * 100}%"></div></div>
+                <small>${fmt(valor)}/${fmt(m.alvo)} • prêmio ₽ ${fmt(m.premio)}</small>
+                ${pronta ? `<button class="btn pequeno dourado" data-tycoon="meta" data-id="${m.id}">Resgatar</button>` : ""}
+            </article>`;
+        }).join("") || `<p class="sutil">Todas as metas cumpridas! 🎉</p>`}</div>
+
+        <h2>⭐ Qualidade dos produtos</h2>
+        <p class="sutil">Produtos de melhor qualidade custam igual para você, mas vendem mais caro (+10% por estrela), mais gente procura e mais gente aceita o preço.</p>
+        <div class="ty-qualidades">${Object.entries(PRODUTOS).map(([id, p]) => {
+            const q = qualidade(tt, id);
+            const liberado = produtoLiberado(tt, id);
+            const custo = custoQualidade(id, q);
+            return `<article class="ty-qualidade ${liberado ? "" : "trancado"}">
+                ${icoProduto(id)}
+                <div><b>${p.nome}</b><span class="ty-estrelas">${"★".repeat(q)}${"☆".repeat(QUALIDADE_MAX - q)}</span>
+                    <small>${liberado ? `vende por ₽ ${precoVenda(tt, id)} • procura ${Math.round(procura(tt, id))}` : `Libera em ${CIDADES[p.cidade].nome}`}</small></div>
+                ${!liberado ? "<span>🔒</span>" : q >= QUALIDADE_MAX ? `<span class="sutil">Máximo</span>`
+                    : `<button class="btn pequeno ${tt.dinheiro >= custo ? "dourado" : "desativado"}" data-tycoon="qualidade" data-produto="${id}" ${tt.dinheiro >= custo ? "" : "disabled"}>+★ ₽ ${fmt(custo)}</button>`}
+            </article>`;
+        }).join("")}</div>
+
+        <h2>🏪 Melhorias da loja</h2>
+        <p class="sutil">Compradas uma vez, valem para sempre (inclusive quando mudar de cidade).</p>
+        <div class="ty-qualidades">${MELHORIAS_LOJA.map((m) => {
+            const tem = temMelhoria(tt, m.id);
+            const liberado = m.cidade <= tt.cidade;
+            return `<article class="ty-qualidade ${tem ? "comprada" : ""} ${liberado ? "" : "trancado"}">
+                <span class="ty-ico-melhoria">${tem ? "✅" : liberado ? "⬆" : "🔒"}</span>
+                <div><b>${m.nome}</b><small>${m.desc}${liberado ? "" : ` • libera em ${CIDADES[m.cidade].nome}`}</small></div>
+                ${tem ? `<span class="sutil">Comprada</span>` : liberado
+                    ? `<button class="btn pequeno ${tt.dinheiro >= m.custo ? "dourado" : "desativado"}" data-tycoon="melhoria-loja" data-id="${m.id}" ${tt.dinheiro >= m.custo ? "" : "disabled"}>₽ ${fmt(m.custo)}</button>` : ""}
+            </article>`;
+        }).join("")}</div>
+    </section>`;
+};
+
 // ---------- Cidades ----------
 const telaCidades = () => {
     const prox = CIDADES[t().cidade + 1];
@@ -656,7 +752,11 @@ const telaCidades = () => {
                     ${i === t().cidade + 1 ? `<small>Precisa de ₽ ${fmt(c.lucroMin)} de lucro total e custa ₽ ${fmt(c.custo)}</small>
                         <button class="btn ${podeMudar(t()) ? "dourado" : "desativado"}" data-tycoon="mudar" ${podeMudar(t()) ? "" : "disabled"}>Mudar para ${c.nome}</button>` : ""}
                     ${i === t().cidade ? `<span class="etiqueta">Você está aqui</span>` : ""}
-                    ${Object.entries(PRODUTOS).filter(([, p]) => p.cidade === i).map(([id, p]) => `<small>Libera: ${icoProduto(id)} ${p.nome}</small>`).join("")}
+                    ${i > 0 ? `<span class="ty-libera">${[
+                        ...Object.entries(PRODUTOS).filter(([, p]) => p.cidade === i).map(([id, p]) => `<small>${icoProduto(id)} ${p.nome}</small>`),
+                        ...Object.entries(MOVEIS).filter(([, m]) => m.cidade === i).map(([id, m]) => `<small>${icoMovel(id)} ${m.nome}</small>`),
+                        ...MELHORIAS_LOJA.filter((m) => m.cidade === i).map((m) => `<small>⬆ ${m.nome}</small>`),
+                    ].join("")}</span>` : ""}
                 </li>`).join("")}
         </ol>
         ${prox ? "" : `<p class="destaque-texto">Você chegou em Saffron, a maior cidade de Kanto!</p>`}
@@ -813,14 +913,43 @@ const ACOES = {
     "vender-movel": async () => {
         const m = editando && movelEm(t(), ...posEditando());
         if (!m) return;
-        const ok = await confirmar(`Vender ${MOVEIS[m.tipo].nome}?`, `Você recebe ₽ ${fmt(MOVEIS[m.tipo].custo / 2)} de volta${m.estoque ? " (o estoque volta pelo preço de custo)" : ""}.`, "Vender");
+        const ok = await confirmar(`Vender ${MOVEIS[m.tipo].nome}?`, `Você recebe ₽ ${fmt(valorMovel(m) / 2)} de volta${m.estoque ? " (o estoque volta pelo preço de custo)" : ""}.`, "Vender");
         if (!ok) return;
-        if (m.tipo === "caixa" && t().moveis.filter((o) => o.tipo === "caixa").length === 1) return aviso("A loja precisa de pelo menos um caixa.", "erro");
-        if (m.estoque) t().dinheiro += m.estoque * PRODUTOS[m.produto].custo;
+        if (ehCaixa(m) && t().moveis.filter(ehCaixa).length === 1) return aviso("A loja precisa de pelo menos um caixa.", "erro");
+        if (m.estoque) t().dinheiro += m.estoque * custoUnit(t(), m.produto);
         remover(t(), m.x, m.y);
         editando = null;
         movendo = false;
         sons.moeda();
+        salvarTycoon();
+        redesenhar();
+    },
+    "melhorar-movel": () => {
+        const m = selecionado && movelEm(t(), ...selecionado.split(",").map(Number));
+        if (!m || !melhorarMovel(t(), m.x, m.y)) return sons.erro();
+        sons.raro(4);
+        aviso(`⬆ ${MOVEIS[m.tipo].nome} agora é <b>${MOVEIS[m.tipo].niveis[nivelMovel(m) - 2].nome}</b>!`, "sucesso");
+        salvarTycoon();
+        redesenhar();
+    },
+    "qualidade": (el) => {
+        if (!melhorarQualidade(t(), el.dataset.produto)) return sons.erro();
+        sons.raro(3);
+        salvarTycoon();
+        redesenhar();
+    },
+    "melhoria-loja": (el) => {
+        if (!comprarMelhoria(t(), el.dataset.id)) return sons.erro();
+        sons.raro(5);
+        aviso(`⬆ Melhoria comprada: <b>${MELHORIAS_LOJA.find((m) => m.id === el.dataset.id).nome}</b>`, "sucesso");
+        salvarTycoon();
+        redesenhar();
+    },
+    meta: (el) => {
+        const meta = METAS.find((m) => m.id === el.dataset.id);
+        if (!resgatarMeta(t(), el.dataset.id)) return sons.erro();
+        sons.moeda();
+        aviso(`🏆 Meta cumprida! +₽ ${fmt(meta.premio)}`, "sucesso");
         salvarTycoon();
         redesenhar();
     },

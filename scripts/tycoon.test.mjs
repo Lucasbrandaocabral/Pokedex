@@ -176,3 +176,79 @@ test("clientes usam a frente do móvel quando ela está livre", () => {
     m.rot = 2;
     assert.deepEqual(T.ladoLivre(t, m), { x: 1, y: 0 });
 });
+
+test("melhorar móveis: mais estoque, custo certo e a venda devolve metade do que foi gasto", () => {
+    const t = novo();
+    t.dinheiro = 1e6;
+    const m = T.movelEm(t, 1, 1);
+    assert.equal(T.estoqueMax(t, m), 10);
+    assert.ok(T.melhorarMovel(t, 1, 1));
+    assert.equal(T.estoqueMax(t, m), 15);
+    assert.ok(T.melhorarMovel(t, 1, 1));
+    assert.equal(T.estoqueMax(t, m), 20);
+    assert.equal(T.melhorarMovel(t, 1, 1), false, "nível 3 é o máximo");
+    assert.equal(T.valorMovel(m), 120 + 300 + 1200);
+    const antes = t.dinheiro;
+    T.remover(t, 1, 1);
+    assert.equal(t.dinheiro, antes + Math.floor((120 + 300 + 1200) / 2));
+    T.comprarMelhoria(t, "deposito");
+    assert.equal(T.estoqueMax(t), 10, "depósito só libera em Viridian");
+    t.cidade = 1;
+    assert.ok(T.comprarMelhoria(t, "deposito"));
+    assert.equal(T.estoqueMax(t), 15);
+    assert.equal(T.comprarMelhoria(t, "deposito"), false, "não compra duas vezes");
+});
+
+test("qualidade aumenta preço e procura; caixa melhorado atende mais rápido", () => {
+    const t = novo();
+    t.dinheiro = 1e6;
+    const preco = T.precoVenda(t, "pocao");
+    const procura = T.procura(t, "pocao");
+    assert.ok(T.melhorarQualidade(t, "pocao"));
+    assert.equal(t.dinheiro, 1e6 - T.custoQualidade("pocao", 0));
+    assert.ok(T.precoVenda(t, "pocao") > preco);
+    assert.ok(T.procura(t, "pocao") > procura);
+    assert.equal(T.melhorarQualidade(t, "docerara"), false, "doce raro ainda bloqueado");
+    const caixa = T.movelEm(t, 4, 3);
+    const tempo = T.tempoCaixa(t, caixa);
+    T.melhorarMovel(t, 4, 3);
+    assert.ok(T.tempoCaixa(t, caixa) < tempo);
+});
+
+test("geladeira só vende bebidas; limites e cidades dos móveis novos", () => {
+    const t = novo();
+    t.dinheiro = 1e6;
+    assert.ok(T.construir(t, 0, 0, "geladeira"));
+    const g = T.movelEm(t, 0, 0);
+    assert.equal(g.produto, "agua");
+    assert.equal(T.trocarProduto(t, g, "pocao"), false);
+    assert.equal(T.trocarProduto(t, T.movelEm(t, 1, 1), "agua"), false, "estante não vende bebida");
+    assert.ok(T.construir(t, 3, 0, "banco"));
+    assert.ok(T.construir(t, 5, 3, "banco"));
+    assert.ok(T.construir(t, 0, 3, "banco"));
+    assert.equal(T.bloqueioConstruir(t, "banco"), "Máximo de 3");
+    assert.match(T.bloqueioConstruir(t, "estatua"), /Libera em/);
+    assert.ok(T.pacienciaFila(t) > 14);
+});
+
+test("clientes procuram produtos que a loja não vende e isso fica anotado", () => {
+    const t = novo();
+    const mundo = T.novoMundo();
+    const rnd = semente(3);
+    let naoTem = 0;
+    for (let i = 0; i < 3000; i++) naoTem += T.simular(t, mundo, 0.1, { rnd }).filter((e) => e.tipo === "nao-tem").length;
+    assert.ok(naoTem > 0);
+    assert.ok((t.procurados.pacote || 0) + (t.procurados.agua || 0) > 0, "pacote e água estão liberados mas não estão à venda");
+    assert.ok(Object.keys(t.vendidos).length >= 1);
+});
+
+test("metas pagam uma vez só", () => {
+    const t = novo();
+    assert.equal(T.resgatarMeta(t, "atender10"), false);
+    t.atendidos = 10;
+    assert.equal(T.metasProntas(t) >= 1, true);
+    const antes = t.dinheiro;
+    assert.ok(T.resgatarMeta(t, "atender10"));
+    assert.equal(t.dinheiro, antes + 200);
+    assert.equal(T.resgatarMeta(t, "atender10"), false);
+});

@@ -91,9 +91,9 @@ const bola = (topo, faixaTopo = null) => {
     return g;
 };
 
-const pocao = () => {
+const pocao = (cor = 0x8a5cd6) => {
     const g = new THREE.Group();
-    g.add(em(cilindro(0.065, 0.07, 0.17, mat(0x8a5cd6, { rough: 0.25 })), 0, 0.085, 0));
+    g.add(em(cilindro(0.065, 0.07, 0.17, mat(cor, { rough: 0.25 })), 0, 0.085, 0));
     g.add(em(cilindro(0.071, 0.071, 0.05, mat(0xf4f4f4, { rough: 0.5 })), 0, 0.09, 0));
     g.add(em(cilindro(0.03, 0.045, 0.05, mat(0xf4f4f4, { rough: 0.4 })), 0, 0.195, 0));
     g.add(em(caixa(0.06, 0.05, 0.09, mat(0x6b7390, { rough: 0.4 })), 0, 0.24, 0.015));
@@ -157,13 +157,88 @@ const isca = () => {
     return g;
 };
 
+// Frasquinho de remédio (Antídoto)
+const frasquinho = (cor) => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.045, 0.05, 0.12, mat(cor, { rough: 0.25 })), 0, 0.06, 0));
+    g.add(em(cilindro(0.03, 0.03, 0.04, mat(0xf4f4f4)), 0, 0.14, 0));
+    g.add(em(cilindro(0.047, 0.047, 0.04, mat(0xf4f4f4, { rough: 0.5 })), 0, 0.06, 0));
+    return g;
+};
+// Bebida em garrafa (vidro colorido com tampinha e rótulo)
+const garrafa = (cor, rotulo = 0xf4f4f4, tampa = 0xdc2a3c) => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.05, 0.055, 0.16, mat(cor, { rough: 0.15, metal: 0.1 })), 0, 0.08, 0));
+    g.add(em(cilindro(0.025, 0.045, 0.06, mat(cor, { rough: 0.15 })), 0, 0.19, 0));
+    g.add(em(cilindro(0.028, 0.028, 0.025, mat(tampa, { rough: 0.4 })), 0, 0.23, 0));
+    g.add(em(cilindro(0.057, 0.057, 0.06, mat(rotulo, { rough: 0.6 })), 0, 0.09, 0));
+    return g;
+};
+// Latinha de refrigerante
+const lata = (cor) => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.055, 0.055, 0.17, mat(cor, { rough: 0.3, metal: 0.5 })), 0, 0.085, 0));
+    g.add(em(cilindro(0.045, 0.055, 0.02, mat(0xd9d9e2, { rough: 0.3, metal: 0.7 })), 0, 0.18, 0));
+    g.add(em(cilindro(0.057, 0.057, 0.04, mat(0xf4f4f4, { rough: 0.4 })), 0, 0.09, 0));
+    return g;
+};
+// Spray do Repelente
+const spray = () => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.055, 0.055, 0.19, mat(0x8a5cd6, { rough: 0.35, metal: 0.3 })), 0, 0.095, 0));
+    g.add(em(cilindro(0.04, 0.05, 0.04, mat(0xf4f4f4)), 0, 0.21, 0));
+    g.add(em(caixa(0.03, 0.03, 0.04, mat(0x2a2a33)), 0, 0.24, 0.015));
+    return g;
+};
+// Pedra do Trovão: cristal amarelo com um raio verde
+const pedraTrovao = () => {
+    const g = new THREE.Group();
+    const p = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09), mat(0xffcb05, { rough: 0.35, emissivo: 0.15 }));
+    p.scale.set(1, 1.25, 0.8);
+    p.position.y = 0.11;
+    p.castShadow = true;
+    g.add(p);
+    const raio = em(caixa(0.03, 0.12, 0.02, mat(0x2e9e5b)), 0, 0.11, 0.075);
+    raio.rotation.z = 0.5;
+    g.add(raio);
+    return g;
+};
+// Doce Raro: bala azul embrulhada
+const doce = () => {
+    const g = new THREE.Group();
+    const bala = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 10), mat(0x2f5bd3, { rough: 0.25 }));
+    bala.scale.set(1.3, 1, 1);
+    bala.position.y = 0.08;
+    bala.castShadow = true;
+    g.add(bala);
+    for (const lado of [-1, 1]) {
+        const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.08, 6), mat(0x9fd6ff, { rough: 0.3 }));
+        ponta.rotation.z = (lado * Math.PI) / 2;
+        ponta.position.set(lado * 0.12, 0.08, 0);
+        g.add(ponta);
+    }
+    g.add(em(cilindro(0.072, 0.072, 0.03, mat(0xf4f4f4)), 0, 0.08, 0));
+    return g;
+};
+
 const MODELOS_PRODUTO = {
     pokebola: () => bola(0xdc2a3c),
+    grandeball: () => bola(0x2f5bd3, 0xdc2a3c),
     ultraball: () => bola(0x2a2a33, 0xffcb05),
-    pocao,
+    pocao: () => pocao(),
+    superpocao: () => pocao(0xf07d2a),
+    hiperpocao: () => pocao(0xf28ab0),
+    antidoto: () => frasquinho(0xffcb05),
+    repelente: spray,
     reviver,
+    pedra: pedraTrovao,
+    docerara: doce,
     pacote,
     isca,
+    agua: () => garrafa(0x9fd6ff, 0x2f5bd3, 0x2f5bd3),
+    refrigerante: () => lata(0x2f5bd3),
+    limonada: () => garrafa(0xffe066, 0xf4f4f4, 0x2e9e5b),
+    leite: () => garrafa(0xf7f7f7, 0x2f5bd3, 0x2f5bd3),
 };
 
 // ---------------- Personagens 3D ----------------
@@ -442,9 +517,165 @@ const estante = (m) => {
     const tag = etiqueta(`₽ ${m.preco}`);
     tag.position.set(0, ALTURAS_TABUA[0] - 0.02, -0.3 + FUNDOS_TABUA[0] + 0.016);
     g.add(tag);
+    enfeitarNivel(g, m.nivel, 1.12);
     g.userData.produtos = produtos;
     g.userData.atualizar = (vis) => produtos.forEach((p, i) => { p.visible = i < vis; });
     g.userData.atualizar(m.visiveis);
+    return g;
+};
+
+// Visual das melhorias: nível 2 ganha cantoneiras de metal; nível 3, letreiro dourado iluminado
+const enfeitarNivel = (g, nivel, altura) => {
+    if (nivel >= 2) {
+        for (const lado of [-1, 1]) g.add(em(caixa(0.04, altura, 0.04, mat(0xb8bcc8, { metal: 0.7, rough: 0.3 })), lado * 0.44, altura / 2, 0.33));
+    }
+    if (nivel >= 3) {
+        const luz = em(caixa(0.86, 0.06, 0.06, mat(0xffd75a, { emissivo: 0.9, rough: 0.3 })), 0, altura + 0.04, 0.3);
+        g.add(luz);
+        g.userData.brilho = luz.material;
+    }
+};
+
+// Geladeira: armário branco com porta de vidro e 3 prateleiras de bebidas
+const geladeira = (m) => {
+    const g = new THREE.Group();
+    const corpo = mat(m.cor || 0xe9e9ef, { rough: 0.35, metal: 0.1 });
+    const H = 1.25;
+    g.add(em(caixa(0.86, 0.1, 0.66, mat(0x6b7390)), 0, 0.05, -0.02));
+    g.add(em(caixa(0.86, H, 0.05, corpo), 0, H / 2, -0.33));
+    for (const lado of [-1, 1]) g.add(em(caixa(0.05, H, 0.66, corpo), lado * 0.405, H / 2, -0.02));
+    g.add(em(caixa(0.86, 0.14, 0.66, corpo), 0, H - 0.07, -0.02));
+    g.add(em(caixa(0.76, H - 0.24, 0.02, mat(0x9fd6ff, { emissivo: 0.35 })), 0, (H - 0.1) / 2 + 0.05, -0.3));
+    // Letreiro aceso em cima
+    const letreiro = texturaCanvas(128, 32, (c, w, h) => {
+        c.fillStyle = "#2f5bd3";
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = "#fff";
+        c.font = "bold 20px sans-serif";
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillText("GELADO", w / 2, h / 2 + 1);
+    });
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.11), new THREE.MeshStandardMaterial({ map: letreiro, emissive: 0x2f5bd3, emissiveIntensity: 0.4 }));
+    placa.position.set(0, H - 0.07, 0.315);
+    g.add(placa);
+    const produtos = [];
+    [0.16, 0.5, 0.84].forEach((y) => {
+        g.add(em(caixa(0.76, 0.02, 0.56, mat(0xd9d9e2, { metal: 0.4, rough: 0.3 })), 0, y, -0.03));
+        [-0.24, 0, 0.24].forEach((x) => {
+            const p = (MODELOS_PRODUTO[m.produto] || MODELOS_PRODUTO.agua)();
+            p.position.set(x, y + 0.01, 0.02);
+            g.add(p);
+            produtos.push(p);
+        });
+    });
+    // Porta de vidro (aberta pela frente) com puxador
+    const vidro = caixa(0.78, H - 0.2, 0.02, mat(0xcdeeff, { rough: 0.05, opacidade: 0.18, depthWrite: false }));
+    vidro.castShadow = false;
+    g.add(em(vidro, 0, (H - 0.1) / 2 + 0.05, 0.3));
+    g.add(em(caixa(0.03, 0.4, 0.04, mat(0xb8bcc8, { metal: 0.7, rough: 0.3 })), 0.33, 0.62, 0.33));
+    const tag = etiqueta(`₽ ${m.preco}`);
+    tag.position.set(0, 0.06, 0.33);
+    g.add(tag);
+    enfeitarNivel(g, m.nivel, H);
+    g.userData.atualizar = (vis) => produtos.forEach((p, i) => { p.visible = i < vis; });
+    g.userData.atualizar(m.visiveis);
+    return g;
+};
+
+const banco = (m) => {
+    const g = new THREE.Group();
+    const madeira = mat(m.cor || MADEIRA, { rough: 0.7 });
+    g.add(em(caixa(0.86, 0.06, 0.34, madeira), 0, 0.3, 0.05));
+    g.add(em(caixa(0.86, 0.22, 0.05, madeira), 0, 0.5, -0.14));
+    for (const x of [-0.36, 0.36]) {
+        for (const z of [-0.08, 0.18]) g.add(em(caixa(0.05, 0.28, 0.05, mat(0x3c4a66, { metal: 0.5, rough: 0.4 })), x, 0.14, z));
+        g.add(em(caixa(0.05, 0.36, 0.05, mat(0x3c4a66, { metal: 0.5, rough: 0.4 })), x, 0.45, -0.14));
+    }
+    return g;
+};
+
+const lixeira = (m) => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.17, 0.14, 0.5, mat(m.cor || 0x2e9e5b, { rough: 0.5 })), 0, 0.25, 0));
+    g.add(em(cilindro(0.19, 0.19, 0.05, mat(0x1f7040, { rough: 0.5 })), 0, 0.52, 0));
+    g.add(em(cilindro(0.05, 0.05, 0.05, mat(0x1f7040)), 0, 0.57, 0));
+    const simbolo = texturaCanvas(32, 32, (c) => {
+        c.fillStyle = "#f4f4f4";
+        c.beginPath();
+        c.arc(16, 16, 12, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = "#2e9e5b";
+        c.font = "bold 18px sans-serif";
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillText("♻", 16, 17);
+    });
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.16), new THREE.MeshBasicMaterial({ map: simbolo, transparent: true }));
+    placa.position.set(0, 0.28, 0.165);
+    g.add(placa);
+    return g;
+};
+
+let texTotem = null;
+const totem = (m) => {
+    const g = new THREE.Group();
+    g.add(em(cilindro(0.2, 0.22, 0.06, mat(TINTA)), 0, 0.03, 0));
+    g.add(em(caixa(0.06, 0.6, 0.06, mat(0xb8bcc8, { metal: 0.6, rough: 0.3 })), 0, 0.33, 0));
+    texTotem ||= texturaCanvas(96, 128, (c, w, h) => {
+        c.fillStyle = "#ffcb05";
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = "#dc2a3c";
+        c.fillRect(0, 0, w, 40);
+        c.fillStyle = "#fff";
+        c.font = "bold 20px sans-serif";
+        c.textAlign = "center";
+        c.fillText("OFERTA", w / 2, 28);
+        c.fillStyle = "#1c1b22";
+        c.font = "bold 34px sans-serif";
+        c.fillText("-20%", w / 2, 86);
+        c.font = "bold 14px sans-serif";
+        c.fillText("POKÉMART", w / 2, 116);
+    });
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.66, 0.05), [mat(m.cor || 0xdc2a3c), mat(m.cor || 0xdc2a3c), mat(m.cor || 0xdc2a3c), mat(m.cor || 0xdc2a3c), new THREE.MeshStandardMaterial({ map: texTotem, emissive: 0xffcb05, emissiveIntensity: 0.15 }), mat(m.cor || 0xdc2a3c)]);
+    placa.position.y = 0.95;
+    placa.castShadow = true;
+    g.add(placa);
+    g.userData.balancar = placa;
+    return g;
+};
+
+let texAuto = null;
+const caixaAutomatico = (m) => {
+    const g = new THREE.Group();
+    const corpo = mat(m.cor || 0xb8bcc8, { rough: 0.35, metal: 0.35 });
+    g.add(em(caixa(0.7, 0.85, 0.5, corpo), 0, 0.425, -0.05));
+    g.add(em(caixa(0.74, 0.06, 0.56, mat(0x3c4a66)), 0, 0.88, -0.05));
+    // Tela inclinada e leitor de código de barras
+    texAuto ||= texturaCanvas(96, 64, (c, w, h) => {
+        c.fillStyle = "#1d2a4a";
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = "#7fe0a0";
+        c.font = "bold 16px sans-serif";
+        c.textAlign = "center";
+        c.fillText("PAGUE", w / 2, 26);
+        c.fillText("AQUI ✓", w / 2, 48);
+    });
+    const tela = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.04), [mat(0x2a2a33), mat(0x2a2a33), mat(0x2a2a33), mat(0x2a2a33), new THREE.MeshStandardMaterial({ map: texAuto, emissive: 0x3fbf6a, emissiveIntensity: 0.35 }), mat(0x2a2a33)]);
+    tela.position.set(0, 1.1, -0.12);
+    tela.rotation.x = -0.35;
+    g.add(tela);
+    g.add(em(caixa(0.06, 0.32, 0.06, mat(0x2a2a33)), 0, 0.95, -0.2));
+    g.add(em(caixa(0.22, 0.03, 0.16, mat(0xdc2a3c, { emissivo: 0.6 })), 0.18, 0.92, 0.08));
+    g.add(em(caixa(0.62, 0.02, 0.18, mat(0x2a2a33)), 0, 0.7, 0.22));
+    return g;
+};
+
+const estatua = () => {
+    const g = new THREE.Group();
+    g.add(em(caixa(0.8, 0.22, 0.8, mat(0xb8bcc8, { rough: 0.8 })), 0, 0.11, 0));
+    g.add(em(caixa(0.7, 0.06, 0.7, mat(0xffcb05, { metal: 0.6, rough: 0.3 })), 0, 0.25, 0));
+    g.add(em(modeloPokemon(`${SPRITES}/143.png`, 1.05), 0, 0.28, 0));
     return g;
 };
 
@@ -498,6 +729,15 @@ const caixaRegistradora = (m) => {
     const cinza = mat(0x3c4a66);
     corpo.add(em(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.05), [cinza, cinza, cinza, cinza, tela, cinza]), 0, 0.3, -0.12));
     g.add(corpo);
+    // Melhorias: esteira rolante no balcão (nível 2) e maquininha de cartão (nível 3)
+    if (m.nivel >= 2) {
+        g.add(em(caixa(0.32, 0.03, 0.5, mat(0x2a2a33, { rough: 0.6 })), -0.28, 0.565, 0.02));
+        for (let i = 0; i < 5; i++) g.add(em(caixa(0.3, 0.01, 0.02, mat(0x6b7390)), -0.28, 0.585, -0.18 + i * 0.09));
+    }
+    if (m.nivel >= 3) {
+        g.add(em(caixa(0.1, 0.04, 0.16, mat(0x2a2a33)), 0.36, 0.575, 0.18));
+        g.add(em(caixa(0.07, 0.01, 0.05, mat(0x7fe0a0, { emissivo: 0.5 })), 0.36, 0.6, 0.15));
+    }
     // Chansey em pé atrás do balcão, atendendo (virada para os clientes)
     if (m.chansey) g.add(em(modeloPokemon(`${SPRITES}/113.png`, 0.85), -0.05, 0, -0.52));
     return g;
@@ -530,10 +770,20 @@ const vitrine = (m) => {
         suporte.add(quadro);
         g.add(suporte);
         g.userData.girar = quadro;
-        const luz = new THREE.PointLight(0xffe7a0, 0.6, 1.4);
+        const luz = new THREE.PointLight(0xffe7a0, 0.6 + (m.nivel - 1) * 0.5, 1.4 + (m.nivel - 1) * 0.6);
         luz.position.set(0, 1.0, 0.1);
         g.add(luz);
+        g.userData.velocidade = m.nivel >= 3 ? 1 : 0;
     }
+    // Holofote (nível 2) e base giratória dourada (nível 3)
+    if (m.nivel >= 2) {
+        const poste = em(caixa(0.04, 0.9, 0.04, mat(TINTA)), 0.36, 0.45, 0.36);
+        g.add(poste);
+        const cabeca = em(cilindro(0.06, 0.09, 0.12, mat(0x2a2a33, { metal: 0.6 })), 0.32, 0.92, 0.32);
+        cabeca.rotation.x = -0.8;
+        g.add(cabeca);
+    }
+    if (m.nivel >= 3) g.add(em(cilindro(0.3, 0.3, 0.03, mat(0xffcb05, { metal: 0.7, rough: 0.25 }), 28), 0, 0.46, 0));
     return g;
 };
 
@@ -596,10 +846,19 @@ const maquina = (m) => {
     sign.position.set(0, 1.24, 0.245);
     g.add(sign);
     g.userData.brilho = letreiro;
+    // Máquina dupla (nível 3): uma segunda máquina azul ao lado
+    if (m.nivel >= 2) g.add(em(caixa(0.12, 0.12, 0.02, mat(0xffcb05, { emissivo: 0.6 })), 0.24, 1.1, 0.25));
+    if (m.nivel >= 3) {
+        const irma = em(caixa(0.22, 1.1, 0.5, mat(0x2f5bd3, { rough: 0.4 })), 0.47, 0.58, -0.04);
+        g.add(irma);
+    }
     return g;
 };
 
-const MODELOS_MOVEL = { prateleira: estante, caixa: caixaRegistradora, vitrine, planta, maquina };
+const MODELOS_MOVEL = {
+    prateleira: estante, caixa: caixaRegistradora, vitrine, planta, maquina,
+    geladeira, banco, lixeira, totem, caixarapido: caixaAutomatico, estatua,
+};
 
 // ---------------- Loja (piso, paredes e decoração) ----------------
 const montarSala = (w, h, porta) => {
@@ -1166,7 +1425,7 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
             o.pk.position.y = o.andando ? Math.abs(Math.sin(tempo * 12 + o.fase)) * 0.06 : 0;
         }
         for (const m of mobilia.children) {
-            if (m.userData.girar) m.userData.girar.rotation.y = Math.sin(tempo * 0.8) * 0.6;
+            if (m.userData.girar) m.userData.girar.rotation.y = m.userData.velocidade ? tempo * 0.9 : Math.sin(tempo * 0.8) * 0.6;
             if (m.userData.balancar) m.userData.balancar.rotation.z = Math.sin(tempo * 1.6 + m.position.x) * 0.06;
             if (m.userData.brilho) m.userData.brilho.emissiveIntensity = 0.35 + Math.sin(tempo * 3) * 0.2;
         }
