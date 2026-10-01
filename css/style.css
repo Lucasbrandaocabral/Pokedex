@@ -2444,3 +2444,74 @@ body.modo-tycoon main { max-width: 1440px; }
     font-size: 1.2rem; font-weight: 800; cursor: pointer; box-shadow: 2px 2px 0 var(--tinta);
 }
 .ty-camera button:hover { background: var(--amarelo); }
+
+/* ====================================================
+   Tycoon no celular: tela cheia, como um app
+   ==================================================== */
+.ty-folha-alca { display: none; }
+.ty-dica-acao {
+    position: absolute; left: 50%; top: 10px; z-index: 7; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); padding: 6px 6px 6px 12px;
+    border: 2px solid var(--tinta); border-radius: 99px; background: var(--papel2); box-shadow: 2px 3px 0 var(--tinta);
+    font-size: 0.82rem; white-space: nowrap;
+}
+.ty-dica-acao span { overflow: hidden; text-overflow: ellipsis; }
+.ty-dica-acao b { color: var(--verde); }
+.ty-dica-acao button {
+    flex-shrink: 0; padding: 4px 10px; border: 2px solid var(--tinta); border-radius: 99px;
+    background: var(--vermelho); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+}
+.ty-grade { position: relative; }
+
+@media (max-width: 760px) {
+    body.modo-tycoon:has(.ty-jogo) .topo { display: none; }
+    body.modo-tycoon:has(.ty-jogo) { padding-bottom: 0; overflow: hidden; }
+    .ty-jogo {
+        position: fixed; z-index: 5; left: 0; right: 0; top: 0; bottom: calc(66px + env(safe-area-inset-bottom));
+        display: flex; flex-direction: column; background: var(--papel); padding-top: env(safe-area-inset-top);
+    }
+    /* Barra de cima compacta */
+    .ty-jogo .clicker-cabeca {
+        flex-wrap: nowrap; margin: 0; padding: 8px 10px 6px; gap: 8px; background: var(--vermelho); border-bottom: var(--linha);
+    }
+    .ty-jogo .clicker-cabeca .btn { padding: 4px 10px; font-size: 0.78rem; white-space: nowrap; }
+    .ty-jogo .clicker-cabeca .etiqueta { font-size: 0.68rem; background: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* Números da loja em chips */
+    .ty-placar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin: 6px 8px; }
+    .ty-placar > div { padding: 3px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--tinta); border-radius: 6px; }
+    .ty-placar small { font-size: 0.58rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ty-placar b { font-size: 1.05rem; }
+    .ty-estrelas { letter-spacing: 0; font-size: 0.9rem !important; }
+    .ty-evento { margin: 0 8px 6px; padding: 6px 10px; font-size: 0.8rem; }
+    /* O mapa ocupa o resto da tela */
+    .ty-grade { flex: 1; display: block; min-height: 0; margin: 0; }
+    .ty-grade > .ty-mapa3d, .ty-grade > .ty-mapa-caixa {
+        position: absolute; inset: 0; height: auto; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; box-shadow: none;
+    }
+    .ty-grade > .ty-mapa-caixa { overflow: auto; align-items: flex-start; padding: 10px 10px 96px; }
+    .ty-mapa3d .ty-camera { bottom: 92px; }
+    .ty-mapa3d .ty-dica3d { display: none; }
+    .ty-mapa3d .ty-vista, .ty-mapa-caixa .ty-vista { top: auto; bottom: 96px; left: 10px; right: auto; }
+    .ty-dica-acao { top: 8px; }
+    /* Painel vira uma gaveta que sobe de baixo */
+    .ty-lado {
+        position: absolute; z-index: 8; left: 0; right: 0; bottom: 0; max-height: 64%; gap: 0;
+        display: flex; flex-direction: column; background: var(--papel);
+        border-top: var(--linha); border-radius: 18px 18px 0 0; box-shadow: 0 -5px 0 rgba(28, 27, 34, 0.18);
+        transform: translateY(calc(100% - 82px)); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .ty-lado.aberta { transform: translateY(0); }
+    .ty-folha-alca {
+        display: grid; place-items: center; flex-shrink: 0; height: 24px; border: 0; background: none; cursor: pointer;
+    }
+    .ty-folha-alca i { width: 46px; height: 6px; border-radius: 99px; background: var(--tinta2); }
+    .ty-lado .ty-modos { flex-shrink: 0; margin: 0 10px 8px; }
+    .ty-lado .ty-modos button { padding: 9px; }
+    #ty-painel { overflow-y: auto; padding: 0 10px 14px; gap: 10px; -webkit-overflow-scrolling: touch; }
+    #ty-painel .ty-bloco { box-shadow: 2px 2px 0 var(--tinta); }
+    /* Paleta de construção: cartões lado a lado, rolando para o lado */
+    .ty-paleta { flex-direction: row; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+    .ty-paleta button { flex: 0 0 150px; scroll-snap-align: start; grid-template-columns: 34px 1fr; }
+    .ty-paleta button small { grid-column: 2; }
+    .ty-paleta button em { display: none; }
+}

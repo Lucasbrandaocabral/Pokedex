@@ -31,6 +31,7 @@ let paleta = null; // tipo de móvel escolhido para construir
 let selecionado = null; // "x,y" do móvel selecionado
 let editando = null; // "x,y" do móvel sendo editado no modo Construir
 let movendo = false; // escolhendo o lugar novo do móvel em edição
+let folhaAberta = false; // no celular, o painel é uma gaveta que sobe de baixo
 let eventoAtual = null; // { tipo, ate }
 let proximoEvento = 0;
 let lucroMinuto = { inicio: Date.now(), valor: 0 };
@@ -326,7 +327,12 @@ const telaLoja = () => {
                     <div class="ty-clientes" id="ty-clientes"></div>
                 </div>
             </div>`}
-            <aside class="ty-lado">
+            ${modoConstruir && (paleta || movendo) ? `<div class="ty-dica-acao">
+                <span>Toque num quadrado <b>verde</b> para ${movendo ? "levar o móvel" : `construir: ${MOVEIS[paleta].nome}`}</span>
+                <button data-tycoon="cancelar-acao">Cancelar</button>
+            </div>` : ""}
+            <aside class="ty-lado ${folhaAberta ? "aberta" : ""}">
+                <button class="ty-folha-alca" data-tycoon="folha" aria-label="${folhaAberta ? "Fechar" : "Abrir"} o painel"><i></i></button>
                 <div class="ty-modos">
                     <button class="${modoConstruir ? "" : "ativo"}" data-tycoon="modo" data-modo="jogar">🛒 Gerenciar</button>
                     <button class="${modoConstruir ? "ativo" : ""}" data-tycoon="modo" data-modo="construir">🔨 Construir</button>
@@ -712,6 +718,7 @@ const ACOES = {
     modo: (el) => {
         modoConstruir = el.dataset.modo === "construir";
         paleta = null;
+        folhaAberta = true;
         editando = null;
         movendo = false;
         redesenhar();
@@ -720,6 +727,8 @@ const ACOES = {
         paleta = paleta === el.dataset.tipo ? null : el.dataset.tipo;
         editando = null;
         movendo = false;
+        // Escolheu o móvel: a gaveta desce para mostrar o mapa
+        folhaAberta = !paleta;
         redesenhar();
     },
     chao: (el) => {
@@ -752,6 +761,7 @@ const ACOES = {
         if (modoConstruir) {
             // No modo Construir, clicar num móvel abre o editor dele
             editando = editando === `${m.x},${m.y}` ? null : `${m.x},${m.y}`;
+            folhaAberta = !!editando;
             movendo = false;
             paleta = null;
             sons.clique();
@@ -759,8 +769,19 @@ const ACOES = {
             return;
         }
         selecionado = `${m.x},${m.y}`;
+        folhaAberta = true;
         sons.clique();
         if (m.tipo === "vitrine" && !m.carta) return escolherCarta(m);
+        redesenhar();
+    },
+    folha: () => {
+        folhaAberta = !folhaAberta;
+        $(".ty-lado", app)?.classList.toggle("aberta", folhaAberta);
+    },
+    "cancelar-acao": () => {
+        paleta = null;
+        movendo = false;
+        folhaAberta = true;
         redesenhar();
     },
     cam: (el) => cena3d?.girarCamera(Number(el.dataset.passo)),
@@ -779,6 +800,7 @@ const ACOES = {
     mover: () => {
         if (!editando) return;
         movendo = !movendo;
+        folhaAberta = !movendo;
         sons.clique();
         redesenhar();
     },

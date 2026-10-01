@@ -794,7 +794,9 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         if (!dados) return;
         const { w, h } = dados;
         alvoCam.set(w / 2, 0.35, h / 2 + 0.2);
-        const dist = (Math.max(w, h) * 1.55 + 3.2) * zoom;
+        // Tela em pé (celular) precisa de mais distância para a loja caber na largura
+        const estreita = Math.max(1, (1.3 / camera.aspect) ** 0.85);
+        const dist = (Math.max(w, h) * 1.55 + 3.2) * zoom * estreita;
         camera.position.set(
             alvoCam.x + Math.sin(yaw) * Math.cos(pitch) * dist,
             alvoCam.y + Math.sin(pitch) * dist,
@@ -817,6 +819,7 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         renderer.setSize(largura, altura, false);
         camera.aspect = largura / altura;
         camera.updateProjectionMatrix();
+        posicionarCamera();
     };
     const observador = new ResizeObserver(ajustarTamanho);
 
@@ -868,8 +871,21 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         miraFundo.material.color.setHex(cor);
     };
 
+    // Dois dedos na tela: pinça para aproximar/afastar
+    const dedos = new Map();
+    let pinca = null;
+    const distanciaDedos = () => {
+        const [a, b] = [...dedos.values()];
+        return Math.hypot(a.x - b.x, a.y - b.y);
+    };
     canvas.addEventListener("pointerdown", (ev) => {
         canvas.setPointerCapture?.(ev.pointerId);
+        dedos.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        if (dedos.size === 2) {
+            pinca = { d: distanciaDedos(), zoom };
+            arrasto = null;
+            return;
+        }
         arrasto = { x: ev.clientX, y: ev.clientY, yaw, pitch, moveu: false, movel: null };
         // No modo Construir, apertar num móvel e arrastar leva o móvel junto
         if (dados?.construir) {
@@ -881,6 +897,12 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         }
     });
     canvas.addEventListener("pointermove", (ev) => {
+        if (dedos.has(ev.pointerId)) dedos.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        if (pinca && dedos.size === 2) {
+            zoom = Math.min(1.5, Math.max(0.45, pinca.zoom * (pinca.d / Math.max(20, distanciaDedos()))));
+            posicionarCamera();
+            return;
+        }
         if (arrasto && ev.buttons) {
             const dx = ev.clientX - arrasto.x;
             const dy = ev.clientY - arrasto.y;
@@ -911,7 +933,21 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         const alvo = alvoNoPonto(ev);
         canvas.style.cursor = alvo && alvo.tipo !== "cliente" ? "pointer" : "grab";
     });
+    const soltarDedo = (ev) => {
+        dedos.delete(ev.pointerId);
+        if (dedos.size < 2) pinca = null;
+    };
+    canvas.addEventListener("pointercancel", (ev) => {
+        soltarDedo(ev);
+        arrasto = null;
+    });
     canvas.addEventListener("pointerup", (ev) => {
+        const eraPinca = !!pinca;
+        soltarDedo(ev);
+        if (eraPinca) {
+            arrasto = null;
+            return;
+        }
         const a = arrasto;
         arrasto = null;
         if (!a) return;
@@ -927,7 +963,10 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         // Construindo ou movendo: o clique vale para a casa do chão embaixo do mouse
         if (dados?.construir && (dados.livres || []).length) {
             const casa = casaNoPonto(ev);
-            if (livre(casa)) return aoClicar({ tipo: "chao", x: casa.x, y: casa.y });
+            // Se um móvel estiver na frente do chão tocado, o toque é no móvel
+            const hit = raio.intersectObject(mobilia, true)[0];
+            const distChao = raio.ray.origin.distanceTo(pontoChao);
+            if (livre(casa) && !(hit && hit.distance < distChao - 0.05)) return aoClicar({ tipo: "chao", x: casa.x, y: casa.y });
         }
         const alvo = alvoNoPonto(ev);
         if (alvo && alvo.tipo !== "cliente") aoClicar(alvo);
