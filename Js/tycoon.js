@@ -36,6 +36,8 @@ let offlinePendente = null;
 let ultimaVendaSom = 0;
 // Vista do mapa: 3D (padrão) ou 2D, lembrada só neste navegador
 let vista3d = true;
+let cena3d = null; // cena WebGL (carregada só quando a vista 3D é usada)
+let modulo3d = null;
 try {
     vista3d = localStorage.getItem("tycoon_vista") !== "2d";
 } catch (e) { /* sem armazenamento */ }
@@ -158,6 +160,7 @@ const reagir = (ev) => {
 };
 
 const flutuar = (pos, texto, classe) => {
+    if (vista3d && cena3d && $("#ty-mapa3d", app)) return cena3d.flutuar(pos, texto, classe);
     const mapa = $("#ty-mapa", app);
     if (!mapa || aba !== "loja") return;
     const el = document.createElement("span");
@@ -281,8 +284,12 @@ const telaLoja = () => {
         </div>
         <div class="ty-evento" id="ty-evento" hidden></div>
         <div class="ty-grade">
-            <div class="ty-mapa-caixa ${vista3d ? "tres-d" : ""}" style="--w:${w};--h:${h}">
-                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">${vista3d ? "▦ Ver em 2D" : "🧊 Ver em 3D"}</button>
+            ${vista3d ? `<div class="ty-mapa3d" id="ty-mapa3d" style="--w:${w};--h:${h}">
+                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">▦ Ver em 2D</button>
+                <span class="ty-dica3d">Arraste para girar • rodinha para aproximar</span>
+                <span class="ty-carregando">Carregando a loja em 3D...</span>
+            </div>` : `<div class="ty-mapa-caixa" style="--w:${w};--h:${h}">
+                <button class="ty-vista" data-tycoon="vista" title="Trocar a vista do mapa">🧊 Ver em 3D</button>
                 <div class="ty-mapa ${modoConstruir ? "construindo" : ""}" id="ty-mapa">
                     <div class="ty-piso"></div>
                     <div class="ty-rejunte"></div>
@@ -301,7 +308,7 @@ const telaLoja = () => {
                     ${nivelEquipe(t(), "pikachu") ? `<div class="ty-mascote" style="left:calc(${porta(t()).x + 1} * var(--tile));top:calc(${porta(t()).y} * var(--tile))"><img src="${imagemPixel(25)}" alt="Pikachu"></div>` : ""}
                     <div class="ty-clientes" id="ty-clientes"></div>
                 </div>
-            </div>
+            </div>`}
             <aside class="ty-lado">
                 <div class="ty-modos">
                     <button class="${modoConstruir ? "" : "ativo"}" data-tycoon="modo" data-modo="jogar">🛒 Gerenciar</button>
@@ -311,7 +318,60 @@ const telaLoja = () => {
             </aside>
         </div>
     </section>`;
+    if (vista3d) iniciar3d();
     desenharMundo(true);
+};
+
+// ---------- Vista 3D (WebGL) ----------
+const dadosLoja3d = () => ({
+    w: tamanho(t()).w,
+    h: tamanho(t()).h,
+    porta: porta(t()),
+    pikachu: nivelEquipe(t(), "pikachu") > 0,
+    moveis: t().moveis.map((m) => ({
+        ...m,
+        visiveis: m.tipo === "prateleira" ? itensVisiveis(m) : 0,
+        preco: m.tipo === "prateleira" ? precoVenda(t(), m.produto) : 0,
+        carta: m.tipo === "vitrine" && m.carta && CARTA_POR_ID[m.carta] && quantidade(m.carta) ? CARTA_POR_ID[m.carta].imagem : null,
+        chansey: m.tipo === "caixa" && nivelEquipe(t(), "chansey") > 0,
+        selecionado: selecionado === `${m.x},${m.y}`,
+    })),
+    // Espaços onde dá para construir (só com um móvel escolhido na paleta)
+    livres: modoConstruir && paleta ? livresParaConstruir() : [],
+});
+const livresParaConstruir = () => {
+    const { w, h } = tamanho(t());
+    const lista = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (podeConstruir(t(), x, y)) lista.push([x, y]);
+    return lista;
+};
+
+// Clique no 3D: chama as mesmas ações dos botões do 2D
+const clique3d = (alvo) => {
+    const el = { dataset: { x: String(alvo.x), y: String(alvo.y), id: String(alvo.id) }, disabled: false, remove() {} };
+    if (alvo.tipo === "chao") ACOES.chao(el);
+    else if (alvo.tipo === "movel") ACOES.movel(el);
+    else if (alvo.tipo === "rocket") ACOES.rocket(el);
+};
+
+const iniciar3d = async () => {
+    try {
+        modulo3d ||= await import("./tycoon-3d.js");
+        if (!modulo3d.temWebGL()) throw new Error("sem WebGL");
+        const el = $("#ty-mapa3d", app);
+        if (!el) return;
+        cena3d ||= modulo3d.criarCena({ aoClicar: clique3d });
+        cena3d.anexar(el);
+        cena3d.limparClientes();
+        cena3d.montarLoja(dadosLoja3d());
+        el.classList.add("pronto");
+        desenharMundo(true);
+    } catch (e) {
+        // Sem 3D neste aparelho: volta para a vista de cima
+        vista3d = false;
+        aviso("Seu navegador não conseguiu abrir o 3D. Mostrando a loja em 2D.", "erro");
+        redesenhar();
+    }
 };
 
 // Clientes andando: reaproveita os elementos para a animação ficar suave
@@ -320,6 +380,23 @@ const companheiros = new Map();
 const DISTANCIA_COMPANHEIRO = 0.65;
 
 const desenharMundo = (forcar = false) => {
+    if (vista3d) {
+        if (cena3d && $("#ty-mapa3d", app)) {
+            cena3d.atualizarClientes(mundo.clientes.map((c) => ({
+                id: c.id,
+                x: c.x,
+                y: c.y,
+                rocket: !!c.rocket,
+                andando: c.rota.length > 0,
+                sprite: spriteTreinador(c.sprite ?? c.id, { rocket: c.rocket }),
+                pokemon: imagemSprite(c.rocket ? ROCKET_SPRITE : CLIENTES_SPRITES[(c.sprite ?? c.id) % CLIENTES_SPRITES.length]),
+                balao: c.estado === "fila" ? "🛍️" : c.humor ? HUMOR[c.humor] : "",
+            })));
+            cena3d.atualizarEstoque(Object.fromEntries(t().moveis.filter((m) => m.tipo === "prateleira").map((m) => [`${m.x},${m.y}`, itensVisiveis(m)])));
+        }
+        if (forcar || Math.random() < 0.1) atualizarPainelSelecionado();
+        return;
+    }
     const camada = $("#ty-clientes", app);
     if (!camada) return;
     const vivos = new Set();
