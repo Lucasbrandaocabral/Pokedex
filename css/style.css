@@ -2290,3 +2290,31 @@ body.modo-tycoon main { max-width: 1440px; }
     50% { transform: translateX(-50%) rotateZ(calc(var(--rz) * -1)) rotateX(-90deg) scaleY(var(--em-pe)) rotate(3deg); }
 }
 .tres-d .ty-planta { background: radial-gradient(closest-side, rgba(0, 0, 0, 0.28), transparent) !important; }
+
+/* ---------- Estante nova: gôndola de madeira com 3 prateleiras ---------- */
+.ty-estante {
+    grid-template-rows: repeat(3, 1fr); gap: 0; padding: 2px 3px 0;
+    background:
+        repeating-linear-gradient(to bottom, transparent 0 calc(33.333% - 4px), #e0a36a calc(33.333% - 4px) calc(33.333% - 2px), #a8744a calc(33.333% - 2px) 33.333%),
+        linear-gradient(#3e2715, #5a3a20);
+    box-shadow: inset 0 0 0 2px #c98b55, inset 0 6px 8px rgba(0, 0, 0, 0.35);
+}
+.ty-estante img { align-self: end; padding: 0 1px 3px; filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.45)); }
+/* 3D: a estante vira um armário de verdade; a frente aberta mostra as prateleiras */
+.tres-d .ty-prateleira {
+    --alt: calc(var(--tile) * 0.95) !important; --lado: #8a5a34; --frente: #5a3a20;
+    background: linear-gradient(135deg, #d8a371, #b98552); border-radius: 2px;
+}
+.tres-d .ty-prateleira::before { display: none; }
+.tres-d .ty-prateleira .ty-estante {
+    inset: auto; left: -2.5px; top: calc(100% - 0.5px); bottom: auto; width: calc(100% + 5px); height: var(--alt); margin: 0;
+    transform-origin: top; transform: rotateX(-90deg); padding: 4px 5px 0; border-width: 2.5px; border-radius: 0;
+    box-shadow: inset 0 0 0 3px #c98b55, inset 0 10px 12px rgba(0, 0, 0, 0.4);
+}
+.tres-d .ty-prateleira .ty-estante::before { display: none; }
+.tres-d .ty-prateleira .ty-etiqueta { bottom: 2px; font-size: calc(var(--tile) * 0.12); }
+.tres-d .ty-prateleira:hover { transform: translateZ(calc(var(--alt) + 4px)); }
+.tres-d .ty-prateleira .ty-estoque { bottom: 6px; left: 10%; right: 10%; }
+.tres-d .construindo .ty-prateleira .ty-estante { opacity: 1; }
+.tres-d .ty-movel.ty-prateleira.selecionado { box-shadow: 0 0 0 4px var(--azul); }
+.tres-d .ty-movel.ty-prateleira.selecionado .ty-estante { filter: none; outline: 3px solid var(--azul); }
