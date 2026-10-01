@@ -1190,6 +1190,15 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         if (dados?.construir) {
             const casa = casaNoPonto(ev);
             const temLivres = (dados.livres || []).length > 0;
+            // Objeto "na mão": acompanha o mouse por cima do chão
+            if (dados.carregando) {
+                const modelo = mobilia.children.find((m) => m.userData.chave === dados.carregando);
+                if (modelo) {
+                    const [ox, oy] = dados.carregando.split(",").map(Number);
+                    const destino = casa && livre(casa) ? casa : { x: ox, y: oy };
+                    modelo.position.set(destino.x + 0.5, 0.15, destino.y + 0.5);
+                }
+            }
             if (temLivres && casa) mostrarMira(casa, livre(casa));
             else miraG.visible = false;
             const alvo = !temLivres || !livre(casa) ? alvoNoPonto(ev) : null;
@@ -1237,7 +1246,14 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         const alvo = alvoNoPonto(ev);
         if (alvo && alvo.tipo !== "cliente") aoClicar(alvo);
     });
-    canvas.addEventListener("pointerleave", () => { miraG.visible = false; });
+    canvas.addEventListener("pointerleave", () => {
+        miraG.visible = false;
+        const modelo = dados?.carregando && mobilia.children.find((m) => m.userData.chave === dados.carregando);
+        if (modelo) {
+            const [ox, oy] = dados.carregando.split(",").map(Number);
+            modelo.position.set(ox + 0.5, 0.15, oy + 0.5);
+        }
+    });
     canvas.addEventListener("wheel", (ev) => {
         ev.preventDefault();
         zoom = Math.min(1.5, Math.max(0.45, zoom * (ev.deltaY > 0 ? 1.08 : 0.93)));
@@ -1267,6 +1283,7 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
             modelo.position.set(m.x + 0.5, 0, m.y + 0.5);
             // A frente gira de 90 em 90 graus (0 = para a frente da loja)
             modelo.rotation.y = (m.rot || 0) * (Math.PI / 2);
+            if (novo.carregando === `${m.x},${m.y}`) modelo.position.y = 0.15;
             modelo.userData.alvo = { tipo: "movel", x: m.x, y: m.y };
             modelo.userData.chave = `${m.x},${m.y}`;
             mobilia.add(modelo);

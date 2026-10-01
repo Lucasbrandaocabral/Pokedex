@@ -2700,3 +2700,17 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
     .ty-jogo:has(.ty-barra) .ty-acoes { bottom: auto; top: 6px; }
     .ty-jogo:has(.ty-barra) .ty-camera { top: 6px; right: 8px; }
 }
+
+/* Modo Editar */
+.ty-modos { grid-template-columns: repeat(3, 1fr); }
+.ty-barra-dica { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.86rem; border-color: var(--azul); }
+.ty-barra-dica b { color: var(--azul); }
+@media (max-width: 760px) {
+    .ty-acoes, .ty-jogo:has(.ty-barra) .ty-acoes { top: 6px; bottom: auto; left: 6px; gap: 4px; }
+    .ty-acoes button { padding: 5px 9px; font-size: 0.78rem; }
+    .ty-acoes button[data-tycoon="abrir-painel"] { display: inline-block; }
+    .ty-acoes button[data-tycoon="abrir-painel"][data-modo="jogar"] { display: none; }
+    .ty-mapa3d .ty-camera { top: 6px; bottom: auto; right: 6px; left: auto; }
+    .ty-camera button { width: 32px; height: 32px; font-size: 1rem; }
+    .ty-barra-dica { font-size: 0.74rem; }
+}
