@@ -742,11 +742,21 @@ const montarSala = (w, h, porta) => {
     sala.add(mat1);
     for (const lado of [0, 1]) sala.add(em(caixa(0.08, 1.5, 0.1, mat(0xb8bcc8, { metal: 0.4, rough: 0.35 })), porta.x + lado, 0.75, h - 0.02));
     sala.add(em(caixa(1.12, 0.12, 0.12, mat(0xdc2a3c)), porta.x + 0.5, 1.52, h - 0.02));
+    // Separa o que fica em cada parede, para esconder a parede que estiver na frente da câmera
+    const fundoG = new THREE.Group();
+    const esquerdaG = new THREE.Group();
+    for (const filho of [...sala.children]) {
+        if (filho === chao) continue;
+        if (filho.position.z <= 0.05) fundoG.add(filho);
+        else if (filho.position.x <= 0.05) esquerdaG.add(filho);
+    }
+    sala.add(fundoG, esquerdaG);
+    sala.userData.paredes = { fundo: fundoG, esquerda: esquerdaG };
     return sala;
 };
 
 // ---------------- Cena ----------------
-export const criarCena = ({ aoClicar }) => {
+export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
@@ -776,6 +786,7 @@ export const criarCena = ({ aoClicar }) => {
     let container = null;
     let rodando = false;
     let yaw = 0.62;
+    let pitch = 0.78;
     let zoom = 0.8;
     const alvoCam = new THREE.Vector3();
 
@@ -784,13 +795,18 @@ export const criarCena = ({ aoClicar }) => {
         const { w, h } = dados;
         alvoCam.set(w / 2, 0.35, h / 2 + 0.2);
         const dist = (Math.max(w, h) * 1.55 + 3.2) * zoom;
-        const pitch = 0.78;
         camera.position.set(
             alvoCam.x + Math.sin(yaw) * Math.cos(pitch) * dist,
             alvoCam.y + Math.sin(pitch) * dist,
             alvoCam.z + Math.cos(yaw) * Math.cos(pitch) * dist,
         );
         camera.lookAt(alvoCam);
+        // Parede entre a câmera e a loja some (assim dá para ver de qualquer lado)
+        const paredes = sala?.userData.paredes;
+        if (paredes) {
+            paredes.fundo.visible = camera.position.z > 0.3;
+            paredes.esquerda.visible = camera.position.x > 0.3;
+        }
     };
 
     const ajustarTamanho = () => {
@@ -804,15 +820,20 @@ export const criarCena = ({ aoClicar }) => {
     };
     const observador = new ResizeObserver(ajustarTamanho);
 
-    // ---- Clique, arrastar para girar e rodinha para aproximar ----
+    // ---- Mouse/toque: arrastar gira a câmera (ou move o móvel no modo Construir) ----
     const raio = new THREE.Raycaster();
     const ponteiro = new THREE.Vector2();
+    const planoChao = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const pontoChao = new THREE.Vector3();
     let arrasto = null;
-    const alvoNoPonto = (ev) => {
+    const mirar = (ev) => {
         const r = canvas.getBoundingClientRect();
         ponteiro.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
         raio.setFromCamera(ponteiro, camera);
-        const hits = raio.intersectObjects([marcas, mobilia, pessoas], true);
+    };
+    const alvoNoPonto = (ev) => {
+        mirar(ev);
+        const hits = raio.intersectObjects([mobilia, pessoas], true);
         for (const hit of hits) {
             let o = hit.object;
             while (o && !o.userData.alvo) o = o.parent;
@@ -820,28 +841,101 @@ export const criarCena = ({ aoClicar }) => {
         }
         return null;
     };
-    canvas.addEventListener("pointerdown", (ev) => { arrasto = { x: ev.clientX, y: ev.clientY, yaw, moveu: false }; });
+    // Casa do chão que está embaixo do mouse (ignora pessoas, móveis e paredes no caminho)
+    const casaNoPonto = (ev) => {
+        mirar(ev);
+        if (!dados || !raio.ray.intersectPlane(planoChao, pontoChao)) return null;
+        const x = Math.floor(pontoChao.x);
+        const y = Math.floor(pontoChao.z);
+        return x >= 0 && y >= 0 && x < dados.w && y < dados.h ? { x, y } : null;
+    };
+    const livre = (casa) => casa && (dados.livres || []).some(([x, y]) => x === casa.x && y === casa.y);
+
+    // Quadrado que mostra onde o móvel vai cair
+    const mira = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(0.96, 0.02, 0.96)), new THREE.LineBasicMaterial({ color: 0xffffff }));
+    const miraFundo = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.96), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false }));
+    miraFundo.rotation.x = -Math.PI / 2;
+    const miraG = new THREE.Group();
+    miraG.add(mira, miraFundo);
+    miraG.visible = false;
+    cena.add(miraG);
+    const mostrarMira = (casa, ok) => {
+        miraG.visible = !!casa;
+        if (!casa) return;
+        miraG.position.set(casa.x + 0.5, 0.02, casa.y + 0.5);
+        const cor = ok ? 0x2ecc71 : 0xe74c3c;
+        mira.material.color.setHex(cor);
+        miraFundo.material.color.setHex(cor);
+    };
+
+    canvas.addEventListener("pointerdown", (ev) => {
+        canvas.setPointerCapture?.(ev.pointerId);
+        arrasto = { x: ev.clientX, y: ev.clientY, yaw, pitch, moveu: false, movel: null };
+        // No modo Construir, apertar num móvel e arrastar leva o móvel junto
+        if (dados?.construir) {
+            const alvo = alvoNoPonto(ev);
+            if (alvo?.tipo === "movel") {
+                const modelo = mobilia.children.find((m) => m.userData.chave === `${alvo.x},${alvo.y}`);
+                arrasto.movel = { ...alvo, modelo };
+            }
+        }
+    });
     canvas.addEventListener("pointermove", (ev) => {
-        if (arrasto && (ev.buttons & 1)) {
+        if (arrasto && ev.buttons) {
             const dx = ev.clientX - arrasto.x;
-            if (Math.abs(dx) > 4) arrasto.moveu = true;
-            yaw = Math.min(1.15, Math.max(0.15, arrasto.yaw - dx * 0.006));
+            const dy = ev.clientY - arrasto.y;
+            if (Math.hypot(dx, dy) > 5) arrasto.moveu = true;
+            if (!arrasto.moveu) return;
+            if (arrasto.movel) {
+                const casa = casaNoPonto(ev);
+                const ok = casa && podeMover?.(arrasto.movel.x, arrasto.movel.y, casa.x, casa.y);
+                if (casa && arrasto.movel.modelo) arrasto.movel.modelo.position.set(casa.x + 0.5, 0.12, casa.y + 0.5);
+                mostrarMira(casa, ok);
+                return;
+            }
+            // Gira em volta da loja (360°) e inclina para cima/baixo
+            yaw = arrasto.yaw - dx * 0.008;
+            pitch = Math.min(1.45, Math.max(0.35, arrasto.pitch + dy * 0.005));
             posicionarCamera();
             return;
         }
+        if (dados?.construir) {
+            const casa = casaNoPonto(ev);
+            const temLivres = (dados.livres || []).length > 0;
+            if (temLivres && casa) mostrarMira(casa, livre(casa));
+            else miraG.visible = false;
+            const alvo = !temLivres || !livre(casa) ? alvoNoPonto(ev) : null;
+            canvas.style.cursor = (temLivres && livre(casa)) || alvo?.tipo === "movel" ? "pointer" : "grab";
+            return;
+        }
         const alvo = alvoNoPonto(ev);
-        canvas.style.cursor = alvo && alvo.tipo !== "piso" ? "pointer" : "grab";
+        canvas.style.cursor = alvo && alvo.tipo !== "cliente" ? "pointer" : "grab";
     });
     canvas.addEventListener("pointerup", (ev) => {
-        const foiArrasto = arrasto?.moveu;
+        const a = arrasto;
         arrasto = null;
-        if (foiArrasto) return;
+        if (!a) return;
+        if (a.movel && a.moveu) {
+            // Soltou o móvel: vai para a casa nova se puder; senão volta
+            miraG.visible = false;
+            const casa = casaNoPonto(ev);
+            if (casa && podeMover?.(a.movel.x, a.movel.y, casa.x, casa.y)) aoMover(a.movel.x, a.movel.y, casa.x, casa.y);
+            else if (a.movel.modelo) a.movel.modelo.position.set(a.movel.x + 0.5, 0, a.movel.y + 0.5);
+            return;
+        }
+        if (a.moveu) return;
+        // Construindo ou movendo: o clique vale para a casa do chão embaixo do mouse
+        if (dados?.construir && (dados.livres || []).length) {
+            const casa = casaNoPonto(ev);
+            if (livre(casa)) return aoClicar({ tipo: "chao", x: casa.x, y: casa.y });
+        }
         const alvo = alvoNoPonto(ev);
-        if (alvo && alvo.tipo !== "piso") aoClicar(alvo);
+        if (alvo && alvo.tipo !== "cliente") aoClicar(alvo);
     });
+    canvas.addEventListener("pointerleave", () => { miraG.visible = false; });
     canvas.addEventListener("wheel", (ev) => {
         ev.preventDefault();
-        zoom = Math.min(1.35, Math.max(0.6, zoom * (ev.deltaY > 0 ? 1.08 : 0.93)));
+        zoom = Math.min(1.5, Math.max(0.45, zoom * (ev.deltaY > 0 ? 1.08 : 0.93)));
         posicionarCamera();
     }, { passive: false });
 
@@ -1058,6 +1152,22 @@ export const criarCena = ({ aoClicar }) => {
         },
         montarLoja,
         atualizarEstoque,
+        // Posição na tela (px, relativa ao canvas) do centro de uma casa do mapa
+        pontoNaTela(x, y, altura = 0) {
+            const v = new THREE.Vector3(x + 0.5, altura, y + 0.5).project(camera);
+            const r = canvas.getBoundingClientRect();
+            return { x: ((v.x + 1) / 2) * r.width, y: ((1 - v.y) / 2) * r.height };
+        },
+        girarCamera(passo) {
+            yaw += passo;
+            posicionarCamera();
+        },
+        centralizarCamera() {
+            yaw = 0.62;
+            pitch = 0.78;
+            zoom = 0.8;
+            posicionarCamera();
+        },
         atualizarClientes,
         flutuar,
         limparClientes() {
