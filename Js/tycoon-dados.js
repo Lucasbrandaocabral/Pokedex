@@ -88,6 +88,10 @@ export const normalizarTycoon = (t) => {
     const base = tycoonInicial();
     const x = t && typeof t === "object" ? { ...base, ...t } : base;
     x.moveis = Array.isArray(x.moveis) ? x.moveis.filter((m) => m && MOVEIS[m.tipo]) : base.moveis;
+    for (const m of x.moveis) {
+        if (!(Number.isInteger(m.rot) && m.rot >= 0 && m.rot < 4)) delete m.rot;
+        if (!ACABAMENTOS[m.acabamento]) delete m.acabamento;
+    }
     x.equipe = x.equipe && typeof x.equipe === "object" ? { ...x.equipe } : {};
     x.precos = x.precos && typeof x.precos === "object" ? { ...x.precos } : {};
     x.pacotesHoje = x.pacotesHoje && typeof x.pacotesHoje === "object" ? x.pacotesHoje : { dia: "", qtd: 0 };
@@ -167,12 +171,57 @@ const todosAlcancaveis = (t) => {
 };
 
 // Espaço livre ao lado de um móvel, o mais perto da porta
+// Para onde a frente do móvel aponta (rot 0 = para baixo, depois gira no sentido horário)
+export const FRENTES = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
 export const ladoLivre = (t, m) => {
+    // Os clientes usam a frente do móvel quando ela está livre
+    const [fx, fy] = FRENTES[m.rot || 0];
+    if (livre(t, m.x + fx, m.y + fy)) return { x: m.x + fx, y: m.y + fy };
     const opcoes = vizinhos(m.x, m.y).filter(([x, y]) => livre(t, x, y));
     if (!opcoes.length) return null;
     const p = porta(t);
     opcoes.sort((a, b) => Math.abs(a[0] - p.x) + Math.abs(a[1] - p.y) - (Math.abs(b[0] - p.x) + Math.abs(b[1] - p.y)));
     return { x: opcoes[0][0], y: opcoes[0][1] };
+};
+
+// ---------------- Editar móveis (mover, girar e pintar) ----------------
+export const ACABAMENTOS = {
+    madeira: { nome: "Madeira", cor: "#c98b55" },
+    nogueira: { nome: "Nogueira", cor: "#7a4f2e" },
+    branco: { nome: "Branco", cor: "#e9e9ef" },
+    vermelho: { nome: "Vermelho Pokémart", cor: "#dc2a3c" },
+    azul: { nome: "Azul", cor: "#2f5bd3" },
+    verde: { nome: "Verde", cor: "#2e9e5b" },
+};
+
+// Dá para levar o móvel de (x,y) até (nx,ny)? Mesmas regras de construir.
+export const podeMover = (t, x, y, nx, ny) => {
+    const m = movelEm(t, x, y);
+    if (!m || (x === nx && y === ny)) return false;
+    t.moveis = t.moveis.filter((o) => o !== m);
+    const ok = podeConstruir(t, nx, ny);
+    t.moveis.push(m);
+    return ok;
+};
+export const moverMovel = (t, x, y, nx, ny) => {
+    if (!podeMover(t, x, y, nx, ny)) return false;
+    const m = movelEm(t, x, y);
+    m.x = nx;
+    m.y = ny;
+    return true;
+};
+export const girarMovel = (t, x, y) => {
+    const m = movelEm(t, x, y);
+    if (!m) return false;
+    m.rot = ((m.rot || 0) + 1) % 4;
+    return true;
+};
+export const pintarMovel = (t, x, y, acabamento) => {
+    const m = movelEm(t, x, y);
+    if (!m || !ACABAMENTOS[acabamento]) return false;
+    m.acabamento = acabamento;
+    return true;
 };
 
 export const construir = (t, x, y, tipo, extra = {}) => {

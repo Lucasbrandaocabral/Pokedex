@@ -12,6 +12,7 @@ import {
     normalizarTycoon, novoMundo, simular, tamanho, porta, movelEm, podeConstruir, construir, remover, trocarProduto, repor, reporTudo,
     custoRepor, estoqueMax, produtoLiberado, contratar, custoEquipe, nivelEquipe, podeMudar, mudarCidade, taxaClientes, precoVenda,
     atracao, expulsarRocket, entrarRocket, atualizarTaxa, aplicarOffline, pacotesDisponiveis, resgatarPacote,
+    ACABAMENTOS, podeMover, moverMovel, girarMovel, pintarMovel,
 } from "./tycoon-dados.js";
 
 const TICK = 100;
@@ -28,6 +29,8 @@ let mundo = novoMundo();
 let modoConstruir = false;
 let paleta = null; // tipo de móvel escolhido para construir
 let selecionado = null; // "x,y" do móvel selecionado
+let editando = null; // "x,y" do móvel sendo editado no modo Construir
+let movendo = false; // escolhendo o lugar novo do móvel em edição
 let eventoAtual = null; // { tipo, ate }
 let proximoEvento = 0;
 let lucroMinuto = { inicio: Date.now(), valor: 0 };
@@ -247,8 +250,17 @@ const htmlMovel = (m) => {
         dentro += `<span class="ty-registradora"><i class="rg-corpo"></i><i class="rg-visor"></i></span>`;
         if (nivelEquipe(t(), "chansey")) dentro += `<img class="ty-funcionario" src="${imagemPixel(113)}" alt="Chansey" draggable="false">`;
     }
-    return `<button class="ty-movel ty-${m.tipo}${sel}" data-tycoon="movel" data-x="${m.x}" data-y="${m.y}"
-        style="grid-column:${m.x + 1};grid-row:${m.y + 1}" title="${info.nome}">${dentro}</button>`;
+    const edit = editando === `${m.x},${m.y}` ? " editando" : "";
+    const acab = m.acabamento ? `--acab:${ACABAMENTOS[m.acabamento].cor};` : "";
+    return `<button class="ty-movel ty-${m.tipo}${sel}${edit} rot-${m.rot || 0}${m.acabamento ? " pintado" : ""}" data-tycoon="movel" data-x="${m.x}" data-y="${m.y}"
+        style="grid-column:${m.x + 1};grid-row:${m.y + 1};${acab}" title="${info.nome}">${dentro}</button>`;
+};
+
+// No modo Construir: dá para pôr o móvel escolhido (ou levar o que está sendo movido) aqui?
+const posEditando = () => editando && editando.split(",").map(Number);
+const podeAqui = (x, y) => {
+    if (movendo && editando) return podeMover(t(), ...posEditando(), x, y);
+    return !!paleta && podeConstruir(t(), x, y);
 };
 
 const htmlChao = () => {
@@ -259,7 +271,7 @@ const htmlChao = () => {
         for (let x = 0; x < w; x++) {
             if (movelEm(t(), x, y)) continue;
             const ehPorta = x === p.x && y === p.y;
-            const pode = modoConstruir && paleta && !ehPorta && podeConstruir(t(), x, y);
+            const pode = modoConstruir && !ehPorta && podeAqui(x, y);
             partes.push(`<button class="ty-chao ${ehPorta ? "porta" : ""} ${pode ? "pode" : ""}" data-tycoon="chao" data-x="${x}" data-y="${y}"
                 style="grid-column:${x + 1};grid-row:${y + 1}" ${modoConstruir ? "" : "tabindex=-1"}>${ehPorta ? "🚪" : ""}</button>`);
         }
@@ -334,15 +346,16 @@ const dadosLoja3d = () => ({
         preco: m.tipo === "prateleira" ? precoVenda(t(), m.produto) : 0,
         carta: m.tipo === "vitrine" && m.carta && CARTA_POR_ID[m.carta] && quantidade(m.carta) ? CARTA_POR_ID[m.carta].imagem : null,
         chansey: m.tipo === "caixa" && nivelEquipe(t(), "chansey") > 0,
-        selecionado: selecionado === `${m.x},${m.y}`,
+        selecionado: selecionado === `${m.x},${m.y}` || editando === `${m.x},${m.y}`,
+        cor: m.acabamento ? ACABAMENTOS[m.acabamento].cor : null,
     })),
     // Espaços onde dá para construir (só com um móvel escolhido na paleta)
-    livres: modoConstruir && paleta ? livresParaConstruir() : [],
+    livres: modoConstruir && (paleta || movendo) ? livresParaConstruir() : [],
 });
 const livresParaConstruir = () => {
     const { w, h } = tamanho(t());
     const lista = [];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (podeConstruir(t(), x, y)) lista.push([x, y]);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (podeAqui(x, y)) lista.push([x, y]);
     return lista;
 };
 
@@ -535,10 +548,35 @@ const atualizarPainelSelecionado = () => {
     }
 };
 
+const htmlEditor = () => {
+    const m = editando && movelEm(t(), ...posEditando());
+    if (!m) return "";
+    const info = MOVEIS[m.tipo];
+    return `
+    <div class="ty-bloco ty-editor">
+        <div class="ty-editor-topo">
+            <h3>${icoMovel(m.tipo)} Editar ${info.nome}</h3>
+            <button class="ty-fechar" data-tycoon="fechar-edicao" title="Fechar">✕</button>
+        </div>
+        <div class="ty-editor-acoes">
+            <button class="btn pequeno" data-tycoon="girar">↻ Girar</button>
+            <button class="btn pequeno ${movendo ? "dourado" : ""}" data-tycoon="mover">${movendo ? "Escolha o lugar…" : "✥ Mover"}</button>
+            <button class="btn pequeno secundario" data-tycoon="vender-movel">Vender (+₽ ${fmt(info.custo / 2)})</button>
+        </div>
+        ${movendo ? `<p class="sutil pequeno">Clique num espaço verde do mapa para levar o móvel. Clique em "Mover" de novo para cancelar.</p>` : ""}
+        <h4>Acabamento</h4>
+        <div class="ty-acabamentos">${Object.entries(ACABAMENTOS).map(([id, a]) => `
+            <button class="${(m.acabamento || "madeira") === id ? "ativo" : ""}" data-tycoon="pintar" data-acabamento="${id}" title="${a.nome}" style="--cor:${a.cor}"><i></i><small>${a.nome}</small></button>`).join("")}
+        </div>
+        <p class="sutil pequeno">A frente do móvel é o lado em que os clientes compram.</p>
+    </div>`;
+};
+
 const htmlPaleta = () => `
+    ${htmlEditor()}
     <div class="ty-bloco">
         <h3>Construir</h3>
-        <p class="sutil pequeno">Escolha um móvel e clique num espaço livre (verde). Clique num móvel para vender (volta metade do preço). Sempre deixe caminho até a porta 🚪.</p>
+        <p class="sutil pequeno">Escolha um móvel e clique num espaço livre (verde). Clique num móvel da loja para <b>editar</b>: girar, mover, pintar ou vender. Sempre deixe caminho até a porta 🚪.</p>
         <div class="ty-paleta">${Object.entries(MOVEIS).map(([id, m]) => `
             <button class="${paleta === id ? "ativo" : ""}" data-tycoon="paleta" data-tipo="${id}" ${t().dinheiro < m.custo ? "disabled" : ""}>
                 <span>${icoMovel(id)}</span><b>${m.nome}</b><small>₽ ${fmt(m.custo)}</small><em>${m.desc}</em>
@@ -653,16 +691,31 @@ const ACOES = {
     modo: (el) => {
         modoConstruir = el.dataset.modo === "construir";
         paleta = null;
+        editando = null;
+        movendo = false;
         redesenhar();
     },
     paleta: (el) => {
         paleta = paleta === el.dataset.tipo ? null : el.dataset.tipo;
+        editando = null;
+        movendo = false;
         redesenhar();
     },
     chao: (el) => {
-        if (!modoConstruir || !paleta) return;
         const x = Number(el.dataset.x);
         const y = Number(el.dataset.y);
+        if (modoConstruir && movendo && editando) {
+            if (!moverMovel(t(), ...posEditando(), x, y)) {
+                sons.erro();
+                return aviso("Aí não dá: bloquearia o caminho dos clientes.", "erro");
+            }
+            sons.clique();
+            editando = `${x},${y}`;
+            movendo = false;
+            salvarTycoon();
+            return redesenhar();
+        }
+        if (!modoConstruir || !paleta) return;
         if (!construir(t(), x, y, paleta)) {
             sons.erro();
             return aviso(podeConstruir(t(), x, y) ? "Dinheiro insuficiente." : "Aí não dá: bloquearia o caminho dos clientes.", "erro");
@@ -676,18 +729,54 @@ const ACOES = {
         const m = movelDoBotao(el);
         if (!m) return;
         if (modoConstruir) {
-            const ok = await confirmar(`Vender ${MOVEIS[m.tipo].nome}?`, `Você recebe ₽ ${fmt(MOVEIS[m.tipo].custo / 2)} de volta${m.estoque ? " (o estoque volta pelo preço de custo)" : ""}.`, "Vender");
-            if (!ok) return;
-            if (m.estoque) t().dinheiro += m.estoque * PRODUTOS[m.produto].custo;
-            if (!remover(t(), m.x, m.y)) return aviso("A loja precisa de pelo menos um caixa.", "erro");
-            sons.moeda();
-            salvarTycoon();
+            // No modo Construir, clicar num móvel abre o editor dele
+            editando = editando === `${m.x},${m.y}` ? null : `${m.x},${m.y}`;
+            movendo = false;
+            paleta = null;
+            sons.clique();
             redesenhar();
             return;
         }
         selecionado = `${m.x},${m.y}`;
         sons.clique();
         if (m.tipo === "vitrine" && !m.carta) return escolherCarta(m);
+        redesenhar();
+    },
+    "fechar-edicao": () => {
+        editando = null;
+        movendo = false;
+        redesenhar();
+    },
+    girar: () => {
+        if (!editando || !girarMovel(t(), ...posEditando())) return;
+        sons.clique();
+        salvarTycoon();
+        redesenhar();
+    },
+    mover: () => {
+        if (!editando) return;
+        movendo = !movendo;
+        sons.clique();
+        redesenhar();
+    },
+    pintar: (el) => {
+        if (!editando || !pintarMovel(t(), ...posEditando(), el.dataset.acabamento)) return;
+        sons.clique();
+        salvarTycoon();
+        redesenhar();
+    },
+    "vender-movel": async () => {
+        const m = editando && movelEm(t(), ...posEditando());
+        if (!m) return;
+        const ok = await confirmar(`Vender ${MOVEIS[m.tipo].nome}?`, `Você recebe ₽ ${fmt(MOVEIS[m.tipo].custo / 2)} de volta${m.estoque ? " (o estoque volta pelo preço de custo)" : ""}.`, "Vender");
+        if (!ok) return;
+        if (m.tipo === "caixa" && t().moveis.filter((o) => o.tipo === "caixa").length === 1) return aviso("A loja precisa de pelo menos um caixa.", "erro");
+        if (m.estoque) t().dinheiro += m.estoque * PRODUTOS[m.produto].custo;
+        remover(t(), m.x, m.y);
+        editando = null;
+        movendo = false;
+        sons.moeda();
+        salvarTycoon();
         redesenhar();
     },
     repor: () => {

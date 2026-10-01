@@ -418,8 +418,10 @@ const ALTURAS_TABUA = [0.1, 0.43, 0.76];
 const FUNDOS_TABUA = [0.64, 0.44, 0.26];
 const estante = (m) => {
     const g = new THREE.Group();
-    const madeira = mat(MADEIRA);
-    const escura = mat(MADEIRA_ESC);
+    // Com acabamento escolhido, a estrutura ganha a cor; as tábuas continuam de madeira
+    const madeira = m.cor ? mat(m.cor, { rough: 0.6 }) : mat(MADEIRA);
+    const escura = m.cor ? mat(m.cor, { rough: 0.7 }) : mat(MADEIRA_ESC);
+    const tabua = mat(MADEIRA);
     g.add(em(caixa(0.88, 0.08, 0.7, escura), 0, 0.04, 0));
     g.add(em(caixa(0.88, 1.08, 0.05, escura), 0, 0.54, -0.325));
     for (const lado of [-1, 1]) g.add(em(caixa(0.05, 1.08, 0.7, madeira), lado * 0.415, 0.54, 0));
@@ -428,7 +430,7 @@ const estante = (m) => {
     ALTURAS_TABUA.forEach((y, n) => {
         const fundo = FUNDOS_TABUA[n];
         const z0 = -0.3;
-        g.add(em(caixa(0.78, 0.03, fundo, madeira), 0, y, z0 + fundo / 2));
+        g.add(em(caixa(0.78, 0.03, fundo, tabua), 0, y, z0 + fundo / 2));
         g.add(em(caixa(0.8, 0.06, 0.025, mat(MADEIRA_CLARA)), 0, y + 0.005, z0 + fundo));
         [-0.25, 0, 0.25].forEach((x) => {
             const p = (MODELOS_PRODUTO[m.produto] || pocao)();
@@ -465,7 +467,7 @@ const caixaRegistradora = (m) => {
         c.fill();
     });
     const frente = new THREE.MeshStandardMaterial({ map: texBalcao, roughness: 0.5 });
-    const lado = mat(0xd9d9e2, { rough: 0.5 });
+    const lado = mat(m.cor || 0xd9d9e2, { rough: 0.5 });
     const tampo = mat(MADEIRA_CLARA, { rough: 0.55 });
     const balcao = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.55, 0.62), [lado, lado, tampo, lado, frente, lado]);
     balcao.position.y = 0.275;
@@ -503,7 +505,7 @@ const caixaRegistradora = (m) => {
 
 const vitrine = (m) => {
     const g = new THREE.Group();
-    g.add(em(caixa(0.78, 0.42, 0.66, mat(0xf4f4f4, { rough: 0.4 })), 0, 0.21, 0));
+    g.add(em(caixa(0.78, 0.42, 0.66, mat(m.cor || 0xf4f4f4, { rough: 0.4 })), 0, 0.21, 0));
     g.add(em(caixa(0.8, 0.04, 0.68, mat(0xffcb05, { metal: 0.5, rough: 0.35 })), 0, 0.43, 0));
     // Vidro
     const vidro = caixa(0.72, 0.6, 0.6, mat(0xbfe8ff, { rough: 0.05, opacidade: 0.22, depthWrite: false }));
@@ -535,9 +537,9 @@ const vitrine = (m) => {
     return g;
 };
 
-const planta = () => {
+const planta = (m) => {
     const g = new THREE.Group();
-    g.add(em(cilindro(0.17, 0.12, 0.26, mat(0xd2693a, { rough: 0.85 })), 0, 0.13, 0));
+    g.add(em(cilindro(0.17, 0.12, 0.26, mat(m.cor || 0xd2693a, { rough: 0.85 })), 0, 0.13, 0));
     g.add(em(cilindro(0.18, 0.18, 0.04, mat(0xb5582a)), 0, 0.26, 0));
     g.add(em(cilindro(0.155, 0.155, 0.02, mat(0x4a3019)), 0, 0.27, 0));
     const folhas = new THREE.Group();
@@ -559,9 +561,9 @@ const planta = () => {
 };
 
 let texLetreiro = null;
-const maquina = () => {
+const maquina = (m) => {
     const g = new THREE.Group();
-    const vermelho = mat(0xdc2a3c, { rough: 0.4 });
+    const vermelho = mat(m.cor || 0xdc2a3c, { rough: 0.4 });
     g.add(em(caixa(0.7, 1.3, 0.56, vermelho), 0, 0.68, -0.04));
     for (const x of [-0.28, 0.28]) g.add(em(caixa(0.08, 0.04, 0.5, mat(TINTA)), x, 0.02, -0.04));
     // Vitrine de latinhas atrás do vidro
@@ -864,6 +866,8 @@ export const criarCena = ({ aoClicar }) => {
         for (const m of novo.moveis) {
             const modelo = (MODELOS_MOVEL[m.tipo] || planta)(m);
             modelo.position.set(m.x + 0.5, 0, m.y + 0.5);
+            // A frente gira de 90 em 90 graus (0 = para a frente da loja)
+            modelo.rotation.y = (m.rot || 0) * (Math.PI / 2);
             modelo.userData.alvo = { tipo: "movel", x: m.x, y: m.y };
             modelo.userData.chave = `${m.x},${m.y}`;
             mobilia.add(modelo);
