@@ -2635,3 +2635,68 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
     .ty-acoes { top: auto; bottom: 96px; left: 10px; }
     .ty-acoes button[data-tycoon="abrir-painel"] { display: none; }
 }
+
+/* ---------- Barra de construir / ferramentas do móvel (embaixo do mapa) ---------- */
+.ty-barra {
+    position: absolute; z-index: 8; left: 50%; bottom: 12px; transform: translateX(-50%);
+    width: min(980px, calc(100% - 330px)); padding: 8px 10px;
+    background: var(--papel2); border: var(--linha); border-radius: 14px; box-shadow: var(--sombra);
+}
+.tb-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 0.82rem; }
+.tb-topo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tinta2); }
+.tb-topo b { color: var(--tinta); }
+.tb-sair { flex-shrink: 0; padding: 3px 10px; border: 2px solid var(--tinta); border-radius: 99px; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.tb-itens { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.tb-item {
+    flex: 0 0 104px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px;
+    border: 2px solid var(--tinta); border-radius: 10px; background: #fff; font: inherit; cursor: pointer; text-align: center;
+}
+.tb-item .ty-ico { width: 40px; height: 40px; }
+.tb-item b { font-size: 0.74rem; line-height: 1.1; }
+.tb-item small { font-size: 0.72rem; font-weight: 700; color: var(--verde); }
+.tb-item.ativo { background: var(--amarelo); box-shadow: 2px 3px 0 var(--tinta); transform: translateY(-2px); }
+.tb-item:disabled { opacity: 0.45; cursor: not-allowed; }
+.tb-item.trancado { filter: grayscale(1); }
+.tb-item.trancado small { color: var(--tinta2); }
+/* Ferramentas do móvel escolhido */
+.ty-barra-edicao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-color: var(--azul); }
+.tb-titulo { display: flex; align-items: center; gap: 8px; min-width: 150px; flex: 1; }
+.tb-titulo .ty-ico { width: 38px; height: 38px; }
+.tb-titulo div { display: flex; flex-direction: column; }
+.tb-titulo small { font-size: 0.74rem; color: var(--tinta2); }
+.tb-grupo { display: flex; gap: 6px; }
+.tb-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 58px; padding: 4px 8px;
+    border: 2px solid var(--tinta); border-radius: 10px; background: #fff; font: inherit; font-size: 1.2rem; font-weight: 800;
+    line-height: 1.1; cursor: pointer; box-shadow: 2px 2px 0 var(--tinta);
+}
+.tb-btn small { font-size: 0.66rem; font-weight: 700; }
+.tb-btn:hover { background: #fff3b0; }
+.tb-btn.ativo { background: var(--amarelo); }
+.tb-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tb-melhorar { color: #b8860b; }
+.tb-vender { color: var(--vermelho); }
+.tb-pronto { background: var(--verde); color: #fff; }
+.tb-pronto:hover { background: #26864c; }
+.tb-cores { display: flex; gap: 5px; }
+.tb-cores button { width: 26px; height: 26px; border: 2px solid var(--tinta); border-radius: 50%; background: var(--cor); cursor: pointer; }
+.tb-cores button.ativo { outline: 3px solid var(--amarelo); outline-offset: 1px; }
+/* Em Construir o mapa fica livre: sem dica embaixo e o placar no lugar de sempre */
+.ty-jogo:has(.ty-barra) .ty-dica3d { display: none; }
+.ty-jogo:has(.ty-barra) .ty-camera { bottom: auto; top: 60px; }
+@media (min-width: 761px) {
+    .ty-jogo:has(.ty-lado.aberta) .ty-placar { left: 14px; right: auto; top: 60px; }
+    .ty-jogo:has(.ty-lado.aberta) .ty-camera { left: auto; }
+}
+@media (max-width: 760px) {
+    .ty-barra { width: auto; left: 6px; right: 6px; bottom: 6px; transform: none; padding: 6px; border-radius: 12px; }
+    .tb-topo span { font-size: 0.7rem; }
+    .tb-item { flex-basis: 86px; }
+    .tb-item .ty-ico { width: 32px; height: 32px; }
+    .ty-barra-edicao { gap: 6px; }
+    .tb-titulo { min-width: 100%; }
+    .tb-btn { min-width: 48px; padding: 3px 5px; font-size: 1rem; }
+    .tb-cores button { width: 22px; height: 22px; }
+    .ty-jogo:has(.ty-barra) .ty-acoes { bottom: auto; top: 6px; }
+    .ty-jogo:has(.ty-barra) .ty-camera { top: 6px; right: 8px; }
+}
