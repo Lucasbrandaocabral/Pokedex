@@ -134,4 +134,4 @@ export const IMAGEM_PRODUTO = {
 export const ARTE_MOVEL = { caixa: REGISTRADORA, planta: PLANTA, maquina: MAQUINA, prateleira: ESTANTE, vitrine: VITRINE };
 
 // Quantos itens aparecem na estante
-export const ITENS_NA_ESTANTE = 6;
+export const ITENS_NA_ESTANTE = 9;
