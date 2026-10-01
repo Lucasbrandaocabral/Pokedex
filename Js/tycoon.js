@@ -229,12 +229,20 @@ const htmlMovel = (m) => {
         const vis = itensVisiveis(m);
         const itens = Array.from({ length: ITENS_NA_ESTANTE }, (_, i) =>
             `<img src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="visibility:${i < vis ? "visible" : "hidden"}">`).join("");
-        dentro = `<span class="ty-estante">${itens}<i class="ty-etiqueta">₽ ${precoVenda(t(), m.produto)}</i></span><i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
+        // No 3D a estante é montada com peças (fundo, laterais, tábuas) e os itens ficam em pé nas tábuas
+        const tabuas = [0, 1, 2].map((n) => `<span class="g-tabua" style="--n:${n}">${[0, 1, 2].map((k) => {
+            const i = n * 3 + k;
+            return `<img class="ty-item" src="${IMAGEM_PRODUTO[m.produto]}" alt="" draggable="false" style="--k:${k};visibility:${i < vis ? "visible" : "hidden"}">`;
+        }).join("")}${n === 0 ? `<b class="g-preco">₽ ${precoVenda(t(), m.produto)}</b>` : ""}</span>`).join("");
+        const gondola = `<span class="ty-gondola"><i class="g-fundo"></i><i class="g-lado e"></i><i class="g-lado d"></i>${tabuas}<i class="g-topo"></i></span>`;
+        dentro = `<span class="ty-estante">${itens}<i class="ty-etiqueta">₽ ${precoVenda(t(), m.produto)}</i></span>${gondola}<i class="ty-estoque ${pct < 30 ? "baixo" : ""}"><b style="width:${pct}%"></b></i>`;
     } else if (m.tipo === "vitrine") {
         const c = m.carta && CARTA_POR_ID[m.carta];
         dentro = `<span class="ty-vidro">${c ? `<img src="${c.imagem}" alt="" draggable="false"><i class="ty-raridade">${RARIDADES[c.raridade].simbolo}</i>` : "<em>vazia</em>"}</span>`;
-    } else if (m.tipo === "caixa" && nivelEquipe(t(), "chansey")) {
-        dentro += `<img class="ty-funcionario" src="${imagemPixel(113)}" alt="Chansey" draggable="false">`;
+    } else if (m.tipo === "caixa") {
+        // Caixa registradora em 3D (corpo com teclado e gaveta + torre do visor)
+        dentro += `<span class="ty-registradora"><i class="rg-corpo"></i><i class="rg-visor"></i></span>`;
+        if (nivelEquipe(t(), "chansey")) dentro += `<img class="ty-funcionario" src="${imagemPixel(113)}" alt="Chansey" draggable="false">`;
     }
     return `<button class="ty-movel ty-${m.tipo}${sel}" data-tycoon="movel" data-x="${m.x}" data-y="${m.y}"
         style="grid-column:${m.x + 1};grid-row:${m.y + 1}" title="${info.nome}">${dentro}</button>`;
@@ -365,7 +373,9 @@ const desenharMundo = (forcar = false) => {
         const barra = $(`.ty-movel[data-x="${m.x}"][data-y="${m.y}"] .ty-estoque`, app);
         if (!barra) continue;
         const vis = itensVisiveis(m);
-        barra.parentElement.querySelectorAll(".ty-estante img").forEach((img, i) => { img.style.visibility = i < vis ? "visible" : "hidden"; });
+        for (const sel of [".ty-estante img", ".ty-gondola .ty-item"]) {
+            barra.parentElement.querySelectorAll(sel).forEach((img, i) => { img.style.visibility = i < vis ? "visible" : "hidden"; });
+        }
         const pct = (m.estoque / estoqueMax(t())) * 100;
         barra.firstElementChild.style.width = `${pct}%`;
         barra.classList.toggle("baixo", pct < 30);

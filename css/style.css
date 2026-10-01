@@ -2318,3 +2318,73 @@ body.modo-tycoon main { max-width: 1440px; }
 .tres-d .construindo .ty-prateleira .ty-estante { opacity: 1; }
 .tres-d .ty-movel.ty-prateleira.selecionado { box-shadow: 0 0 0 4px var(--azul); }
 .tres-d .ty-movel.ty-prateleira.selecionado .ty-estante { filter: none; outline: 3px solid var(--azul); }
+
+/* ---------- Estante e caixa registradora montadas em 3D ---------- */
+.ty-gondola, .ty-registradora { display: none; }
+.tres-d .ty-prateleira .ty-estante { display: none !important; }
+.tres-d .ty-prateleira {
+    --alt: 2px !important; --H: calc(var(--tile) * 0.95);
+    background: #4a3019; border-color: transparent; box-shadow: none;
+}
+.tres-d .ty-prateleira::after { display: none; }
+.tres-d .ty-prateleira > .ty-estoque { top: 3%; bottom: auto; transform: translateZ(calc(var(--H) + 1px)); z-index: 3; }
+.tres-d .ty-gondola { display: block; position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.tres-d .ty-gondola i, .tres-d .g-tabua { position: absolute; display: block; }
+.tres-d .g-fundo {
+    left: 0; top: 0; width: 100%; height: var(--H); transform-origin: top; transform: rotateX(90deg);
+    background: linear-gradient(#4a3019, #6b4426); border: 2px solid var(--tinta);
+}
+.tres-d .g-lado { top: 0; width: var(--H); height: 100%; transform-origin: left; transform: rotateY(-90deg); border: 2px solid var(--tinta); }
+.tres-d .g-lado.e { left: 0; background: #7a4f2e; }
+.tres-d .g-lado.d { left: 100%; background: linear-gradient(90deg, #a8744a, #c98b55); }
+.tres-d .g-topo {
+    left: 0; right: 0; top: 0; height: 18%; transform: translateZ(var(--H)); background: linear-gradient(135deg, #e0a36a, #c98b55);
+    border: 2px solid var(--tinta); border-radius: 1px;
+}
+.tres-d .g-tabua {
+    /* Degraus: cada tábua de cima é mais rasa, para os produtos de baixo aparecerem vistos de cima */
+    left: 0; right: 0; top: 0; height: calc(100% - var(--n) * 30%); transform-style: preserve-3d; transform: translateZ(calc(var(--H) * (0.03 + var(--n) * 0.32)));
+    background: linear-gradient(#8a5a34, #a8744a);
+}
+.tres-d .g-tabua::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%; height: calc(var(--tile) * 0.07); transform-origin: top; transform: rotateX(-90deg);
+    background: #e0a36a; border: 1.5px solid var(--tinta);
+}
+.tres-d .ty-item {
+    position: absolute; bottom: calc(var(--tile) * 0.06); left: calc(-6% + var(--k) * 31%); width: 44%; height: calc(var(--H) * 0.34);
+    object-fit: contain; object-position: 50% 100%; image-rendering: pixelated; transform-origin: 50% 100%; transform: rotateX(90deg) scale(1.55);
+}
+.tres-d .g-preco {
+    position: absolute; left: 50%; top: 100%; z-index: 2; padding: 0 4px; transform-origin: top; transform: translateX(-50%) translateZ(1px) rotateX(-90deg);
+    border: 1.5px solid var(--tinta); border-radius: 3px; background: #ffcb05; font: 800 calc(var(--tile) * 0.12) "Rubik", sans-serif; white-space: nowrap;
+}
+.tres-d .construindo .ty-prateleira, .tres-d .construindo .ty-gondola { --H: 6px; }
+.tres-d .construindo .ty-item, .tres-d .construindo .g-preco { display: none; }
+.tres-d .ty-movel.ty-prateleira.selecionado .g-topo { box-shadow: 0 0 0 3px var(--azul); }
+
+/* Caixa registradora: corpo (teclado + gaveta) e torre do visor */
+.tres-d .ty-caixa .ty-arte { display: none; }
+.tres-d .ty-registradora { display: block; position: absolute; left: 16%; top: 30%; width: 68%; height: 48%; transform-style: preserve-3d; pointer-events: none; }
+.tres-d .ty-registradora i { position: absolute; display: block; transform-style: preserve-3d; }
+.tres-d .rg-corpo {
+    --h: calc(var(--tile) * 0.16); inset: 0; transform: translateZ(var(--h)); border: 2px solid var(--tinta); border-radius: 2px;
+    background: radial-gradient(circle, #f4f4f4 0 30%, transparent 34%) 0 0 / 20% 33% #b8bcc8;
+}
+.tres-d .rg-corpo::before, .tres-d .rg-corpo::after, .tres-d .rg-visor::before, .tres-d .rg-visor::after { content: ""; position: absolute; border: 2px solid var(--tinta); }
+.tres-d .rg-corpo::before {
+    left: -2px; right: -2px; top: calc(100% + 0px); height: var(--h); transform-origin: top; transform: rotateX(-90deg);
+    background: radial-gradient(ellipse 10% 18% at 50% 55%, #ffcb05 0 90%, transparent 100%), linear-gradient(#8a90a0 0 30%, #6b7390 30%);
+}
+.tres-d .rg-corpo::after {
+    top: -2px; bottom: -2px; left: 100%; width: var(--h); transform-origin: left; transform: rotateY(90deg); background: #8a90a0;
+}
+.tres-d .rg-visor {
+    --h: calc(var(--tile) * 0.36); left: 28%; top: 2%; width: 44%; height: 26%; transform: translateZ(var(--h));
+    background: #3c4a66; border: 2px solid var(--tinta);
+}
+.tres-d .rg-visor::before {
+    left: -2px; right: -2px; top: 100%; height: var(--h); transform-origin: top; transform: rotateX(-90deg);
+    background: linear-gradient(#3c4a66 0 6%, #7fe0a0 6% 42%, #3c4a66 42%);
+}
+.tres-d .rg-visor::after { top: -2px; bottom: -2px; left: 100%; width: var(--h); transform-origin: left; transform: rotateY(90deg); background: #2b3548; }
+.tres-d .construindo .ty-registradora { display: none; }
