@@ -12,7 +12,7 @@ import {
     normalizarTycoon, novoMundo, simular, tamanho, porta, movelEm, podeConstruir, construir, remover, trocarProduto, repor, reporTudo,
     custoRepor, estoqueMax, produtoLiberado, contratar, custoEquipe, nivelEquipe, podeMudar, mudarCidade, taxaClientes, precoVenda,
     atracao, expulsarRocket, entrarRocket, atualizarTaxa, aplicarOffline, pacotesDisponiveis, resgatarPacote,
-    ACABAMENTOS, podeMover, moverMovel, girarMovel, pintarMovel,
+    ACABAMENTOS, podeMover, moverMovel, girarMovel, pintarMovel, movelMudou,
     vende, ehCaixa, nivelMovel, proximoNivel, melhorarMovel, valorMovel, bloqueioConstruir, custoUnit, procura,
     MELHORIAS_LOJA, temMelhoria, comprarMelhoria, QUALIDADE_MAX, qualidade, custoQualidade, melhorarQualidade,
     METAS, metaPronta, metasProntas, resgatarMeta, tempoCaixa, pacienciaFila,
@@ -36,7 +36,7 @@ let editando = null; // "x,y" do móvel sendo editado no modo Construir
 let movendo = false; // escolhendo o lugar novo do móvel em edição
 let modoEditar = false; // modo só para mexer nos objetos (pegar, soltar, girar, pintar)
 let folhaAberta = false; // no celular, o painel é uma gaveta que sobe de baixo
-const celular = () => window.matchMedia("(max-width: 760px)").matches;
+const celular = () => window.matchMedia("(max-width: 1100px)").matches;
 let eventoAtual = null; // { tipo, ate }
 let proximoEvento = 0;
 let lucroMinuto = { inicio: Date.now(), valor: 0 };
@@ -241,8 +241,6 @@ const redesenhar = () => {
 const atualizarLoja = () => {
     const inferior = $("#ty-inferior", app);
     if (inferior) inferior.outerHTML = htmlInferior();
-    $(".ty-dica-acao", app)?.remove();
-    $(".ty-grade", app)?.insertAdjacentHTML("beforeend", htmlDicaAcao());
     const acoes = $(".ty-acoes", app);
     if (acoes) acoes.outerHTML = htmlAcoes();
     const dica = $(".ty-dica3d", app);
@@ -252,10 +250,7 @@ const atualizarLoja = () => {
     atualizarHud();
 };
 const textoDica3d = () => (modoConstruir ? "Arraste o chão para girar a câmera" : "Arraste para girar e inclinar • rodinha para aproximar");
-const htmlDicaAcao = () => (modoConstruir && paleta ? `<div class="ty-dica-acao">
-                <span>Toque num quadrado <b>verde</b> para ${movendo ? `levar: ${MOVEIS[movelEm(t(), ...posEditando())?.tipo]?.nome || "móvel"}` : `construir: ${MOVEIS[paleta].nome}`}</span>
-                <button data-tycoon="cancelar-acao">${movendo ? "Pronto" : "Cancelar"}</button>
-            </div>` : "");
+
 // Botões flutuantes que abrem o painel
 const htmlAcoes = () => `<div class="ty-acoes">
                 <button class="${folhaAberta && !modoConstruir ? "ativo" : ""}" data-tycoon="abrir-painel" data-modo="jogar">🛒 Gerenciar</button>
@@ -311,6 +306,15 @@ const htmlMovel = (m) => {
     const acab = m.acabamento ? `--acab:${ACABAMENTOS[m.acabamento].cor};` : "";
     return `<button class="ty-movel ty-${m.tipo}${sel}${edit} rot-${m.rot || 0}${m.acabamento ? " pintado" : ""}" data-tycoon="movel" data-x="${m.x}" data-y="${m.y}"
         style="grid-column:${m.x + 1};grid-row:${m.y + 1};${acab}" title="${info.nome}">${dentro}${selo(m)}</button>`;
+};
+
+// Move um móvel e avisa os clientes que iam até ele (e a seleção do painel)
+const mover = (de, nx, ny) => {
+    if (!moverMovel(t(), ...de.split(",").map(Number), nx, ny)) return false;
+    const para = `${nx},${ny}`;
+    movelMudou(t(), mundo, de, para);
+    if (selecionado === de) selecionado = para;
+    return true;
 };
 
 // No modo Construir: dá para pôr o móvel escolhido (ou levar o que está sendo movido) aqui?
@@ -383,7 +387,7 @@ const telaLoja = () => {
             </div>`}
             ${htmlAcoes()}
             ${htmlInferior()}
-            ${htmlDicaAcao()}
+
         </div>
     </section>`;
     if (vista3d) iniciar3d();
@@ -441,7 +445,7 @@ const iniciar3d = async () => {
             // Arrastar um móvel no modo Construir e soltar numa casa livre
             podeMover: (x, y, nx, ny) => podeMover(t(), x, y, nx, ny),
             aoMover: (x, y, nx, ny) => {
-                if (!moverMovel(t(), x, y, nx, ny)) return;
+                if (!mover(`${x},${y}`, nx, ny)) return;
                 sons.clique();
                 editando = `${nx},${ny}`;
                 modoEditar = true;
@@ -680,8 +684,10 @@ const htmlBarra = () => {
     }
     return `<div class="ty-barra ty-barra-catalogo">
         <div class="tb-topo">
-            <span>🔨 <b>Construir</b> • escolha um móvel e toque num quadrado verde • para mexer nos que já existem, use ✥ Editar</span>
-            <button class="tb-sair" data-tycoon="sair-construir">✕ Sair</button>
+            ${paleta ? `<span class="tb-colocando">👉 Toque num quadrado <b>verde</b> para colocar: <b>${MOVEIS[paleta].nome}</b></span>
+            <button class="tb-sair" data-tycoon="cancelar-acao">Cancelar</button>`
+            : `<span>🔨 <b>Construir</b> • escolha um móvel e toque num quadrado verde • para mexer nos que já existem, use ✥ Editar</span>
+            <button class="tb-sair" data-tycoon="sair-construir">✕ Sair</button>`}
         </div>
         <div class="tb-itens">${Object.entries(MOVEIS).map(([id, mv]) => {
             const bloqueio = bloqueioConstruir(t(), id);
@@ -875,7 +881,7 @@ const ACOES = {
         const x = Number(el.dataset.x);
         const y = Number(el.dataset.y);
         if (modoConstruir && movendo && editando) {
-            if (!moverMovel(t(), ...posEditando(), x, y)) {
+            if (!mover(editando, x, y)) {
                 sons.erro();
                 return aviso("Aí não dá: bloquearia o caminho dos clientes.", "erro");
             }
@@ -994,6 +1000,8 @@ const ACOES = {
         if (ehCaixa(m) && t().moveis.filter(ehCaixa).length === 1) return aviso("A loja precisa de pelo menos um caixa.", "erro");
         if (m.estoque) t().dinheiro += m.estoque * custoUnit(t(), m.produto);
         remover(t(), m.x, m.y);
+        movelMudou(t(), mundo, `${m.x},${m.y}`, null);
+        if (selecionado === `${m.x},${m.y}`) selecionado = null;
         editando = null;
         movendo = false;
         sons.moeda();

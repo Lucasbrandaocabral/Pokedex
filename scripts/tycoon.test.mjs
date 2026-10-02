@@ -252,3 +252,28 @@ test("metas pagam uma vez só", () => {
     assert.equal(t.dinheiro, antes + 200);
     assert.equal(T.resgatarMeta(t, "atender10"), false);
 });
+
+test("mover ou vender um móvel muda o caminho de quem ia até ele, sem perder reputação", () => {
+    const t = novo();
+    t.dinheiro = 1e6;
+    const mundo = T.novoMundo();
+    const rnd = semente(11);
+    // Simula até ter alguém indo para a prateleira (1,1) ou na fila do caixa
+    let indo = null;
+    for (let i = 0; i < 2000 && !indo; i++) {
+        T.simular(t, mundo, 0.1, { rnd });
+        indo = mundo.clientes.find((c) => c.estado === "entrando" && c.alvo === "1,1" && c.rota.length);
+    }
+    assert.ok(indo, "alguém foi para a prateleira");
+    const rep = t.reputacao;
+    const perdidos = t.perdidos;
+    assert.ok(T.moverMovel(t, 1, 1, 0, 0));
+    T.movelMudou(t, mundo, "1,1", "0,0");
+    assert.equal(indo.alvo, "0,0");
+    // Vende a prateleira: quem ia até ela sai sem reclamar
+    T.remover(t, 0, 0);
+    T.movelMudou(t, mundo, "0,0", null);
+    assert.equal(indo.estado, "saindo");
+    for (let i = 0; i < 100; i++) T.simular(t, mundo, 0.1, { rnd: () => 0.99 });
+    assert.ok(t.reputacao >= rep - 0.0001 || t.perdidos === perdidos, "não perdeu reputação por causa da mudança");
+});

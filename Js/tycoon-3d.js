@@ -1239,7 +1239,12 @@ export const criarCena = ({ aoClicar, aoMover, podeMover }) => {
         if (dados?.construir && (dados.livres || []).length) {
             const casa = casaNoPonto(ev);
             // Se um móvel estiver na frente do chão tocado, o toque é no móvel
-            const hit = raio.intersectObject(mobilia, true)[0];
+            // (menos o objeto "na mão", que está bem embaixo do mouse)
+            const naMao = (o) => {
+                while (o && !o.userData.chave) o = o.parent;
+                return o?.userData.chave === dados.carregando;
+            };
+            const hit = raio.intersectObject(mobilia, true).find((h) => !naMao(h.object));
             const distChao = raio.ray.origin.distanceTo(pontoChao);
             if (livre(casa) && !(hit && hit.distance < distChao - 0.05)) return aoClicar({ tipo: "chao", x: casa.x, y: casa.y });
         }
