@@ -747,6 +747,41 @@ export const simular = (t, mundo, dt, { rnd = Math.random, cartas = {}, evento =
     return eventos;
 };
 
+// Um móvel mudou de lugar (para = "x,y") ou foi vendido (para = null):
+// os clientes indo até ele ou na fila dele mudam o caminho, sem perder reputação.
+export const movelMudou = (t, mundo, de, para = null) => {
+    const p = porta(t);
+    if (mundo.caixas[de]) {
+        if (para) mundo.caixas[para] = mundo.caixas[de];
+        delete mundo.caixas[de];
+    }
+    for (const c of mundo.clientes) {
+        if (c.estado === "entrando" && c.alvo === de) {
+            const m = para && movelEm(t, ...para.split(",").map(Number));
+            const lado = m && ladoLivre(t, m);
+            if (lado) {
+                c.alvo = para;
+                andarAte(t, c, lado);
+            } else {
+                // O móvel sumiu: devolve o que pegou e sai sem reclamar
+                c.estado = "saindo";
+                andarAte(t, c, p);
+            }
+        } else if (c.estado === "fila" && c.caixa === de) {
+            const m = para ? movelEm(t, ...para.split(",").map(Number)) : caixaMaisVazio(t, mundo);
+            const lado = m && ladoLivre(t, m);
+            if (lado) {
+                c.caixa = `${m.x},${m.y}`;
+                c.espera = 0;
+                andarAte(t, c, lado);
+            } else {
+                c.estado = "saindo";
+                andarAte(t, c, p);
+            }
+        }
+    }
+};
+
 // Expulsar o Rocket (clique nele) antes de ele roubar
 export const expulsarRocket = (t, mundo, id) => {
     const c = mundo.clientes.find((x) => x.id === id && x.rocket && !x.expulso);

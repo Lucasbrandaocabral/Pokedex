@@ -2463,7 +2463,7 @@ body.modo-tycoon main { max-width: 1440px; }
 }
 .ty-grade { position: relative; }
 
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
     body.modo-tycoon:has(.ty-jogo) .topo { display: none; }
     body.modo-tycoon:has(.ty-jogo) { padding-bottom: 0; overflow: hidden; }
     .ty-jogo {
@@ -2591,7 +2591,7 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
 .ty-fechar-painel { display: none; }
 .ty-mapa3d .ty-vista, .ty-mapa-caixa .ty-vista { display: none; }
 
-@media (min-width: 761px) {
+@media (min-width: 1101px) {
     body.modo-tycoon:has(.ty-jogo) .topo { display: none; }
     body.modo-tycoon:has(.ty-jogo) { padding-bottom: 0; overflow: hidden; }
     body.modo-tycoon:has(.ty-jogo) main { max-width: none; padding: 0; margin: 0; }
@@ -2630,7 +2630,7 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
     .ty-lado .ty-modos { margin-right: 42px; flex-shrink: 0; }
     #ty-painel { overflow-y: auto; min-height: 0; padding-right: 4px; }
 }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
     /* No celular o painel já é a gaveta de baixo: fica só o botão de trocar a vista */
     .ty-acoes { top: auto; bottom: 96px; left: 10px; }
     .ty-acoes button[data-tycoon="abrir-painel"] { display: none; }
@@ -2683,12 +2683,12 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
 .tb-cores button.ativo { outline: 3px solid var(--amarelo); outline-offset: 1px; }
 /* Em Construir o mapa fica livre: sem dica embaixo e o placar no lugar de sempre */
 .ty-jogo:has(.ty-barra) .ty-dica3d { display: none; }
-.ty-jogo:has(.ty-barra) .ty-camera { bottom: auto; top: 60px; }
-@media (min-width: 761px) {
-    .ty-jogo:has(.ty-lado.aberta) .ty-placar { left: 14px; right: auto; top: 60px; }
-    .ty-jogo:has(.ty-lado.aberta) .ty-camera { left: auto; }
+@media (min-width: 1101px) { .ty-jogo:has(.ty-barra) .ty-camera { top: auto; left: auto; right: 14px; bottom: 14px; } }
+@media (min-width: 1101px) {
+    /* Painel aberto na direita: o placar desce para baixo dos botões, à esquerda */
+    .ty-jogo:has(.ty-lado.aberta) .ty-placar { left: 14px; right: auto; top: 112px; flex-wrap: wrap; max-width: calc(100% - 460px); }
 }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
     .ty-barra { width: auto; left: 6px; right: 6px; bottom: 6px; transform: none; padding: 6px; border-radius: 12px; }
     .tb-topo span { font-size: 0.7rem; }
     .tb-item { flex-basis: 86px; }
@@ -2705,7 +2705,7 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
 .ty-modos { grid-template-columns: repeat(3, 1fr); }
 .ty-barra-dica { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.86rem; border-color: var(--azul); }
 .ty-barra-dica b { color: var(--azul); }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
     .ty-acoes, .ty-jogo:has(.ty-barra) .ty-acoes { top: 6px; bottom: auto; left: 6px; gap: 4px; }
     .ty-acoes button { padding: 5px 9px; font-size: 0.78rem; }
     .ty-acoes button[data-tycoon="abrir-painel"] { display: inline-block; }
@@ -2714,3 +2714,9 @@ h3 .ty-nivel { position: static; vertical-align: middle; margin-left: 4px; }
     .ty-camera button { width: 32px; height: 32px; font-size: 1rem; }
     .ty-barra-dica { font-size: 0.74rem; }
 }
+.tb-colocando { color: var(--tinta) !important; font-weight: 600; }
+.tb-colocando b { color: var(--verde); }
+.ty-lado .ty-modos button { white-space: nowrap; font-size: 0.85rem; padding: 8px 4px; }
+/* Avisos no Tycoon: um pouco mais abaixo e sem bloquear os botões do mapa */
+body.modo-tycoon .avisos { top: 120px; }
+body.modo-tycoon .aviso { pointer-events: none; }
